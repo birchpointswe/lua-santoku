@@ -23,6 +23,12 @@ local fs = require("lfs")
 -- optional, return handle
 -- TODO: add sqlite and socket wrappers
 
+-- TODO: io.lines: avoid pcall by using io.open
+-- directly, add max lines and max line length
+-- capability
+-- TODO: Standardize error returns: in case of
+-- error, return false, <enum>, <detail>
+
 local M = {}
 
 M.co = require("santoku.co")
@@ -219,6 +225,7 @@ end
 -- TODO
 -- Interpolate strings
 --   "Hello %name. %adjective to meet you."
+--   "Name: %name. Age: %d:age"
 M.interp = function (s, t)
   M.unimplemented("interp")
 end
