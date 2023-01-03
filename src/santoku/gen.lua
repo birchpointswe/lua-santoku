@@ -1,94 +1,80 @@
-local utils = require("santoku.utils")
-local co = require("santoku.co")
+-- TODO: Generators shouldn't rely on nil being
+-- returned to signal completion, but instead
+-- should check the state of the coroutine.
+
+local UTILS = require("santoku.utils")
+local CO = require("santoku.co")
 
 local M = {}
-
-M.iter = function (tbl, iter)
-  tbl = tbl or {}
-  local coroutine = co.make()
-  return M.gen(coroutine.wrap(function ()
-    local g, p, s = iter(tbl)
-    while true do
-      local vs = utils.pack(g(p, s))
-      s = vs[1]
-      if s == nil then
-        break
-      else
-        coroutine.yield(utils.unpack(vs))
-      end
-    end
-  end))
-end
-
-M.ipairs = function(t)
-  return M.iter(t, ipairs)
-end
-
-M.pairs = function(t)
-  return M.iter(t, pairs)
-end
-
--- NOTE: We're dropping nil values here. We
--- can't do a simple map(nret(1)) because if
--- some values are nil the consumers of this
--- generator will stop early.
-M.vals = function (t)
-  local co = co.make()
-  return M.gen(co.wrap(function ()
-    for i, v in pairs(t) do
-      if v ~= nil then
-        co.yield(v)
-      end
-    end
-  end))
-end
-
-M.keys = function (t)
-  return M.map(M.pairs(t), utils.nret(1))
-end
-
--- NOTE: We're dropping nil values here. We
--- can't do a simple map(nret(1)) because if
--- some values are nil the consumers of this
--- generator will stop early.
-M.ivals = function (t)
-  local co = co.make()
-  return M.gen(co.wrap(function ()
-    local max
-    if t.n ~= nil then
-      max = t.n
-    else
-      max = #t
-    end
-    for i = 1, max do
-      local v = t[i]
-      if v ~= nil then
-        co.yield(v)
-      end
-    end
-  end))
-end
-
-M.ikeys = function (t)
-  return M.map(M.ipairs(t), utils.nret(1))
-end
 
 -- TODO: Is this the best way to do this?
 -- TODO: What other metamethods can we override?
 -- TODO: We should not assign all of M to the generator,
 -- instead, only assign gen-related functions
 -- TODO: Consider overloading operators for generators
+-- TODO: This should leverage "inherit" so we
+-- don't lose a metatable that is provided to us
 M.gen = function (gen)
+  assert(type(gen) == "function")
   return setmetatable({}, {
     __index = M,
     __call = gen,
   })
 end
 
+M.iter = function (tbl, iter)
+  tbl = tbl or {}
+  assert(type(tbl) == "table")
+  assert(type(iter) == "function")
+  local co = CO.make()
+  return M.gen(co.wrap(function ()
+    local g, p, s = iter(tbl)
+    while true do
+      local vs = UTILS.pack(g(p, s))
+      s = vs[1]
+      if s == nil then
+        break
+      else
+        co.yield(UTILS.unpack(vs))
+      end
+    end
+  end))
+end
+
+M.ipairs = function(t)
+  assert(type(t) == "table")
+  return M.iter(t, ipairs)
+end
+
+M.pairs = function(t)
+  assert(type(t) == "table")
+  return M.iter(t, pairs)
+end
+
+M.vals = function (t)
+  assert(type(t) == "table")
+  return M.map(M.pairs(t), UTILS.nret(2))
+end
+
+M.keys = function (t)
+  assert(type(t) == "table")
+  return M.map(M.pairs(t), UTILS.nret(1))
+end
+
+M.ivals = function (t)
+  assert(type(t) == "table")
+  return M.map(M.ipairs(t), UTILS.nret(2))
+end
+
+M.ikeys = function (t)
+  assert(type(t) == "table")
+  return M.map(M.ipairs(t), UTILS.nret(1))
+end
+
 M.caller = function (...)
-  local args = utils.pack(...)
+  local args = UTILS.pack(...)
   return function (f)
-    return f(utils.unpack(args))
+    return f(UTILS.unpack(args))
   end
 end
 
@@ -107,20 +93,20 @@ M.match = function (str, pat)
 end
 
 M.reducer = function (acc, ...)
-  local val1 = utils.pack(...)
+  local val1 = UTILS.pack(...)
   return function (gen)
     if val1.n == 0 then
-      val1 = utils.pack(gen())
+      val1 = UTILS.pack(gen())
     end
     if val1.n == 0 then
       return nil
     end
     while true do
-      local val2 = utils.pack(gen())
+      local val2 = UTILS.pack(gen())
       if val2.n == 0 then
-        return utils.unpack(val1)
+        return UTILS.unpack(val1)
       else
-        val1 = utils.pack(acc(utils.extendarg(val1, val2)))
+        val1 = UTILS.pack(acc(UTILS.extendarg(val1, val2)))
       end
     end
   end
@@ -130,12 +116,14 @@ M.reduce = function (gen, acc, ...)
   return M.reducer(acc, ...)(gen)
 end
 
+-- TODO: Does this break if the underlying
+-- coroutine ends?
 M.taker = function (n)
   return function (gen)
-    local coroutine = co.make()
-    return M.gen(coroutine.wrap(function ()
+    local co = CO.make()
+    return M.gen(co.wrap(function ()
       while n > 0 do
-        coroutine.yield(gen())
+        co.yield(gen())
         n = n - 1
       end
     end))
@@ -157,19 +145,19 @@ M.max = function (gen, def)
 end
 
 M.flatten = function (gengen)
-  local coroutine = co.make()
-  return M.gen(coroutine.wrap(function ()
+  local co = CO.make()
+  return M.gen(co.wrap(function ()
     while true do
       local gen = gengen()
       if gen == nil then
         break
       end
       while true do
-        local val = utils.pack(gen())
+        local val = UTILS.pack(gen())
         if val.n == 0 then
           break
         end
-        coroutine.yield(utils.unpack(val))
+        co.yield(UTILS.unpack(val))
       end
     end
   end))
@@ -177,32 +165,32 @@ end
 
 M.collect = function (gen)
   return M.reduce(gen, function (a, ...)
-    local vals = utils.pack(...)
+    local vals = UTILS.pack(...)
     if vals.n <= 1 then
-      return utils.append(a, vals[1])
+      return UTILS.append(a, vals[1])
     else
       -- NOTE: Design decision here: it might technically
-      -- make more sense to provide vals here (a utils.pack()
+      -- make more sense to provide vals here (a UTILS.pack()
       -- of the arguments, however in most uses users will
       -- expect zip to return a list of lists)
-      return utils.append(a, { ... })
+      return UTILS.append(a, { ... })
     end
   end, {})
 end
 
 M.filterer = function (fn, ...)
-  fn = fn or utils.id
-  local args = utils.pack(...)
+  fn = fn or UTILS.id
+  local args = UTILS.pack(...)
   return function (gen)
-    local coroutine = co.make()
-    return M.gen(coroutine.wrap(function ()
+    local co = CO.make()
+    return M.gen(co.wrap(function ()
       while true do
-        local val = utils.pack(gen())
+        local val = UTILS.pack(gen())
         if val.n == 0 then
           break
         end
-        if fn(utils.extendarg(val, args)) then
-          coroutine.yield(utils.unpack(val))
+        if fn(UTILS.extendarg(val, args)) then
+          co.yield(UTILS.unpack(val))
         end
       end
     end))
@@ -214,17 +202,17 @@ M.filter = function (gen, fn, ...)
 end
 
 M.mapper = function (fn, ...)
-  fn = fn or utils.id
-  local args = utils.pack(...)
+  fn = fn or UTILS.id
+  local args = UTILS.pack(...)
   return function (gen)
-    local coroutine = co.make()
-    return M.gen(coroutine.wrap(function ()
+    local co = CO.make()
+    return M.gen(co.wrap(function ()
       while true do
-        local vals = utils.pack(gen())
+        local vals = UTILS.pack(gen())
         if vals.n == 0 then
           break
         else
-          coroutine.yield(fn(utils.extendarg(vals, args)))
+          co.yield(fn(UTILS.extendarg(vals, args)))
         end
       end
     end))
@@ -237,11 +225,11 @@ end
 
 M.each = function (gen, fn)
   while true do
-    local vals = utils.pack(gen())
+    local vals = UTILS.pack(gen())
     if vals.n == 0 then
       break
     else
-      fn(utils.unpack(vals))
+      fn(UTILS.unpack(vals))
     end
   end
 end
@@ -256,20 +244,20 @@ end
 -- opts.mode == N for stopping after N iterations
 -- invalid mode treated as "longest"
 M.zipper = function (opts)
-  local fn = (opts or {}).fn or utils.id
+  local fn = (opts or {}).fn or UTILS.id
   local mode = (opts or {}).mode or "first"
   return function (...)
-    local gens = utils.pack(...)
-    local coroutine = co.make()
+    local gens = UTILS.pack(...)
+    local co = CO.make()
     local nb = 0
-    return M.gen(coroutine.wrap(function ()
+    return M.gen(co.wrap(function ()
       while true do
         local vals = {}
         local nils = 0
         for i, gen in ipairs(gens) do
-          local val = utils.pack(gen())
+          local val = UTILS.pack(gen())
           if val.n == 0 then
-            gens[i] = utils.const(nil)
+            gens[i] = UTILS.const(nil)
             nils = nils + 1
             vals[i] = val
             if mode == "first" then
@@ -289,7 +277,7 @@ M.zipper = function (opts)
         elseif gens.n == nils then
           break
         else
-          coroutine.yield(fn(utils.extendarg(utils.unpack(vals))))
+          co.yield(fn(UTILS.extendarg(UTILS.unpack(vals))))
         end
       end
     end))
@@ -302,11 +290,11 @@ end
 
 -- TODO: This name sucks
 M.aller = function (fn, ...)
-  fn = fn or utils.id
-  local args = utils.pack(...)
+  fn = fn or UTILS.id
+  local args = UTILS.pack(...)
   return function (gen)
     return M.reduce(gen, function (a, ...)
-      return a and fn(utils.extendarg(args, utils.pack(...)))
+      return a and fn(UTILS.extendarg(args, UTILS.pack(...)))
     end)
   end
 end
@@ -336,9 +324,9 @@ M.tabulate = function (gen, keys, opts)
 end
 
 M.finder = function (...)
-  local args = utils.pack(...)
+  local args = UTILS.pack(...)
   return function (gen)
-    return gen:filter(utils.unpack(args)):head()
+    return gen:filter(UTILS.unpack(args)):head()
   end
 end
 
@@ -347,12 +335,12 @@ M.find = function (gen, ...)
 end
 
 M.chain = function (...)
-  local gens = utils.pack(...)
-  local coroutine = co.make()
-  return M.gen(coroutine.wrap(function ()
+  local gens = UTILS.pack(...)
+  local co = CO.make()
+  return M.gen(co.wrap(function ()
     for _, gen in ipairs(gens) do
       for v in gen do
-        coroutine.yield(v)
+        co.yield(v)
       end
     end
   end))
@@ -361,7 +349,7 @@ end
 M.equals = function (...)
   return M.zipper({
     fn = function (a, ...)
-      local rest = utils.pack(...)
+      local rest = UTILS.pack(...)
       for _, v in ipairs(rest) do
         if a ~= v then
           return false
@@ -393,8 +381,8 @@ M.splitter = function (pat, opts)
   opts = opts or {}
   local delim = opts.delim or false
   return function (str)
-    local coroutine = co.make()
-    return M.gen(coroutine.wrap(function ()
+    local co = CO.make()
+    return M.gen(co.wrap(function ()
       local n = 0
       local ls = 0
       local stop = false
@@ -405,16 +393,16 @@ M.splitter = function (pat, opts)
           s = #str + 1
         end
         if delim == true then
-          coroutine.yield(str:sub(n, s - 1))
+          co.yield(str:sub(n, s - 1))
           if not stop then
-            coroutine.yield(str:sub(s, e))
+            co.yield(str:sub(s, e))
           end
         elseif delim == "left" then
-          coroutine.yield(str:sub(n, e))
+          co.yield(str:sub(n, e))
         elseif delim == "right" then
-          coroutine.yield(str:sub(ls, s - 1))
+          co.yield(str:sub(ls, s - 1))
         else
-          coroutine.yield(str:sub(n, s - 1))
+          co.yield(str:sub(n, s - 1))
         end
         if stop then
           break
@@ -434,8 +422,8 @@ end
 M.slicer = function (start, num)
   start = start or 1
   return function (gen)
-    local coroutine = co.make()
-    return M.gen(coroutine.wrap(function ()
+    local co = CO.make()
+    return M.gen(co.wrap(function ()
       local val
       while start > 1 do
         val = gen()
@@ -445,7 +433,7 @@ M.slicer = function (start, num)
         start = start - 1
       end
       while num == nil or num > 0 do
-        coroutine.yield(gen())
+        co.yield(gen())
         if num ~= nil then
           num = num - 1
         end

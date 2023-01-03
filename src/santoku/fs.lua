@@ -157,6 +157,7 @@ M.joinwith = function (d, ...)
   local de = str.escape(d)
   local pat = string.format("(%s)*$", de)
   return gen.ivals(utils.pack(...))
+    :filter()
     :reduce(function (a, n)
       return table.concat({
         -- Need these parens to ensure only the first return
