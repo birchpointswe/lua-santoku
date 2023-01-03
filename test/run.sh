@@ -2,8 +2,6 @@
 
 cd "$(dirname "$0")/.."
 
-LUA_INTERP="$(luarocks config lua_interpreter)"
-
 run()
 {
   rm -f \
@@ -15,7 +13,7 @@ run()
     shift
   fi
   echo
-  busted --helper paths -f test/busted.lua test/spec "$@"
+  busted -f test/busted.lua test/spec "$@"
   awk '/^Summary/ { P = NR } P && NR > P + 1' \
     test/luacov.report.out
 }
