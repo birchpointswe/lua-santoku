@@ -156,12 +156,13 @@ end
 M.joinwith = function (d, ...)
   local de = str.escape(d)
   local pat = string.format("(%s)*$", de)
-  local parts = gen.ivals(utils.pack(...))
-    :filter()
+  return gen.ivals(utils.pack(...))
     :reduce(function (a, n)
       return table.concat({
-        a:gsub(pat, ""),
-        n:gsub(path, "")
+        -- Need these parens to ensure only the first return
+        -- value of gsub used in concat
+        (a:gsub(pat, "")),
+        (n:gsub(pat, ""))
       }, d)
     end)
 end

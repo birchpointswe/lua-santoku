@@ -13,9 +13,11 @@ run()
     shift
   fi
   echo
-  busted -f test/busted.lua test/spec "$@"
-  awk '/^Summary/ { P = NR } P && NR > P + 1' \
-    test/luacov.report.out
+  if busted -f test/busted.lua test/spec "$@"
+  then
+    awk '/^Summary/ { P = NR } P && NR > P + 1' \
+      test/luacov.report.out
+  fi
 }
 
 iterate()
