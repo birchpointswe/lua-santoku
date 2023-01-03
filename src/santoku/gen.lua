@@ -162,6 +162,7 @@ M.collect = function (gen)
 end
 
 M.filterer = function (fn, ...)
+  fn = fn or utils.id
   local args = utils.pack(...)
   return function (gen)
     local coroutine = co.make()
@@ -184,6 +185,7 @@ M.filter = function (gen, fn, ...)
 end
 
 M.mapper = function (fn, ...)
+  fn = fn or utils.id
   local args = utils.pack(...)
   return function (gen)
     local coroutine = co.make()

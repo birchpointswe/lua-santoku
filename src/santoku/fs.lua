@@ -50,6 +50,9 @@ M.dir = function (dir)
   end
 end
 
+-- TODO: Breadth vs depth, default to depth so
+-- that directory contents are returned before
+-- directories themselves
 M.walk = function (dir, opts)
   local prune = (opts or {}).prune or utils.const(false)
   local prunekeep = (opts or {}).prunekeep or false
@@ -151,10 +154,16 @@ M.join = function (...)
 end
 
 M.joinwith = function (d, ...)
-  d = str.escape(d)
-  local pat = string.format("(%s)+", d)
-  return table.concat((utils.pack(...)), d)
-    :gsub(pat, d)
+  local de = str.escape(d)
+  local pat = string.format("(%s)*$", de)
+  local parts = gen.ivals(table.pack(...))
+    :filter()
+    :reduce(function (a, n)
+      return table.concat({
+        a:gsub(pat, ""),
+        n:gsub(path, "")
+      }, d)
+    end)
 end
 
 M.splitexts = function (fp)
