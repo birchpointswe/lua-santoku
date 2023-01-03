@@ -1,3 +1,4 @@
 test/luacov.report.out
 test/luacov.stats.out
 test/luacov.report.out.index
+lua_modules
