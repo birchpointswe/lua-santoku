@@ -1,5 +1,5 @@
 package = "santoku"
-version = "0.0.1"
+version = "scm-1"
 rockspec_format = "3.0"
 
 source = {
