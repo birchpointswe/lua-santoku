@@ -3,7 +3,7 @@ version = "dev-1"
 rockspec_format = "3.0"
 
 source = {
-  url = "git+ssh://git@github.com/broma0/lua-examples.git"
+  url = "git+ssh://git@github.com/broma0/lua-santoku.git"
 }
 
 description = {

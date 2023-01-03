@@ -3,6 +3,8 @@ statsfile = "test/luacov.stats.out"
 reportfile = "test/luacov.report.out"
 includeuntestedfiles = true
 
+-- TODO: Can we load this from the rockspec
+-- itself?
 modules = {
 
     ["santoku"] = "src/santoku.lua",
