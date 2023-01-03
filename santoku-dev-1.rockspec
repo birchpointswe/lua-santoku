@@ -1,5 +1,5 @@
 package = "santoku"
-version = "dev-1"
+version = "0.0.1"
 rockspec_format = "3.0"
 
 source = {
@@ -15,7 +15,7 @@ description = {
 -- things like luafilesystem, socket, sqlite,
 -- posix, etc?
 dependencies = {
-  "lua == 5.1",
+  "lua >= 5.1",
   "luafilesystem >= 1.8.0-1"
 }
 
