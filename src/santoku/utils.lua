@@ -4,38 +4,55 @@
 
 local M = {}
 
+local unpack = unpack or table.unpack
+
+-- TODO: I'm thinking we should switch the
+-- library to use select instead of pack
+-- directly
+M.pack = function (...)
+  local args = { ... }
+  args.n = select("#", ...)
+  return args
+end
+
+-- TODO: Do we need to do anything special with
+-- n here to be compatible with all versions?
+M.unpack = function (args)
+  return unpack(args)
+end
+
 -- TODO: does this handle nils as expected? I
 -- think we need to iterate numerically using
--- table.pack(...).n
--- TODO: does ipairs handle nils in table.pack
+-- M.pack(...).n
+-- TODO: does ipairs handle nils in M.pack
 -- correctly?
 M.extendarg = function (...)
-  return table.unpack(M.extend({}, ...))
+  return M.unpack(M.extend({}, ...))
 end
 
 M.narg = function (...)
-  local idx = table.pack(...)
+  local idx = M.pack(...)
   return function (fn)
     return function (...)
-      local args0 = table.pack(...)
+      local args0 = M.pack(...)
       local args1 = {}
       for _, v in ipairs(idx) do
         table.insert(args1, args0[v])
       end
-      return fn(table.unpack(args1))
+      return fn(M.unpack(args1))
     end
   end
 end
 
 M.nret = function (...)
-  local idx = table.pack(...)
+  local idx = M.pack(...)
   return function (...)
-    local args = table.pack(...)
+    local args = M.pack(...)
     local rets = {}
     for _, v in ipairs(idx) do
       table.insert(rets, args[v])
     end
-    return table.unpack(rets)
+    return M.unpack(rets)
   end
 end
 
@@ -65,7 +82,7 @@ M.id = function (...)
 end
 
 M.compose = function (...)
-  local args = table.pack(...)
+  local args = M.pack(...)
   return M.ivals(args)
     :reduce(function(f, g)
       return function(...)
@@ -76,7 +93,7 @@ end
 
 -- TODO: allow composition
 M.lens = function (...)
-  local keys = table.pack(...)
+  local keys = M.pack(...)
   return function (fn)
     fn = fn or M.id
     return function(t)
@@ -100,18 +117,18 @@ M.getter = function (...)
 end
 
 M.get = function (t, keys)
-  return M.getter(table.unpack(keys))(t)
+  return M.getter(M.unpack(keys))(t)
 end
 
 M.setter = function (...)
-  local args = table.pack(...)
+  local args = M.pack(...)
   return function (v)
-    return M.lens(table.unpack(args))(M.const(v))
+    return M.lens(M.unpack(args))(M.const(v))
   end
 end
 
 M.set = function (t, keys, ...)
-  return M.setter(table.unpack(keys))(...)(t)
+  return M.setter(M.unpack(keys))(...)(t)
 end
 
 M.maybe = function (a, f, g)
@@ -125,9 +142,9 @@ M.maybe = function (a, f, g)
 end
 
 M.const = function (...)
-  local val = table.pack(...)
+  local val = M.pack(...)
   return function ()
-    return table.unpack(val)
+    return M.unpack(val)
   end
 end
 
@@ -140,7 +157,7 @@ M.choose = function (a, b, c)
 end
 
 M.assigner = function (...)
-  local args = table.pack(...)
+  local args = M.pack(...)
   return function (t0)
     for _, t1 in ipairs(args) do
       for k, v in pairs(t1) do
@@ -156,7 +173,7 @@ M.assign = function (t0, ...)
 end
 
 M.extender = function (...)
-  local args = table.pack(...)
+  local args = M.pack(...)
   return function (a)
     for _, t in ipairs(args) do
       for _, v in ipairs(t) do
@@ -172,7 +189,7 @@ M.extend = function (a, ...)
 end
 
 M.appender = function (...)
-  local args = table.pack(...)
+  local args = M.pack(...)
   return function (a)
     return M.extend(a, args)
   end

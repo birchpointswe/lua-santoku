@@ -153,7 +153,7 @@ end
 M.joinwith = function (d, ...)
   d = str.escape(d)
   local pat = string.format("(%s)+", d)
-  return table.concat((table.pack(...)), d)
+  return table.concat((utils.pack(...)), d)
     :gsub(pat, d)
 end
 

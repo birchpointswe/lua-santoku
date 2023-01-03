@@ -9,12 +9,12 @@ M.iter = function (tbl, iter)
   return M.gen(coroutine.wrap(function ()
     local g, p, s = iter(tbl)
     while true do
-      local vs = table.pack(g(p, s))
+      local vs = utils.pack(g(p, s))
       s = vs[1]
       if s == nil then
         break
       else
-        coroutine.yield(table.unpack(vs))
+        coroutine.yield(utils.unpack(vs))
       end
     end
   end))
@@ -57,9 +57,9 @@ M.gen = function (gen)
 end
 
 M.caller = function (...)
-  local args = table.pack(...)
+  local args = utils.pack(...)
   return function (f)
-    return f(table.unpack(args))
+    return f(utils.unpack(args))
   end
 end
 
@@ -78,20 +78,20 @@ M.match = function (str, pat)
 end
 
 M.reducer = function (acc, ...)
-  local val1 = table.pack(...)
+  local val1 = utils.pack(...)
   return function (gen)
     if val1.n == 0 then
-      val1 = table.pack(gen())
+      val1 = utils.pack(gen())
     end
     if val1.n == 0 then
       return nil
     end
     while true do
-      local val2 = table.pack(gen())
+      local val2 = utils.pack(gen())
       if val2.n == 0 then
-        return table.unpack(val1)
+        return utils.unpack(val1)
       else
-        val1 = table.pack(acc(utils.extendarg(val1, val2)))
+        val1 = utils.pack(acc(utils.extendarg(val1, val2)))
       end
     end
   end
@@ -136,11 +136,11 @@ M.flatten = function (gengen)
         break
       end
       while true do
-        local val = table.pack(gen())
+        local val = utils.pack(gen())
         if val.n == 0 then
           break
         end
-        coroutine.yield(table.unpack(val))
+        coroutine.yield(utils.unpack(val))
       end
     end
   end))
@@ -148,12 +148,12 @@ end
 
 M.collect = function (gen)
   return M.reduce(gen, function (a, ...)
-    local vals = table.pack(...)
+    local vals = utils.pack(...)
     if vals.n <= 1 then
       return utils.append(a, vals[1])
     else
       -- NOTE: Design decision here: it might technically
-      -- make more sense to provide vals here (a table.pack()
+      -- make more sense to provide vals here (a utils.pack()
       -- of the arguments, however in most uses users will
       -- expect zip to return a list of lists)
       return utils.append(a, { ... })
@@ -162,17 +162,17 @@ M.collect = function (gen)
 end
 
 M.filterer = function (fn, ...)
-  local args = table.pack(...)
+  local args = utils.pack(...)
   return function (gen)
     local coroutine = co.make()
     return M.gen(coroutine.wrap(function ()
       while true do
-        local val = table.pack(gen())
+        local val = utils.pack(gen())
         if val.n == 0 then
           break
         end
         if fn(utils.extendarg(val, args)) then
-          coroutine.yield(table.unpack(val))
+          coroutine.yield(utils.unpack(val))
         end
       end
     end))
@@ -184,12 +184,12 @@ M.filter = function (gen, fn, ...)
 end
 
 M.mapper = function (fn, ...)
-  local args = table.pack(...)
+  local args = utils.pack(...)
   return function (gen)
     local coroutine = co.make()
     return M.gen(coroutine.wrap(function ()
       while true do
-        local vals = table.pack(gen())
+        local vals = utils.pack(gen())
         if vals.n == 0 then
           break
         else
@@ -206,11 +206,11 @@ end
 
 M.each = function (gen, fn)
   while true do
-    local vals = table.pack(gen())
+    local vals = utils.pack(gen())
     if vals.n == 0 then
       break
     else
-      fn(table.unpack(vals))
+      fn(utils.unpack(vals))
     end
   end
 end
@@ -228,7 +228,7 @@ M.zipper = function (opts)
   local fn = (opts or {}).fn or utils.id
   local mode = (opts or {}).mode or "first"
   return function (...)
-    local gens = table.pack(...)
+    local gens = utils.pack(...)
     local coroutine = co.make()
     local nb = 0
     return M.gen(coroutine.wrap(function ()
@@ -236,7 +236,7 @@ M.zipper = function (opts)
         local vals = {}
         local nils = 0
         for i, gen in ipairs(gens) do
-          local val = table.pack(gen())
+          local val = utils.pack(gen())
           if val.n == 0 then
             gens[i] = utils.const(nil)
             nils = nils + 1
@@ -258,7 +258,7 @@ M.zipper = function (opts)
         elseif gens.n == nils then
           break
         else
-          coroutine.yield(fn(utils.extendarg(table.unpack(vals))))
+          coroutine.yield(fn(utils.extendarg(utils.unpack(vals))))
         end
       end
     end))
@@ -272,10 +272,10 @@ end
 -- TODO: This name sucks
 M.aller = function (fn, ...)
   fn = fn or utils.id
-  local args = table.pack(...)
+  local args = utils.pack(...)
   return function (gen)
     return M.reduce(gen, function (a, ...)
-      return a and fn(utils.extendarg(args, table.pack(...)))
+      return a and fn(utils.extendarg(args, utils.pack(...)))
     end)
   end
 end
@@ -305,9 +305,9 @@ M.tabulate = function (gen, keys, opts)
 end
 
 M.finder = function (...)
-  local args = table.pack(...)
+  local args = utils.pack(...)
   return function (gen)
-    return gen:filter(table.unpack(args)):head()
+    return gen:filter(utils.unpack(args)):head()
   end
 end
 
@@ -316,7 +316,7 @@ M.find = function (gen, ...)
 end
 
 M.chain = function (...)
-  local gens = table.pack(...)
+  local gens = utils.pack(...)
   local coroutine = co.make()
   return M.gen(coroutine.wrap(function ()
     for _, gen in ipairs(gens) do
@@ -330,7 +330,7 @@ end
 M.equals = function (...)
   return M.zipper({
     fn = function (a, ...)
-      local rest = table.pack(...)
+      local rest = utils.pack(...)
       for _, v in ipairs(rest) do
         if a ~= v then
           return false

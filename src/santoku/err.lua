@@ -16,13 +16,13 @@ M.error = function (...)
 end
 
 M.pwrapper = function (coroutine, ...)
-  local errs = table.pack(...)
+  local errs = utils.pack(...)
   local wrapper = {
     err = function (...)
       return M.pwrapper(coroutine, ...)
     end,
     exists = function (val, ...)
-      local args = table.pack(...)
+      local args = utils.pack(...)
       if val ~= nil then
         return val, ...
       else
@@ -30,7 +30,7 @@ M.pwrapper = function (coroutine, ...)
       end
     end,
     ok = function (ok, ...)
-      local args = table.pack(...)
+      local args = utils.pack(...)
       if ok then
         return ...
       else
@@ -50,11 +50,11 @@ end
 -- TODO: pass uncaught errors to onErr
 M.pwrap = function (run, onErr)
   local coroutine = co.make()
-  local err = table.pack(coroutine.wrap(function ()
+  local err = utils.pack(coroutine.wrap(function ()
     run(M.pwrapper(coroutine))
   end)())
   if err.n ~= 0 then
-    return onErr(table.unpack(err))
+    return onErr(utils.unpack(err))
   end
 end
 
