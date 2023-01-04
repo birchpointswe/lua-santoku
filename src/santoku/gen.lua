@@ -1,114 +1,167 @@
--- TODO: Generators shouldn't rely on nil being
--- returned to signal completion, but instead
--- should check the state of the coroutine.
+-- TODO: Leverage "inherit" to set __index
+-- TODO: Avoid pack(...)
+-- TODO: Consider overloading operators for generators
+-- TODO: We should not assign all of M to the
+-- generators, instead, only assign gen-related
+-- functions
+-- TODO: Need an gen:abort() function to early
+-- exit iterators
+-- TODO: Add asserts to all 'er' functions and
+-- the non-'er' functions that don't immediately
+-- call the 'er' functions
 
-local UTILS = require("santoku.utils")
-local CO = require("santoku.co")
+local utils = require("santoku.utils")
+local co = require("santoku.co")
+
+local GEN_TAG = {}
 
 local M = {}
 
--- TODO: Is this the best way to do this?
--- TODO: What other metamethods can we override?
--- TODO: We should not assign all of M to the generator,
--- instead, only assign gen-related functions
--- TODO: Consider overloading operators for generators
--- TODO: This should leverage "inherit" so we
--- don't lose a metatable that is provided to us
-M.gen = function (gen)
-  assert(type(gen) == "function")
-  return setmetatable({}, {
+M.genco = function (fn, ...)
+  assert(type(fn) == "function")
+  local co = co.make()
+  local cor = co.create(fn)
+  local val = utils.pack(co.resume(cor, co, ...))
+  if not val[1] then
+    error(val[2])
+  end
+  local gen = {
+    tag = GEN_TAG,
+    done = function ()
+      return co.status(cor) == "dead"
+    end
+  }
+  return setmetatable(gen, {
     __index = M,
-    __call = gen,
+    __call = function (...)
+      if gen:done() then
+        return nil
+      end
+      local nval = utils.pack(co.resume(cor, ...))
+      if not nval[1] then
+        error(nval[2])
+      else
+        local ret = val
+        val = nval
+        return select(2, utils.unpack(ret))
+      end
+    end
   })
 end
 
-M.iter = function (tbl, iter)
-  tbl = tbl or {}
-  assert(type(tbl) == "table")
-  assert(type(iter) == "function")
-  local co = CO.make()
-  return M.gen(co.wrap(function ()
-    local g, p, s = iter(tbl)
-    while true do
-      local vs = UTILS.pack(g(p, s))
-      s = vs[1]
-      if s == nil then
-        break
-      else
-        co.yield(UTILS.unpack(vs))
-      end
+M.gennil = function (fn, ...)
+  assert(type(fn) == "function")
+  local val = utils.pack(fn(...))
+  local gen = {
+    tag = GEN_TAG,
+    done = function ()
+      return val[1] == nil
     end
-  end))
+  }
+  return setmetatable(gen, {
+    __index = M,
+    __call = function (...)
+      if gen:done() then
+        return nil
+      end
+      local nval = utils.pack(fn(...))
+      local ret = val
+      val = nval
+      return utils.unpack(ret)
+    end
+  })
 end
 
 M.ipairs = function(t)
   assert(type(t) == "table")
-  return M.iter(t, ipairs)
+  return M.genco(function (co)
+    for k, v in ipairs(t) do
+      co.yield(k, v)
+    end
+  end)
 end
 
 M.pairs = function(t)
   assert(type(t) == "table")
-  return M.iter(t, pairs)
+  return M.genco(function (co)
+    for k, v in pairs(t) do
+      co.yield(k, v)
+    end
+  end)
+end
+
+M.args = function (...)
+  local args = utils.pack(...)
+  return M.genco(function (co)
+    for i = 1, args.n do
+      co.yield(args[i])
+    end
+  end)
 end
 
 M.vals = function (t)
   assert(type(t) == "table")
-  return M.map(M.pairs(t), UTILS.nret(2))
+  return M.pairs(t):map(utils.nret(2))
 end
 
 M.keys = function (t)
   assert(type(t) == "table")
-  return M.map(M.pairs(t), UTILS.nret(1))
+  return M.pairs(t):map(utils.nret(1))
 end
 
 M.ivals = function (t)
   assert(type(t) == "table")
-  return M.map(M.ipairs(t), UTILS.nret(2))
+  return M.ipairs(t):map(utils.nret(2))
 end
 
 M.ikeys = function (t)
   assert(type(t) == "table")
-  return M.map(M.ipairs(t), UTILS.nret(1))
+  return M.ipairs(t):map(utils.nret(1))
 end
 
 M.caller = function (...)
-  local args = UTILS.pack(...)
+  local args = utils.pack(...)
   return function (f)
-    return f(UTILS.unpack(args))
+    assert(type(f) == "function")
+    return f(utils.unpack(args))
   end
 end
 
 M.call = function (f, ...)
+  assert(type(f) == "function")
   return M.caller(...)(f)
 end
 
 M.matcher = function (pat)
+  assert(type(pat) == "string")
   return function (str)
-    return M.gen(str:gmatch(pat))
+    assert(type(str) == "string")
+    return M.gennil(str:gmatch(pat))
   end
 end
 
 M.match = function (str, pat)
+  assert(type(str) == "string")
+  assert(type(pat) == "string")
   return M.matcher(pat)(str)
 end
 
 M.reducer = function (acc, ...)
-  local val1 = UTILS.pack(...)
+  assert(type(acc) == "function")
+  local val = utils.pack(...)
   return function (gen)
-    if val1.n == 0 then
-      val1 = UTILS.pack(gen())
+    assert(type(gen) == "table")
+    assert(gen.tag == GEN_TAG)
+    if gen:done() then
+      return utils.unpack(val)
+    elseif val.n == 0 then
+      val = utils.pack(gen())
     end
-    if val1.n == 0 then
-      return nil
+    while not gen:done() do
+      val = utils.pack(acc(
+        utils.extendarg(val, utils.pack(gen()))))
     end
-    while true do
-      local val2 = UTILS.pack(gen())
-      if val2.n == 0 then
-        return UTILS.unpack(val1)
-      else
-        val1 = UTILS.pack(acc(UTILS.extendarg(val1, val2)))
-      end
-    end
+    return utils.unpack(val)
   end
 end
 
@@ -116,17 +169,21 @@ M.reduce = function (gen, acc, ...)
   return M.reducer(acc, ...)(gen)
 end
 
--- TODO: Does this break if the underlying
--- coroutine ends?
 M.taker = function (n)
+  assert(n == nil or type(n) == "number")
   return function (gen)
-    local co = CO.make()
-    return M.gen(co.wrap(function ()
-      while n > 0 do
-        co.yield(gen())
-        n = n - 1
-      end
-    end))
+    assert(type(gen) == "table")
+    assert(gen.tag == GEN_TAG)
+    if n == nil then
+      return gen
+    else
+      return M.genco(function (co)
+        while n > 0 and not gen:done() do
+          co.yield(gen())
+          n = n - 1
+        end
+      end)
+    end
   end
 end
 
@@ -145,55 +202,50 @@ M.max = function (gen, def)
 end
 
 M.flatten = function (gengen)
-  local co = CO.make()
-  return M.gen(co.wrap(function ()
-    while true do
+  assert(type(gengen) == "table")
+  assert(gengen.tag == GEN_TAG)
+  return M.genco(function (co)
+    while not gengen:done() do
       local gen = gengen()
-      if gen == nil then
-        break
-      end
-      while true do
-        local val = UTILS.pack(gen())
-        if val.n == 0 then
-          break
-        end
-        co.yield(UTILS.unpack(val))
+      while not gen:done() do
+        co.yield(gen())
       end
     end
-  end))
+  end)
 end
 
+-- NOTE: this removes nils, which might be
+-- unexpected
 M.collect = function (gen)
   return M.reduce(gen, function (a, ...)
-    local vals = UTILS.pack(...)
+    local vals = utils.pack(...)
     if vals.n <= 1 then
-      return UTILS.append(a, vals[1])
+      return utils.append(a, vals[1])
     else
-      -- NOTE: Design decision here: it might technically
-      -- make more sense to provide vals here (a UTILS.pack()
-      -- of the arguments, however in most uses users will
-      -- expect zip to return a list of lists)
-      return UTILS.append(a, { ... })
+      -- NOTE: Design decision here: it might
+      -- technically make more sense to provide
+      -- vals here (a utils.pack() of the
+      -- arguments, however in most uses users
+      -- will expect zip to return a list of
+      -- lists)
+      return utils.append(a, { ... })
     end
   end, {})
 end
 
 M.filterer = function (fn, ...)
-  fn = fn or UTILS.id
-  local args = UTILS.pack(...)
+  fn = fn or utils.id
+  assert(type(fn) == "function")
+  local args = utils.pack(...)
   return function (gen)
-    local co = CO.make()
-    return M.gen(co.wrap(function ()
-      while true do
-        local val = UTILS.pack(gen())
-        if val.n == 0 then
-          break
-        end
-        if fn(UTILS.extendarg(val, args)) then
-          co.yield(UTILS.unpack(val))
+    return M.genco(function (co)
+      while not gen:done() do
+        local val = utils.pack(gen())
+        if fn(utils.extendarg(val, args)) then
+          co.yield(utils.unpack(val))
         end
       end
-    end))
+    end)
   end
 end
 
@@ -202,20 +254,15 @@ M.filter = function (gen, fn, ...)
 end
 
 M.mapper = function (fn, ...)
-  fn = fn or UTILS.id
-  local args = UTILS.pack(...)
+  fn = fn or utils.id
+  local args = utils.pack(...)
   return function (gen)
-    local co = CO.make()
-    return M.gen(co.wrap(function ()
-      while true do
-        local vals = UTILS.pack(gen())
-        if vals.n == 0 then
-          break
-        else
-          co.yield(fn(UTILS.extendarg(vals, args)))
-        end
+    return M.genco(function (co)
+      while not gen:done() do
+        local vals = utils.pack(gen())
+        co.yield(fn(utils.extendarg(vals, args)))
       end
-    end))
+    end)
   end
 end
 
@@ -224,13 +271,8 @@ M.map = function (gen, fn, ...)
 end
 
 M.each = function (gen, fn)
-  while true do
-    local vals = UTILS.pack(gen())
-    if vals.n == 0 then
-      break
-    else
-      fn(UTILS.unpack(vals))
-    end
+  while not gen:done() do
+    fn(gen())
   end
 end
 
@@ -244,43 +286,38 @@ end
 -- opts.mode == N for stopping after N iterations
 -- invalid mode treated as "longest"
 M.zipper = function (opts)
-  local fn = (opts or {}).fn or UTILS.id
+  local fn = (opts or {}).fn or utils.id
   local mode = (opts or {}).mode or "first"
   return function (...)
-    local gens = UTILS.pack(...)
-    local co = CO.make()
+    local gens = utils.pack(...)
     local nb = 0
-    return M.gen(co.wrap(function ()
+    return M.genco(function (co)
       while true do
         local vals = {}
         local nils = 0
         for i, gen in ipairs(gens) do
-          local val = UTILS.pack(gen())
-          if val.n == 0 then
-            gens[i] = UTILS.const(nil)
+          if gen:done() then
+            vals[i] = utils.pack(nil)
             nils = nils + 1
-            vals[i] = val
             if mode == "first" then
-              break
+              return
             end
           else
-            vals[i] = val
+            vals[i] = utils.pack(gen())
           end
         end
         nb = nb + 1
         if type(mode) == "number" and nb > mode then
-          break
-        elseif mode == "first" and vals[1].n == 0 then
           break
         elseif mode == "shortest" and nils > 0 then
           break
         elseif gens.n == nils then
           break
         else
-          co.yield(fn(UTILS.extendarg(UTILS.unpack(vals))))
+          co.yield(fn(utils.extendarg(utils.unpack(vals))))
         end
       end
-    end))
+    end)
   end
 end
 
@@ -290,11 +327,11 @@ end
 
 -- TODO: This name sucks
 M.aller = function (fn, ...)
-  fn = fn or UTILS.id
-  local args = UTILS.pack(...)
+  fn = fn or utils.id
+  local args = utils.pack(...)
   return function (gen)
     return M.reduce(gen, function (a, ...)
-      return a and fn(UTILS.extendarg(args, UTILS.pack(...)))
+      return a and fn(utils.extendarg(args, utils.pack(...)))
     end)
   end
 end
@@ -324,9 +361,9 @@ M.tabulate = function (gen, keys, opts)
 end
 
 M.finder = function (...)
-  local args = UTILS.pack(...)
+  local args = utils.pack(...)
   return function (gen)
-    return gen:filter(UTILS.unpack(args)):head()
+    return gen:filter(utils.unpack(args)):head()
   end
 end
 
@@ -335,21 +372,18 @@ M.find = function (gen, ...)
 end
 
 M.chain = function (...)
-  local gens = UTILS.pack(...)
-  local co = CO.make()
-  return M.gen(co.wrap(function ()
-    for _, gen in ipairs(gens) do
-      for v in gen do
-        co.yield(v)
-      end
-    end
-  end))
+  local gens = M.args(...)
+  return M.genco(function (co)
+    gens:each(function (gen)
+      gen:each(co.yield)
+    end)
+  end)
 end
 
 M.equals = function (...)
   return M.zipper({
     fn = function (a, ...)
-      local rest = UTILS.pack(...)
+      local rest = utils.pack(...)
       for _, v in ipairs(rest) do
         if a ~= v then
           return false
@@ -381,8 +415,7 @@ M.splitter = function (pat, opts)
   opts = opts or {}
   local delim = opts.delim or false
   return function (str)
-    local co = CO.make()
-    return M.gen(co.wrap(function ()
+    return M.genco(function (co)
       local n = 0
       local ls = 0
       local stop = false
@@ -411,7 +444,7 @@ M.splitter = function (pat, opts)
           n = e + 1
         end
       end
-    end))
+    end)
   end
 end
 
@@ -422,23 +455,8 @@ end
 M.slicer = function (start, num)
   start = start or 1
   return function (gen)
-    local co = CO.make()
-    return M.gen(co.wrap(function ()
-      local val
-      while start > 1 do
-        val = gen()
-        if val == nil then
-          return
-        end
-        start = start - 1
-      end
-      while num == nil or num > 0 do
-        co.yield(gen())
-        if num ~= nil then
-          num = num - 1
-        end
-      end
-    end))
+    gen:take(start - 1):collect()
+    return gen:take(num)
   end
 end
 
@@ -450,9 +468,14 @@ M.head = function (gen)
   return gen()
 end
 
+M.tail = function (gen)
+  gen()
+  return gen
+end
+
 M.picker = function (n)
   return function (gen)
-    return M.slice(gen, n, 1):head()
+    return gen:slice(n, 1):head()
   end
 end
 

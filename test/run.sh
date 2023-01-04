@@ -15,8 +15,9 @@ run()
   echo
   if busted -f test/busted.lua test/spec "$@"
   then
-    awk '/^Summary/ { P = NR } P && NR > P + 1' \
-      test/luacov.report.out
+    :
+    # awk '/^Summary/ { P = NR } P && NR > P + 1' \
+    #   test/luacov.report.out
   fi
 }
 

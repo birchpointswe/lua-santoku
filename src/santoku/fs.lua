@@ -37,16 +37,16 @@ M.dir = function (dir)
   if not ok then
     return false, entries, state
   else
-    local coroutine = co.make()
-    return true, gen.gen(coroutine.wrap(function ()
+    return true, gen.genco(function (co)
       while true do
         local ent, state = entries(state)
         if ent == nil then
           break
+        else
+          co.yield(ent)
         end
-        coroutine.yield(ent)
       end
-    end))
+    end)
   end
 end
 
@@ -56,34 +56,34 @@ end
 M.walk = function (dir, opts)
   local prune = (opts or {}).prune or utils.const(false)
   local prunekeep = (opts or {}).prunekeep or false
-  local coroutine = co.make()
-  return gen.gen(coroutine.wrap(function()
+  local co = co.make()
+  return gen.genco(function (co)
     local ok, entries = M.dir(dir)
     if not ok then
-      coroutine.yield(false, entries)
+      co.yield(false, entries)
     else
       for it in entries do
         if it ~= M.dirparent and it ~= M.dirthis then
           it = M.join(dir, it)
           local attr, err, code = fs.attributes(it)
           if not attr then
-            coroutine.yield(false, err, code)
+            co.yield(false, err, code)
           elseif attr.mode == "directory" then
             if not prune(it, attr) then
-              coroutine.yield(true, it, attr)
+              co.yield(true, it, attr)
               for ok0, it0, attr0 in M.walk(it, opts) do
-                coroutine.yield(ok0, it0, attr0)
+                co.yield(ok0, it0, attr0)
               end
             elseif prunekeep then
-              coroutine.yield(true, it, attr)
+              co.yield(true, it, attr)
             end
           else
-            coroutine.yield(true, it, attr)
+            co.yield(true, it, attr)
           end
         end
       end
     end
-  end))
+  end)
 end
 
 -- TODO: Avoid pcall by using io.open/read
@@ -92,10 +92,11 @@ end
 -- Provide binary t/f, chunk size, max line
 -- size, max file size, how to handle overunning
 -- max line size, etc.
+-- TODO: Need a way to abort this iterator and close the file
 M.lines = function (fp)
   local ok, iter, cd = pcall(io.lines, fp)
   if ok then
-    return true, gen.gen(iter)
+    return true, gen.gennil(iter)
   else
     return false, iter, cd
   end
@@ -156,7 +157,7 @@ end
 M.joinwith = function (d, ...)
   local de = str.escape(d)
   local pat = string.format("(%s)*$", de)
-  return gen.ivals(utils.pack(...))
+  return gen.args(...)
     :filter()
     :reduce(function (a, n)
       return table.concat({

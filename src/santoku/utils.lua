@@ -9,6 +9,7 @@ local unpack = unpack or table.unpack
 -- TODO: I'm thinking we should switch the
 -- library to use select instead of pack
 -- directly
+-- TODO: no pack, just use gen.args(...)
 M.pack = function (...)
   local args = { ... }
   args.n = select("#", ...)

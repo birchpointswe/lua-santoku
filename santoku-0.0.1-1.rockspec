@@ -41,6 +41,7 @@ build = {
     ["santoku.string"] = "src/santoku/string.lua",
     ["santoku.utils"] = "src/santoku/utils.lua",
     ["santoku.validation"] = "src/santoku/validation.lua",
+    ["santoku.assert"] = "src/santoku/assert.lua",
 
     ["santoku.posix"] = "src/santoku/posix.lua",
     ["santoku.socket"] = "src/santoku/socket.lua",
