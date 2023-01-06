@@ -2,68 +2,59 @@ local utils = require("santoku.utils")
 
 describe("utils", function ()
 
-  describe("pack", function ()
+  describe("tuple", function ()
 
-    it("should pack args into a table", function ()
+    it("should store arguments", function ()
 
-      local args = utils.pack(nil, 1, nil, nil, 2, nil)
-
-      assert.equals(6, args.n)
-      assert.equals(nil, args[1])
-      assert.equals(1,   args[2])
-      assert.equals(nil, args[3])
-      assert.equals(nil, args[4])
-      assert.equals(2,   args[5])
-      assert.equals(nil, args[6])
+      local args = utils.tuple(1, 2, 3, nil, 4, nil)
+      local a, b, c, d, e, f = args()
+      assert.equals(1, a)
+      assert.equals(2, b)
+      assert.equals(3, c)
+      assert.is_nil(d)
+      assert.equals(4, e)
+      assert.is_nil(f)
 
     end)
 
   end)
 
-  describe("unpack", function ()
+  describe("tuples", function ()
 
-    it("should assign table values to arguments", function ()
+    it("should concatenate tuples", function ()
 
-      local fn = function (a, b, c, d)
-        assert.equals(1, a)
-        assert.equals(2, b)
-        assert.equals(3, c)
-        assert.equals(4, d)
-      end
+      local arg0, n0 = utils.tuple(1, 2, 3)
+      local arg1, n1 = utils.tuple(4, 5, 6)
+      local args, n = utils.tuples(arg0, arg1)
 
-      fn(utils.unpack({ 1, 2, 3, 4 }))
+      assert.equals(3, n0)
+      assert.equals(3, n1)
 
-    end)
+      local a, b, c, d, e, f = args()
 
-    it("should concat multiple table.pack(...) results", function ()
+      assert.equals(1, a)
+      assert.equals(2, b)
+      assert.equals(3, c)
+      assert.equals(4, d)
+      assert.equals(5, e)
+      assert.equals(6, f)
 
-      local fn = function (a, b, c, d)
-        assert.equals(1, a)
-        assert.equals(2, b)
-        assert.equals(3, c)
-        assert.equals(4, d)
-      end
-
-      fn(utils.unpack(
-          utils.pack(1, 2),
-          utils.pack(3, 4)))
+      assert.equals(6, n)
 
     end)
 
-    it("should handle nils", function ()
+    it("should handle empty tuples", function ()
 
-      local fn = function (a, b, c, d, e, f)
-        assert.equals(1, a)
-        assert.equals(nil, b)
-        assert.equals(2, c)
-        assert.equals(nil, d)
-        assert.equals(3, e)
-        assert.equals(4, f)
-      end
+      local arg0, n0 = utils.tuple()
+      local arg1, n1 = utils.tuple(4, 5, 6)
+      local args, n = utils.tuples(arg0, arg1)
 
-      fn(utils.unpack(
-          utils.pack(1, nil, 2, nil),
-          utils.pack(3, 4)))
+      local a, b, c = args()
+
+      assert.equals(3, n)
+      assert.equals(4, a)
+      assert.equals(5, b)
+      assert.equals(6, c)
 
     end)
 
@@ -140,6 +131,19 @@ describe("utils", function ()
       assert.is_nil(c)
       assert.equals("a", d)
       assert.is_nil(e)
+
+    end)
+
+    it("should work with one return argument", function ()
+
+      local fn = function ()
+        return "a", "b"
+      end
+
+      local a, b = utils.nret(2)(fn())
+
+      assert.equals("b", a)
+      assert.is_nil(b)
 
     end)
 
@@ -223,6 +227,11 @@ describe("utils", function ()
       assert.is_nil(utils.get(obj, "a", "x", 3, 2))
     end)
 
+    it("should get function as identity with no keys", function ()
+      local obj = { a = { b = { 1, 2, { 3, 4 } } } }
+      assert.same(obj, utils.get(obj))
+    end)
+
   end)
 
   describe("set", function ()
@@ -297,6 +306,16 @@ describe("utils", function ()
 
     end)
 
+    it("should handle non-empty initial tables", function ()
+
+      local expected = { "a", "b", 1, 2, 3, 4 }
+      local one = { 1, 2 }
+      local two = { 3, 4 }
+
+      assert.same(expected, utils.extend({ "a", "b" }, one, two))
+
+    end)
+
     it("should drop trailing nils ", function ()
 
       local expected = { 1, 2, 3, 4 }
@@ -314,6 +333,17 @@ describe("utils", function ()
       local two = { nil, 3, 4 }
 
       assert.same(expected, utils.extend({}, one, two))
+
+    end)
+
+  end)
+
+  describe("append", function ()
+
+    it("should append args to array", function ()
+
+      local expected = { 1, 2, 3 }
+      assert.same(expected, utils.append({ 1 }, 2, 3))
 
     end)
 

@@ -9,35 +9,41 @@
 
 local M = {}
 
-local unpack = unpack or table.unpack
+M.unpack = unpack or table.unpack
 
--- TODO: Move to common?
-M.pack = function (...)
-  return { n = select("#", ...), ... }
+M.tuple = function (...)
+  local n = select('#', ...)
+  if n == 0 then
+    return function() end, 0
+  else
+    return M.tupleh(nil, 0, n, ...), n
+  end
 end
 
--- TODO: Move to common?
-M.unpack = function (...)
-  local args = M.pack(...)
-  if args.n == 1 then
-    return unpack(args[1])
+-- TODO: Generalize to accept N tuples
+M.tuples = function (a, b)
+  local nxt, nnxt = M.tupleh(nil, 0, select("#", b()), b())
+  local ret, nret = M.tupleh(nxt, nnxt, select("#", a()), a())
+  return ret, nret
+end
+
+M.tupleh = function (nxt, m, n, first, ...)
+  if n == 0 then
+    nxt = nxt or function () end
+    return function ()
+      return nxt()
+    end, m
+  elseif n == 1 then
+    nxt = nxt or function () end
+    return function()
+      return first, nxt()
+    end, m + 1
+  else
+    local rest, m = M.tupleh(nxt, m, n - 1, ...)
+    return function()
+      return first, rest()
+    end, m + 1
   end
-  local n = 1
-  local nargs = {}
-  for i = 1, args.n do
-    local t = args[i]
-    local m
-    if t.n ~= nil then
-      m = t.n
-    else
-      m = #t
-    end
-    for j = 1, m do
-      nargs[n] = t[j]
-      n = n + 1
-    end
-  end
-  return unpack(nargs, 1, n)
 end
 
 M.id = function (...)
@@ -45,20 +51,22 @@ M.id = function (...)
 end
 
 M.const = function (...)
-  local val = M.pack(...)
+  local val = M.tuple(...)
   return function ()
-    return M.unpack(val)
+    return val()
   end
 end
 
 M.narg = function (...)
-  local idx = M.pack(...)
+  local idx, n = M.tuple(...)
   return function (fn)
     return function (...)
-      local args0 = M.pack(...)
+      local args0 = M.tuple(...)
       local args1 = {}
-      for _, v in ipairs(idx) do
-        table.insert(args1, args0[v])
+      local ridx = 0
+      for i = 1, n do
+        ridx = ridx + 1
+        args1[ridx] = select(select(i, idx()), args0())
       end
       return fn(M.unpack(args1))
     end
@@ -66,24 +74,21 @@ M.narg = function (...)
 end
 
 M.nret = function (...)
-  local idx = M.pack(...)
+  local idx, n = M.tuple(...)
   return function (...)
-    local args = M.pack(...)
+    local args = M.tuple(...)
     local rets = {}
     local ridx = 0
-    for i = 1, idx.n do
+    for i = 1, n do
       ridx = ridx + 1
-      rets[ridx] = args[idx[i]]
+      rets[ridx] = select(select(i, idx()), args())
     end
-    rets.n = ridx
-    return unpack(rets)
+    return M.unpack(rets, 1, ridx)
   end
 end
 
 M.interpreter = function (args)
-  if arg == nil then
-    return nil
-  end
+  arg = arg or {}
   local i_min = 0
   while arg[i_min] do
     i_min = i_min - 1
@@ -104,14 +109,15 @@ end
 -- TODO: simplify with recursion
 -- TODO: Should we silently drop nil args?
 M.compose = function (...)
-  local fns = M.pack(...)
+  local fns, n = M.tuple(...)
   return function(...)
-    local vs = M.pack(...)
-    for i = fns.n, 1, -1 do
-      assert(type(fns[i]) == "function")
-      vs = M.pack(fns[i](M.unpack(vs)))
+    local vs = M.tuple(...)
+    for i = n, 1, -1 do
+      local fn = select(i, fns())
+      assert(type(fn) == "function")
+      vs = M.tuple(fn(vs()))
     end
-    return M.unpack(vs)
+    return vs()
   end
 end
 
@@ -119,22 +125,22 @@ end
 -- TODO: allow setting a nested value that
 -- doesnt exist
 M.lens = function (...)
-  local keys = M.pack(...)
+  local keys, n = M.tuple(...)
   return function (fn)
     fn = fn or M.id
     return function(t)
-      if keys.n == 0 then
+      if n == 0 then
         return t, fn(t)
       else
         local t0 = t
-        for i = 1, keys.n - 1 do
+        for i = 1, n - 1 do
           if t0 == nil then
             return t, nil
           end
-          t0 = t0[keys[i]]
+          t0 = t0[select(i, keys())]
         end
-        local val = fn(t0[keys[keys.n]])
-        t0[keys[keys.n]] = val
+        local val = fn(t0[select(n, keys())])
+        t0[select(n, keys())] = val
         return t, val
       end
     end
@@ -150,9 +156,9 @@ M.get = function (t, ...)
 end
 
 M.setter = function (...)
-  local keys = M.pack(...)
+  local keys = M.tuple(...)
   return function (v)
-    return M.lens(M.unpack(keys))(M.const(v))
+    return M.lens(keys())(M.const(v))
   end
 end
 
@@ -179,9 +185,8 @@ M.choose = function (a, b, c)
 end
 
 M.assign = function (t0, ...)
-  local args = M.pack(...)
-  for i = 1, args.n do
-    local t1 = args[i]
+  for i = 1, select("#", ...) do
+    local t1 = select(i, ...)
     for k, v in pairs(t1) do
       t0[k] = v
     end
@@ -201,9 +206,8 @@ M.extend = function (t0, ...)
       n = k
     end
   end
-  local args = M.pack(...)
-  for i = 1, args.n do
-    local t1 = args[i]
+  for i = 1, select("#", ...) do
+    local t1 = select(i, ...)
     local m = 0
     for k, v in pairs(t1) do
       if type(k) == "number" then
@@ -220,9 +224,9 @@ M.extend = function (t0, ...)
 end
 
 M.appender = function (...)
-  local args = M.pack(...)
+  local args = M.tuple(...)
   return function (a)
-    return M.extend(a, args)
+    return M.extend(a, { args() })
   end
 end
 

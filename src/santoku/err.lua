@@ -12,25 +12,27 @@ M.error = function (...)
 end
 
 M.pwrapper = function (co, ...)
-  local errs = utils.pack(...)
+  local errs = utils.tuple(...)
   local wrapper = {
     err = function (...)
       return M.pwrapper(co, ...)
     end,
     exists = function (val, ...)
-      local args = utils.pack(...)
+      local args = utils.tuple(...)
       if val ~= nil then
         return val, ...
       else
-        return co.yield(utils.extendarg(errs, args))
+        local allargs = utils.tuples(errs, args)
+        return co.yield(allargs())
       end
     end,
     ok = function (ok, ...)
-      local args = utils.pack(...)
+      local args = utils.tuple(...)
       if ok then
         return ...
       else
-        return co.yield(utils.extendarg(errs, args))
+        local allargs = utils.tuples(errs, args)
+        return co.yield(allargs())
       end
     end
   }
@@ -47,14 +49,14 @@ end
 M.pwrap = function (run, onErr)
   onErr = onErr or error
   local co = co.make()
-  local err = utils.pack(co.wrap(function ()
+  local err, n = utils.tuple(co.wrap(function ()
     run(M.pwrapper(co))
   end)())
-  if err.n ~= 0 then
+  if n ~= 0 then
     if onErr == error then
-      return onErr(err[2])
+      return onErr((select(2, err)))
     else
-      return onErr(utils.unpack(err))
+      return onErr(err())
     end
   end
 end

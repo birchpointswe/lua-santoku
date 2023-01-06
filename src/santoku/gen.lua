@@ -28,9 +28,9 @@ M.genco = function (fn, ...)
   assert(type(fn) == "function")
   local co = co.make()
   local cor = co.create(fn)
-  local val = utils.pack(co.resume(cor, co, ...))
-  if not val[1] then
-    error(val[2])
+  local val, n = utils.tuple(co.resume(cor, co, ...))
+  if not (select(1, val())) then
+    error((select(2, val())))
   end
   local gen = {
     tag = GEN_TAG,
@@ -44,13 +44,13 @@ M.genco = function (fn, ...)
       if gen:done() then
         return nil
       end
-      local nval = utils.pack(co.resume(cor, ...))
-      if not nval[1] then
-        error(nval[2])
+      local nval = utils.tuple(co.resume(cor, ...))
+      if not (select(1, nval())) then
+        error((select(2, nval())))
       else
         local ret = val
         val = nval
-        return select(2, utils.unpack(ret))
+        return select(2, ret())
       end
     end
   })
@@ -58,11 +58,11 @@ end
 
 M.gennil = function (fn, ...)
   assert(type(fn) == "function")
-  local val = utils.pack(fn(...))
+  local val = utils.tuple(fn(...))
   local gen = {
     tag = GEN_TAG,
     done = function ()
-      return val[1] == nil
+      return val() == nil
     end
   }
   return setmetatable(gen, {
@@ -71,10 +71,10 @@ M.gennil = function (fn, ...)
       if gen:done() then
         return nil
       end
-      local nval = utils.pack(fn(...))
+      local nval = utils.tuple(fn(...))
       local ret = val
       val = nval
-      return utils.unpack(ret)
+      return ret()
     end
   })
 end
@@ -98,10 +98,10 @@ M.pairs = function(t)
 end
 
 M.args = function (...)
-  local args = utils.pack(...)
+  local args, n = utils.tuple(...)
   return M.genco(function (co)
-    for i = 1, args.n do
-      co.yield(args[i])
+    for i = 1, n do
+      co.yield((select(i, args())))
     end
   end)
 end
@@ -155,20 +155,20 @@ end
 
 M.reducer = function (acc, ...)
   assert(type(acc) == "function")
-  local val = utils.pack(...)
+  local val, n = utils.tuple(...)
   return function (gen)
     assert(type(gen) == "table")
     assert(gen.tag == GEN_TAG)
     if gen:done() then
-      return utils.unpack(val)
-    elseif val.n == 0 then
-      val = utils.pack(gen())
+      return val()
+    elseif n == 0 then
+      val = utils.tuple(gen())
     end
     while not gen:done() do
-      val = utils.pack(acc(
-        utils.unpack(val, utils.pack(gen()))))
+      val = utils.tuples(val, utils.tuple(gen()))
+      val = utils.tuple(acc(val()))
     end
-    return utils.unpack(val)
+    return val()
   end
 end
 
@@ -221,13 +221,12 @@ M.flatten = function (gengen)
   end)
 end
 
--- NOTE: this removes nils, which might be
--- unexpected
+-- TODO: Need some tests to define nil handing
+-- behavior
 M.collect = function (gen)
   return M.reduce(gen, function (a, ...)
-    local vals = utils.pack(...)
-    if vals.n <= 1 then
-      return utils.append(a, vals[1])
+    if select("#", ...) <= 1 then
+      return utils.append(a, ...)
     else
       -- NOTE: Design decision here: it might
       -- technically make more sense to provide
@@ -235,7 +234,7 @@ M.collect = function (gen)
       -- arguments, however in most uses users
       -- will expect zip to return a list of
       -- lists)
-      return utils.append(a, ...)
+      return utils.append(a, { ... })
     end
   end, {})
 end
@@ -243,13 +242,14 @@ end
 M.filterer = function (fn, ...)
   fn = fn or utils.id
   assert(type(fn) == "function")
-  local args = utils.pack(...)
+  local args = utils.tuple(...)
   return function (gen)
     return M.genco(function (co)
       while not gen:done() do
-        local val = utils.pack(gen())
-        if fn(utils.unpack(val, args)) then
-          co.yield(utils.unpack(val))
+        local val = utils.tuple(gen())
+        local allargs = utils.tuples(val, args)
+        if fn(allargs()) then
+          co.yield(val())
         end
       end
     end)
@@ -262,12 +262,13 @@ end
 
 M.mapper = function (fn, ...)
   fn = fn or utils.id
-  local args = utils.pack(...)
+  local args, n = utils.tuple(...)
   return function (gen)
     return M.genco(function (co)
       while not gen:done() do
-        local vals = utils.pack(gen())
-        co.yield(fn(utils.unpack(vals, args)))
+        local vals = utils.tuple(gen())
+        local allargs = utils.tuples(args, vals)
+        co.yield(fn(allargs()))
       end
     end)
   end
@@ -296,21 +297,22 @@ M.zipper = function (opts)
   local fn = (opts or {}).fn or utils.id
   local mode = (opts or {}).mode or "first"
   return function (...)
-    local gens = utils.pack(...)
+    local gens, ngens = utils.tuple(...)
     local nb = 0
     return M.genco(function (co)
       while true do
-        local vals = {}
+        local vals = utils.tuple()
         local nils = 0
-        for i, gen in ipairs(gens) do
+        for i = 1, ngens do
+          local gen = select(i, gens())
           if gen:done() then
-            vals[i] = utils.pack(nil)
+            vals = utils.tuples(vals, utils.tuple(nil))
             nils = nils + 1
             if mode == "first" then
               return
             end
           else
-            vals[i] = utils.pack(gen())
+            vals = utils.tuples(vals, utils.tuple(gen()))
           end
         end
         nb = nb + 1
@@ -318,10 +320,10 @@ M.zipper = function (opts)
           break
         elseif mode == "shortest" and nils > 0 then
           break
-        elseif gens.n == nils then
+        elseif ngens == nils then
           break
         else
-          co.yield(fn(utils.unpack(utils.unpack(vals))))
+          co.yield(fn(vals()))
         end
       end
     end)
@@ -335,10 +337,12 @@ end
 -- TODO: This name sucks
 M.aller = function (fn, ...)
   fn = fn or utils.id
-  local args = utils.pack(...)
+  local args = utils.tuple(...)
   return function (gen)
     return M.reduce(gen, function (a, ...)
-      return a and fn(utils.unpack(args, utils.pack(...)))
+      local args2 = utils.tuple(...)
+      local allargs = utils.tuples(args, args2)
+      return a and fn(allargs())
     end)
   end
 end
@@ -368,9 +372,9 @@ M.tabulate = function (gen, keys, opts)
 end
 
 M.finder = function (...)
-  local args = utils.pack(...)
+  local args = utils.tuple(...)
   return function (gen)
-    return gen:filter(utils.unpack(args)):head()
+    return gen:filter(args()):head()
   end
 end
 
@@ -390,9 +394,9 @@ end
 M.equals = function (...)
   return M.zipper({
     fn = function (a, ...)
-      local rest = utils.pack(...)
-      for _, v in ipairs(rest) do
-        if a ~= v then
+      local rest, n = utils.tuple(...)
+      for i = 1, n do
+        if a ~= (select(i, rest())) then
           return false
         end
       end

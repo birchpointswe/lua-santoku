@@ -1,6 +1,4 @@
-local co = require("santoku.co")
 local gen = require("santoku.gen")
-local utils = require("santoku.utils")
 
 describe("santoku.gen", function ()
 
@@ -68,6 +66,24 @@ describe("santoku.gen", function ()
       assert.equals(true, gen:done())
       assert.is_nil(gen())
       assert.is_nil(gen())
+
+    end)
+
+  end)
+
+  describe("map", function ()
+
+    it("should map over a generator", function ()
+
+      local gen = gen.genco(function (co)
+        co.yield(1)
+        co.yield(2)
+      end):map(function (a)
+        return a * 2
+      end)
+
+      assert.equals(2, gen())
+      assert.equals(4, gen())
 
     end)
 
