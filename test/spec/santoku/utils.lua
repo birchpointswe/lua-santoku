@@ -234,14 +234,26 @@ describe("utils", function ()
 
   end)
 
-  describe("set", function ()
+  describe("dset", function ()
 
     it("should set deep vals in objects", function ()
       local obj = { a = { b = { 1, 2, { 3, 4 } } } }
-      local t, v = utils.set(obj, "x", "a", "b", 3, 2)
+      local t, v = utils.dset(obj, "x", "a", "b", 3, 2)
       assert.equals(obj, t)
       assert.equals("x", v)
       assert.equals(obj.a.b[3][2], "x")
+    end)
+
+  end)
+
+  describe("set", function ()
+
+    it("should set vals in objects and only return the object", function ()
+      local expected = { a = 1, b = 2 }
+      local obj = { a = 1 }
+      local t, v = utils.set(obj, "b", 2)
+      assert.same(expected, obj)
+      assert.is_nil(v)
     end)
 
   end)

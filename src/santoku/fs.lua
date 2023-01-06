@@ -1,6 +1,5 @@
 local fs = require("lfs")
 local utils = require("santoku.utils")
-local co = require("santoku.co")
 local str = require("santoku.string")
 local gen = require("santoku.gen")
 
@@ -56,7 +55,6 @@ end
 M.walk = function (dir, opts)
   local prune = (opts or {}).prune or utils.const(false)
   local prunekeep = (opts or {}).prunekeep or false
-  local co = co.make()
   return gen.genco(function (co)
     local ok, entries = M.dir(dir)
     if not ok then
@@ -170,8 +168,8 @@ M.joinwith = function (d, ...)
 end
 
 M.splitexts = function (fp)
-  local parts = gen.split(fp, M.pathdelim, { delim = "left" }):collect()
-  local last = gen.split(parts[#parts], "%.", { delim = "right" }):collect()
+  local parts = str.split(fp, M.pathdelim, { delim = "left" }):collect()
+  local last = str.split(parts[#parts], "%.", { delim = "right" }):collect()
   if last[1] == "" then
     last = gen.ivals(last):slice(2):collect()
   end

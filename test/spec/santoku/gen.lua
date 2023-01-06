@@ -4,7 +4,7 @@ describe("santoku.gen", function ()
 
   describe("genco", function ()
 
-    it("should be 'done' when dead", function ()
+    it("is 'done' when dead", function ()
 
       local gen = gen.genco(function (co)
         co.yield(1)
@@ -20,7 +20,7 @@ describe("santoku.gen", function ()
 
     end)
 
-    it("should be 'done' for empty cor", function ()
+    it("is 'done' for empty cor", function ()
 
       local gen = gen.genco(function () end)
 
@@ -34,7 +34,7 @@ describe("santoku.gen", function ()
 
   describe("gennil", function ()
 
-    it("should be 'done' when nil returned", function ()
+    it("is 'done' when nil returned", function ()
 
       local n = 0
       local iter = function ()
@@ -57,7 +57,7 @@ describe("santoku.gen", function ()
 
     end)
 
-    it("should be 'done' for empty cor", function ()
+    it("is 'done' for empty cor", function ()
 
       local iter = function () end
 
@@ -71,19 +71,39 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("map", function ()
+  describe("pairs", function ()
 
-    it("should map over a generator", function ()
+    it("iterates pairs in a table", function ()
 
-      local gen = gen.genco(function (co)
-        co.yield(1)
-        co.yield(2)
-      end):map(function (a)
-        return a * 2
-      end)
+      local gen = gen.pairs({ a = 1, b = 2 })
+      local a, b
 
-      assert.equals(2, gen())
-      assert.equals(4, gen())
+      a, b = gen()
+      assert.same({ "a", 1 }, { a, b })
+
+      a, b = gen()
+      assert.same({ "b", 2 }, { a, b })
+
+      assert(gen:done())
+
+    end)
+
+  end)
+
+  describe("ipairs", function ()
+
+    it("iterates ipairs in a table", function ()
+
+      local gen = gen.ipairs({ 1, 2 })
+      local a, b
+
+      a, b = gen()
+      assert.same({ 1, 1 }, { a, b })
+
+      a, b = gen()
+      assert.same({ 2, 2 }, { a, b })
+
+      assert(gen:done())
 
     end)
 
@@ -91,7 +111,20 @@ describe("santoku.gen", function ()
 
   describe("args", function ()
 
-    it("should handle arg nils", function ()
+    it("iterates over arguments", function ()
+
+      local gen = gen.args(1, 2, 3, 4)
+
+      assert.equals(1, gen())
+      assert.equals(2, gen())
+      assert.equals(3, gen())
+      assert.equals(4, gen())
+
+      assert(gen:done())
+
+    end)
+
+    it("handles arg nils", function ()
 
       local vals = gen.args(1, nil, 2, nil, nil)
 
@@ -117,7 +150,7 @@ describe("santoku.gen", function ()
 
     end)
 
-    it("should drop array nils", function ()
+    it("drops array nils", function ()
 
       local array = {}
 
@@ -149,18 +182,118 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("match", function ()
+  describe("vals", function ()
 
-    it("should return string matches", function ()
+    it("iterates table values", function ()
 
-      local gen = gen.match("this is a test", "%S+")
+      local gen = gen.vals({ a = 1, b = 2 })
 
-      assert.equals("this", gen())
-      assert.equals("is", gen())
+      assert.equals(1, gen())
+      assert.equals(2, gen())
+
+      assert(gen:done())
+
+    end)
+
+  end)
+
+  describe("keys", function ()
+
+    it("iterates table keys", function ()
+
+      local gen = gen.keys({ a = 1, b = 2 })
+
       assert.equals("a", gen())
-      assert.equals("test", gen())
-      assert.equals(true, gen:done())
+      assert.equals("b", gen())
 
+      assert(gen:done())
+
+    end)
+
+  end)
+
+  describe("ivals", function ()
+
+    it("iterates table ivalues", function ()
+
+      local gen = gen.ivals({ 1, 2, a = "b" })
+
+      assert.equals(1, gen())
+      assert.equals(2, gen())
+
+      assert(gen:done())
+
+    end)
+
+  end)
+
+  describe("ikeys", function ()
+
+    it("iterates table keys", function ()
+
+      local gen = gen.ikeys({ "a", "b", a = 12 })
+
+      assert.equals(1, gen())
+      assert.equals(2, gen())
+
+      assert(gen:done())
+
+    end)
+
+  end)
+
+  describe("map", function ()
+
+    it("maps over a generator", function ()
+
+      local gen = gen.genco(function (co)
+        co.yield(1)
+        co.yield(2)
+      end):map(function (a)
+        return a * 2
+      end)
+
+      assert.equals(2, gen())
+      assert.equals(4, gen())
+
+    end)
+
+  end)
+
+  describe("reduce", function ()
+
+    it("reduces a generator", function ()
+      local gen = gen.genco(function (co)
+        co.yield(1)
+        co.yield(2)
+        co.yield(3)
+      end)
+      local t, x = gen:reduce(function (a, n)
+        return a + n
+      end)
+      assert.equals(t, 6)
+      assert(gen:done())
+    end)
+
+  end)
+
+  describe("filter", function ()
+
+    it("filters a generator", function ()
+      local gen = gen.genco(function (co)
+        co.yield(1)
+        co.yield(2)
+        co.yield(3)
+        co.yield(4)
+        co.yield(5)
+        co.yield(6)
+      end):filter(function (n)
+        return (n % 2) == 0
+      end)
+      assert.equals(2, gen())
+      assert.equals(4, gen())
+      assert.equals(6, gen())
+      assert(gen:done())
     end)
 
   end)

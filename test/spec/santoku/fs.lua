@@ -27,8 +27,8 @@ describe("santoku.fs", function ()
     it("should handle nils", function ()
 
       local delim = "/"
-      local parts =  { nil, "a", nil, "b" }
-      local result = fs.joinwith(delim, utils.unpack(parts))
+      local parts = utils.tuple(nil, "a", nil, "b")
+      local result = fs.joinwith(delim, parts())
 
       assert.equals("a/b", result)
 
