@@ -4,11 +4,15 @@
 -- TODO: We should not assign all of M to the
 -- generators, instead, only assign gen-related
 -- functions
+-- TODO: genco and gennil arent great
+-- user-facing APIs for creating iterators
 -- TODO: Need an gen:abort() function to early
--- exit iterators
+-- exit iterators that allows for cleanup
 -- TODO: Add asserts to all 'er' functions and
 -- the non-'er' functions that don't immediately
 -- call the 'er' functions
+-- TODO: Do we really want the GEN_TAG thing for
+-- asserts? It's a bit ugly
 
 local utils = require("santoku.utils")
 local co = require("santoku.co")
@@ -17,6 +21,9 @@ local GEN_TAG = {}
 
 local M = {}
 
+-- TODO: Allow the user to provide an error
+-- function, default it to error and ensure only
+-- one value is passed
 M.genco = function (fn, ...)
   assert(type(fn) == "function")
   local co = co.make()
@@ -159,7 +166,7 @@ M.reducer = function (acc, ...)
     end
     while not gen:done() do
       val = utils.pack(acc(
-        utils.extendarg(val, utils.pack(gen()))))
+        utils.unpack(val, utils.pack(gen()))))
     end
     return utils.unpack(val)
   end
@@ -228,7 +235,7 @@ M.collect = function (gen)
       -- arguments, however in most uses users
       -- will expect zip to return a list of
       -- lists)
-      return utils.append(a, { ... })
+      return utils.append(a, ...)
     end
   end, {})
 end
@@ -241,7 +248,7 @@ M.filterer = function (fn, ...)
     return M.genco(function (co)
       while not gen:done() do
         local val = utils.pack(gen())
-        if fn(utils.extendarg(val, args)) then
+        if fn(utils.unpack(val, args)) then
           co.yield(utils.unpack(val))
         end
       end
@@ -260,7 +267,7 @@ M.mapper = function (fn, ...)
     return M.genco(function (co)
       while not gen:done() do
         local vals = utils.pack(gen())
-        co.yield(fn(utils.extendarg(vals, args)))
+        co.yield(fn(utils.unpack(vals, args)))
       end
     end)
   end
@@ -314,7 +321,7 @@ M.zipper = function (opts)
         elseif gens.n == nils then
           break
         else
-          co.yield(fn(utils.extendarg(utils.unpack(vals))))
+          co.yield(fn(utils.unpack(utils.unpack(vals))))
         end
       end
     end)
@@ -331,7 +338,7 @@ M.aller = function (fn, ...)
   local args = utils.pack(...)
   return function (gen)
     return M.reduce(gen, function (a, ...)
-      return a and fn(utils.extendarg(args, utils.pack(...)))
+      return a and fn(utils.unpack(args, utils.pack(...)))
     end)
   end
 end
@@ -481,6 +488,18 @@ end
 
 M.pick = function (gen, n)
   return M.picker(n, gen)
+end
+
+-- TODO: Where should this be?
+-- TODO: Should we silently drop nil args?
+-- Should we assert?
+M.compose = function (...)
+  return M.args(...)
+    :reduce(function(f, g)
+      return function(...)
+        return f(g(...))
+      end
+    end)
 end
 
 return M

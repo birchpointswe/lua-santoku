@@ -1,5 +1,11 @@
 #!/bin/sh
 
+# TODO: getopts to parse iterate options:
+#   - test/cov everything
+#   - test/cov single with summary of missed
+#     lines
+#   - custom reporter that understands functions
+
 cd "$(dirname "$0")/.."
 
 run()
@@ -12,12 +18,26 @@ run()
     luarocks build
     shift
   fi
-  echo
-  if busted -f test/busted.lua test/spec "$@"
+  if [ "$#" = "0" ]
   then
-    :
-    # awk '/^Summary/ { P = NR } P && NR > P + 1' \
-    #   test/luacov.report.out
+    set -- test/spec
+  else
+    set -- $1
+  fi
+  echo
+  if busted -f test/busted.lua "$@"
+  then
+    luacov -c test/luacov.lua
+    if [ "$1" != "test/spec" ]
+    then
+      p=$(echo "$1" | sed 's/test\/spec\//src\//')
+      cat test/luacov.report.out | \
+        awk '/^Summary/ { P = NR } P && NR > P + 1' | \
+        awk "NR < 4 || match(\$0, \"$p\") { print }"
+    else
+      cat test/luacov.report.out | \
+        awk '/^Summary/ { P = NR } P && NR > P + 1'
+    fi
   fi
 }
 

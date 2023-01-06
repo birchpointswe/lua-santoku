@@ -4,29 +4,25 @@ local co = require("santoku.co")
 local M = {}
 
 M.unimplemented = function (msg)
-  local message = "Unimplemented"
-  if msg then
-    message = message .. ": " .. msg
-  end
-  error(message, 2)
+  M.error("Unimplemented", msg)
 end
 
 M.error = function (...)
   error(table.concat({ ... }, ": "), 2)
 end
 
-M.pwrapper = function (coroutine, ...)
+M.pwrapper = function (co, ...)
   local errs = utils.pack(...)
   local wrapper = {
     err = function (...)
-      return M.pwrapper(coroutine, ...)
+      return M.pwrapper(co, ...)
     end,
     exists = function (val, ...)
       local args = utils.pack(...)
       if val ~= nil then
         return val, ...
       else
-        return coroutine.yield(utils.extendarg(errs, args))
+        return co.yield(utils.extendarg(errs, args))
       end
     end,
     ok = function (ok, ...)
@@ -34,7 +30,7 @@ M.pwrapper = function (coroutine, ...)
       if ok then
         return ...
       else
-        return coroutine.yield(utils.extendarg(errs, args))
+        return co.yield(utils.extendarg(errs, args))
       end
     end
   }
@@ -49,12 +45,17 @@ end
 -- handler
 -- TODO: pass uncaught errors to onErr
 M.pwrap = function (run, onErr)
-  local coroutine = co.make()
-  local err = utils.pack(coroutine.wrap(function ()
-    run(M.pwrapper(coroutine))
+  onErr = onErr or error
+  local co = co.make()
+  local err = utils.pack(co.wrap(function ()
+    run(M.pwrapper(co))
   end)())
   if err.n ~= 0 then
-    return onErr(utils.unpack(err))
+    if onErr == error then
+      return onErr(err[2])
+    else
+      return onErr(utils.unpack(err))
+    end
   end
 end
 

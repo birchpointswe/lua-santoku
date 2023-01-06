@@ -1,34 +1,54 @@
 -- TODO: Some of these should be split into
 -- a "common" module for brodly required
 -- functions
+-- TODO: I'm thinking we should switch the
+-- library to use select instead of pack
+-- directly: no pack, just use gen.args(...)
+-- TODO: mergeWith, deep merge, etc, walk a
+-- table
 
 local M = {}
 
 local unpack = unpack or table.unpack
 
--- TODO: I'm thinking we should switch the
--- library to use select instead of pack
--- directly
--- TODO: no pack, just use gen.args(...)
+-- TODO: Move to common?
 M.pack = function (...)
-  local args = { ... }
-  args.n = select("#", ...)
-  return args
+  return { n = select("#", ...), ... }
 end
 
--- TODO: Do we need to do anything special with
--- n here to be compatible with all versions?
-M.unpack = function (args)
-  return unpack(args)
+-- TODO: Move to common?
+M.unpack = function (...)
+  local args = M.pack(...)
+  if args.n == 1 then
+    return unpack(args[1])
+  end
+  local n = 1
+  local nargs = {}
+  for i = 1, args.n do
+    local t = args[i]
+    local m
+    if t.n ~= nil then
+      m = t.n
+    else
+      m = #t
+    end
+    for j = 1, m do
+      nargs[n] = t[j]
+      n = n + 1
+    end
+  end
+  return unpack(nargs, 1, n)
 end
 
--- TODO: does this handle nils as expected? I
--- think we need to iterate numerically using
--- M.pack(...).n
--- TODO: does ipairs handle nils in M.pack
--- correctly?
-M.extendarg = function (...)
-  return M.unpack(M.extend({}, ...))
+M.id = function (...)
+  return ...
+end
+
+M.const = function (...)
+  local val = M.pack(...)
+  return function ()
+    return M.unpack(val)
+  end
 end
 
 M.narg = function (...)
@@ -50,10 +70,13 @@ M.nret = function (...)
   return function (...)
     local args = M.pack(...)
     local rets = {}
-    for _, v in ipairs(idx) do
-      table.insert(rets, args[v])
+    local ridx = 0
+    for i = 1, idx.n do
+      ridx = ridx + 1
+      rets[ridx] = args[idx[i]]
     end
-    return M.unpack(rets)
+    rets.n = ridx
+    return unpack(rets)
   end
 end
 
@@ -78,21 +101,23 @@ M.interpreter = function (args)
   return ret
 end
 
-M.id = function (...)
-  return ...
-end
-
+-- TODO: simplify with recursion
+-- TODO: Should we silently drop nil args?
 M.compose = function (...)
-  local args = M.pack(...)
-  return M.ivals(args)
-    :reduce(function(f, g)
-      return function(...)
-        return f(g(...))
-      end
-    end)
+  local fns = M.pack(...)
+  return function(...)
+    local vs = M.pack(...)
+    for i = fns.n, 1, -1 do
+      assert(type(fns[i]) == "function")
+      vs = M.pack(fns[i](M.unpack(vs)))
+    end
+    return M.unpack(vs)
+  end
 end
 
 -- TODO: allow composition
+-- TODO: allow setting a nested value that
+-- doesnt exist
 M.lens = function (...)
   local keys = M.pack(...)
   return function (fn)
@@ -103,6 +128,9 @@ M.lens = function (...)
       else
         local t0 = t
         for i = 1, keys.n - 1 do
+          if t0 == nil then
+            return t, nil
+          end
           t0 = t0[keys[i]]
         end
         local val = fn(t0[keys[keys.n]])
@@ -117,35 +145,28 @@ M.getter = function (...)
   return M.compose(M.nret(2), M.lens(...)())
 end
 
-M.get = function (t, keys)
-  return M.getter(M.unpack(keys))(t)
+M.get = function (t, ...)
+  return M.getter(...)(t)
 end
 
 M.setter = function (...)
-  local args = M.pack(...)
+  local keys = M.pack(...)
   return function (v)
-    return M.lens(M.unpack(args))(M.const(v))
+    return M.lens(M.unpack(keys))(M.const(v))
   end
 end
 
-M.set = function (t, keys, ...)
-  return M.setter(M.unpack(keys))(...)(t)
+M.set = function (t, val, ...)
+  return M.setter(...)(val)(t)
 end
 
 M.maybe = function (a, f, g)
   f = f or M.id
-  g = g or M.const(nil)
+  g = g or M.const(a)
   if a then
     return f(a)
   else
     return g()
-  end
-end
-
-M.const = function (...)
-  local val = M.pack(...)
-  return function ()
-    return M.unpack(val)
   end
 end
 
@@ -157,36 +178,45 @@ M.choose = function (a, b, c)
   end
 end
 
-M.assigner = function (...)
-  local args = M.pack(...)
-  return function (t0)
-    for _, t1 in ipairs(args) do
-      for k, v in pairs(t1) do
-        t0[k] = v
-      end
-    end
-    return t0
-  end
-end
-
 M.assign = function (t0, ...)
-  return M.assigner(...)(t0)
+  local args = M.pack(...)
+  for i = 1, args.n do
+    local t1 = args[i]
+    for k, v in pairs(t1) do
+      t0[k] = v
+    end
+  end
+  return t0
 end
 
-M.extender = function (...)
+-- TODO: There MUST be a better way to do this,
+-- but neither ipairs nor 'i = 0, #t' can manage
+-- to handle both leading nils and intermixed
+-- nils as expected.
+M.extend = function (t0, ...)
+  local n = 0
+  for k, v in pairs(t0) do
+    assert(type(k) == "number")
+    if k > n then
+      n = k
+    end
+  end
   local args = M.pack(...)
-  return function (a)
-    for _, t in ipairs(args) do
-      for _, v in ipairs(t) do
-        table.insert(a, v)
+  for i = 1, args.n do
+    local t1 = args[i]
+    local m = 0
+    for k, v in pairs(t1) do
+      if type(k) == "number" then
+        if k > m then
+          m = k
+        end
+        t0[k + n] = v
       end
     end
-    return a
+    n = n + m
+    m = 0
   end
-end
-
-M.extend = function (a, ...)
-  return M.extender(...)(a)
+  return t0
 end
 
 M.appender = function (...)
