@@ -2,6 +2,7 @@ package = "santoku"
 version = "0.0.5-1"
 rockspec_format = "3.0"
 
+-- TODO: Should this source be local?
 source = {
   url = "git+ssh://git@github.com/broma0/lua-santoku.git"
 }
