@@ -6,7 +6,7 @@
 #     lines
 #   - custom reporter that understands functions
 
-# TODO: include luacheck
+# TODO: write this in lua
 
 cd "$(dirname "$0")/.."
 
@@ -24,25 +24,22 @@ run()
   fi
   if [ "$#" = "0" ]
   then
-    set -- test/spec
+    covmatch="true"
+    test_files="test/spec"
+    source_files="src"
   else
-    set -- $1
+    covmatch="NR < 4 $(echo "$@" | sed 's/\(\S*\)/|| match(\$0, \"\1\")/')"
+    test_files="$(echo "$@" | sed 's/src/test\/spec/')"
+    source_files="$@"
   fi
   echo
-  if busted --lua="$LUA" -f test/busted.lua "$@" && \
-    luacheck --lua="$LUA" -q src
+  if busted --lua="$LUA" -f test/busted.lua "$test_files" && \
+    luacheck --config test/luacheck.lua "$source_files"
   then
     luacov -c test/luacov.lua
-    if [ "$1" != "test/spec" ]
-    then
-      p=$(echo "$1" | sed 's/test\/spec\//src\//')
-      cat test/luacov.report.out | \
-        awk '/^Summary/ { P = NR } P && NR > P + 1' | \
-        awk "NR < 4 || match(\$0, \"$p\") { print }"
-    else
-      cat test/luacov.report.out | \
-        awk '/^Summary/ { P = NR } P && NR > P + 1'
-    fi
+    cat test/luacov.report.out | \
+      awk '/^Summary/ { P = NR } P && NR > P + 1' | \
+      awk "$covmatch { print }"
   fi
 }
 

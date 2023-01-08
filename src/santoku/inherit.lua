@@ -1,4 +1,5 @@
 -- TODO: Basic inheritance logic
+-- TODO: Should this be merged into utils?
 
 local utils = require("santoku.utils")
 

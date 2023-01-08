@@ -4,27 +4,35 @@
 -- TODO: mergeWith, deep merge, etc, walk a
 -- table
 
+-- TODO: Leverage this library more fully in the
+-- other modules (compose, narg, etc.)
+
 local tup = require("santoku.tuple")
 
 local M = {}
 
-M.unpack = unpack or table.unpack
-
+-- This is effectively a curry/bind function
+-- that also allows for argument re-ordering
+--
+-- TODO: Figure out the arglist before returning
+-- the new function instead of re-computing the
+-- arglist for every function call. Do the same
+-- with nret below.
 M.narg = function (...)
   local idx = tup(...)
-  return function (fn)
+  return function (fn, ...)
+    local bound = tup(...)
     return function (...)
-      local args0 = tup(...)
-      local args1 = tup()
-      for i = 1, idx:len() do
-        local narg = select(select(i, idx()), args0())
-        args1 = args1:append(narg)
-      end
-      return fn(args1())
+      local args0 = bound:append(...)
+      local pick
+      args0, pick = args0:pick(idx())
+      return fn(pick:append(args0())())
     end
   end
 end
 
+-- TODO: Could an index of 0 mean something
+-- useful?
 M.nret = function (...)
   local idx = tup(...)
   return function (...)
@@ -95,7 +103,7 @@ M.lens = function (...)
         local t0 = t
         for i = 1, keys:len() - 1 do
           if t0 == nil then
-            return t, nil
+            return t
           end
           t0 = t0[select(i, keys())]
         end

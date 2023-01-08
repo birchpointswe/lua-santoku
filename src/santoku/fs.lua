@@ -7,7 +7,7 @@ local M = {}
 
 M.mkdirp = function (dir)
   local p0 = nil
-  for p1 in dir:gmatch("([^" .. M.pathdelim .. "]+)/?") do
+  for p1 in dir:gmatch("([^" .. str.escape(M.pathdelim) .. "]+)/?") do
     if p0 then
       p1 = M.join(p0, p1)
     end
@@ -38,7 +38,7 @@ M.dir = function (dir)
   else
     return true, gen.genco(function (co)
       while true do
-        local ent, state = entries(state)
+        local ent = entries(state)
         if ent == nil then
           break
         else
@@ -104,23 +104,23 @@ M.files = function (dir, opts)
   local recurse = (opts or {}).recurse
   local walkopts = {}
   if not recurse then
-    walkopts.prune = function (it, attr)
+    walkopts.prune = function (_, attr)
       return attr.mode == "directory"
     end
   end
   return M.walk(dir, walkopts)
 end
 
-M.dirs = function (dir)
+M.dirs = function (dir, opts)
   local recurse = (opts or {}).recurse
   local walkopts = { prunekeep = true }
   if not recurse then
-    walkopts.prune = function (it, attr)
+    walkopts.prune = function (_, attr)
       return attr.mode == "directory"
     end
   end
   return M.walk(dir, walkopts)
-    :filter(function (ok, it, attr)
+    :filter(function (ok, _, attr)
       return not ok or attr.mode == "directory"
     end)
 end
@@ -136,16 +136,22 @@ M.dirparent = ".."
 M.dirthis = "."
 
 M.basename = function (fp)
-  if fp == M.pathroot then
+  if not string.match(fp, str.escape(M.pathdelim)) then
     return fp
-  elseif fp:sub(-1) == M.pathdelim then
-    fp = fp:sub(0, -2)
+  else
+    local parts = str.split(fp, M.pathdelim):collect()
+    return parts[#parts]
   end
-  return string.match(fp, "[^" .. M.pathdelim .. "]*$")
 end
 
 M.dirname = function (fp)
-  M.unimplemented("dirname")
+  local parts = str.split(fp, M.pathdelim, { delim = "left" }):collect()
+  local dir = table.concat(parts, "", 1, #parts - 1):gsub("/$", "")
+  if dir == "" then
+    return "."
+  else
+    return dir
+  end
 end
 
 M.join = function (...)

@@ -1,5 +1,5 @@
 package = "santoku"
-version = "0.0.4-1"
+version = "0.0.5-1"
 rockspec_format = "3.0"
 
 source = {
@@ -44,6 +44,7 @@ build = {
     ["santoku.utils"] = "src/santoku/utils.lua",
     ["santoku.validation"] = "src/santoku/validation.lua",
     ["santoku.assert"] = "src/santoku/assert.lua",
+    ["santoku.tree"] = "src/santoku/tree.lua",
 
     ["santoku.posix"] = "src/santoku/posix.lua",
     ["santoku.socket"] = "src/santoku/socket.lua",

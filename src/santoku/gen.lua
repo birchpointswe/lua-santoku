@@ -18,7 +18,10 @@
 -- just want to end the function or generator.
 -- TODO: Refactor to use gensent/genend instead of
 -- genco
--- TODO: Leverage tuple library in earnest
+-- TODO: Leverage tuple library in earnest (map,
+-- reduce, each, etc.)
+-- TODO: Don't cache a value on generator
+-- creation, but instead cache on :done()
 
 local tup = require("santoku.tuple")
 local utils = require("santoku.utils")
@@ -27,6 +30,8 @@ local co = require("santoku.co")
 
 local M = {}
 
+-- TODO: Hide these from the user. For M.END,
+-- see the note on M.genend
 M.END = {}
 M.GEN = {}
 
@@ -35,18 +40,22 @@ M.GEN = {}
 -- one value is passed
 -- TODO: Make sure we handle the final return of
 -- the coroutine, not just the yields
--- TODO: Dont pre-cache a value. Figure out
--- another way to check done()
+-- TODO: Cache value on :done() not on generator
+-- creation.
 M.genco = function (fn, ...)
   assert(type(fn) == "function")
   local co = co.make()
   local cor = co.create(fn)
+  local idx = 0
   local val = tup(co.resume(cor, co, ...))
   if not (select(1, val())) then
     error((select(2, val())))
   end
   local gen = {
     tag = M.GEN,
+    idx = function ()
+      return idx
+    end,
     done = function ()
       return co.status(cor) == "dead"
     end
@@ -55,7 +64,7 @@ M.genco = function (fn, ...)
     __index = M,
     __call = function (...)
       if gen:done() then
-        return nil
+        return
       end
       local nval = tup(co.resume(cor, ...))
       if not (select(1, nval())) then
@@ -63,19 +72,24 @@ M.genco = function (fn, ...)
       else
         local ret = val
         val = nval
+        idx = idx + 1
         return select(2, ret())
       end
     end
   })
 end
 
--- TODO: Dont pre-cache a value. Figure out
--- another way to check done()
+-- TODO: Cache value on :done() not on generator
+-- creation.
 M.gensent = function (fn, sent, ...)
   assert(type(fn) == "function")
+  local idx = 0
   local val = tup(fn(...))
   local gen = {
     tag = M.GEN,
+    idx = function ()
+      return idx
+    end,
     done = function ()
       -- TODO: This only checks the first value
       -- when it should really check all values
@@ -91,6 +105,7 @@ M.gensent = function (fn, sent, ...)
       local nval = tup(fn(...))
       local ret = val
       val = nval
+      idx = idx + 1
       return ret()
     end
   })
@@ -100,6 +115,10 @@ M.gennil = function (fn, ...)
   return M.gensent(fn, nil, ...)
 end
 
+-- TODO: Instead of relying on the user to
+-- return M.END, pass M.END to fn so that the
+-- user has it as a first arg to fn and can
+-- return it, this hiding M.END from the user
 M.genend = function (fn, ...)
   return M.gensent(fn, M.END, ...)
 end
@@ -130,9 +149,7 @@ end
 M.args = function (...)
   local args = tup(...)
   return M.genco(function (co)
-    for i = 1, args:len() do
-      co.yield((select(i, args())))
-    end
+    args:each(co.yield)
   end)
 end
 
@@ -218,7 +235,7 @@ M.filter = function (gen, fn, ...)
 end
 
 M.zipper = function (opts)
-  mode = (opts or {}).mode or "first"
+  local mode = (opts or {}).mode or "first"
   assert(mode == "first" or mode == "longest")
   return function (...)
     local gens = tup(...)
@@ -232,14 +249,12 @@ M.zipper = function (opts)
             nb = nb + 1
             ret = ret:append((tup(gen())))
           elseif i == 1 and mode == "first" then
-            break
+            return
           else
             ret = ret:append((tup()))
           end
         end
-        if i == 1 and mode == "first" then
-          break
-        elseif nb == 0 then
+        if nb == 0 then
           break
         else
           co.yield(ret())

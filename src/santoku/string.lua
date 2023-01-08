@@ -1,5 +1,8 @@
 local gen = require("santoku.gen")
 
+-- TODO: Should we use tuple instead of gen for these
+-- functions since they're usually strict?
+
 local M = {}
 
 M.matcher = function (pat)
@@ -98,13 +101,23 @@ end
 --   "Hello %name. %adjective to meet you."
 --   "Name: %name. Age: %d:age"
 M.interp = function (s, t)
-  M.unimplemented("interp")
+  return table.concat(M.split(s, "%%%w*", {
+    delim = true
+  }):map(function (s)
+    local v = s:match("%%(%w*)")
+    if v ~= nil then
+      return t[v]
+    else
+      return s
+    end
+  end):collect())
 end
 
 -- TODO
 -- Indent or de-dent strings
 --   opts.char = indent char, default ' '
 --   opts.level = indent level, default auto
+--   opts.dir = indent direction, default "in"
 M.indent = function (s, opts)
   M.unimplemented("indent")
 end

@@ -35,4 +35,35 @@ describe("santoku.fs", function ()
 
   end)
 
+  describe("dirname", function ()
+
+    it("should return the directory name", function ()
+
+      local p0 = "/opt/bin/sort"
+      assert.equals("/opt/bin", fs.dirname(p0))
+
+      local p1 = "stdio.h"
+      assert.equals(".", fs.dirname(p1))
+
+      local p2 = "../../test"
+      assert.equals("../..", fs.dirname(p2))
+
+    end)
+
+  end)
+
+  describe("basename", function ()
+
+    it("should return the file name without directories", function ()
+
+      local p0 = "/opt/bin/sort"
+      assert.equals("sort", fs.basename(p0))
+
+      local p1 = "stdio.h"
+      assert.equals("stdio.h", fs.basename(p1))
+
+    end)
+
+  end)
+
 end)

@@ -12,8 +12,11 @@ describe("santoku.gen", function ()
       end)
 
       assert.equals(false, gen:done())
+      assert.equals(0, gen:idx())
       assert.equals(1, gen())
+      assert.equals(1, gen:idx())
       assert.equals(2, gen())
+      assert.equals(2, gen:idx())
       assert.equals(true, gen:done())
       assert.is_nil(gen())
       assert.is_nil(gen())
@@ -75,9 +78,18 @@ describe("santoku.gen", function ()
         end
       end)
 
+      assert.equals(0, gen:idx())
+      assert(not gen:done())
+
       assert.equals(1, gen())
+      assert.equals(1, gen:idx())
+
       assert.equals(2, gen())
+      assert.equals(2, gen:idx())
+
       assert.equals(3, gen())
+      assert.equals(3, gen:idx())
+
       assert(gen:done())
 
     end)
@@ -100,12 +112,20 @@ describe("santoku.gen", function ()
 
       local gen = gen.gennil(iter)
 
+      assert.equals(0, gen:idx())
       assert.equals(false, gen:done())
+
       assert.equals(1, gen())
+      assert.equals(1, gen:idx())
+
       assert.equals(2, gen())
+      assert.equals(2, gen:idx())
+
       assert.equals(true, gen:done())
+      assert.equals(2, gen:idx())
       assert.is_nil(gen())
       assert.is_nil(gen())
+      assert.equals(2, gen:idx())
 
     end)
 

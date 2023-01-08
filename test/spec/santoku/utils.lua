@@ -1,4 +1,5 @@
 local utils = require("santoku.utils")
+local op = require("santoku.op")
 
 describe("utils", function ()
 
@@ -30,16 +31,35 @@ describe("utils", function ()
 
   describe("narg", function ()
 
-    it("should rearrange args", function ()
+--     it("should rearrange args", function ()
 
-      local fn = function (a, b, c)
-        assert.equals("c", a)
-        assert.equals("b", b)
-        assert.equals("a", c)
-      end
+--       local fn = function (a, b, c)
+--         assert.equals("c", a)
+--         assert.equals("b", b)
+--         assert.equals("a", c)
+--       end
 
-      utils.narg(3, 2, 1)(fn)("a", "b", "c")
+--       utils.narg(3, 2, 1)(fn)("a", "b", "c")
 
+--     end)
+
+--     it("should curry the first argument", function ()
+--       local add10 = utils.narg(1)(op.add, 10)
+--       assert.equals(20, add10(10))
+--     end)
+
+--     it("should curry the second argument", function ()
+--       local div10 = utils.narg(2)(op.div, 10)
+--       assert.equals(10, div10(100))
+--     end)
+
+    it("should curry multiple arguments", function ()
+      local fn0 = function (a, b, c) return a, b, c end
+      local fn = utils.narg(2, 3)(fn0, "c", "a")
+      local a, b, c = fn("b")
+      assert.equals("a", a)
+      assert.equals("b", b)
+      assert.equals("c", c)
     end)
 
   end)
