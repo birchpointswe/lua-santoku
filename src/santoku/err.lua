@@ -1,4 +1,4 @@
-local utils = require("santoku.utils")
+local tup = require("santoku.tuple")
 local co = require("santoku.co")
 
 local M = {}
@@ -12,27 +12,25 @@ M.error = function (...)
 end
 
 M.pwrapper = function (co, ...)
-  local errs = utils.tuple(...)
+  local errs = tup(...)
   local wrapper = {
     err = function (...)
       return M.pwrapper(co, ...)
     end,
     exists = function (val, ...)
-      local args = utils.tuple(...)
+      local args = tup(...)
       if val ~= nil then
         return val, ...
       else
-        local allargs = utils.tuples(errs, args)
-        return co.yield(allargs())
+        return co.yield(errs:append(args()))
       end
     end,
     ok = function (ok, ...)
-      local args = utils.tuple(...)
+      local args = tup(...)
       if ok then
         return ...
       else
-        local allargs = utils.tuples(errs, args)
-        return co.yield(allargs())
+        return co.yield(errs:append(args()))
       end
     end
   }
@@ -49,12 +47,12 @@ end
 M.pwrap = function (run, onErr)
   onErr = onErr or error
   local co = co.make()
-  local err, n = utils.tuple(co.wrap(function ()
+  local err = tup(co.wrap(function ()
     run(M.pwrapper(co))
   end)())
-  if n ~= 0 then
+  if err:len() ~= 0 then
     if onErr == error then
-      return onErr((select(2, err)))
+      return onErr(err:get(2))
     else
       return onErr(err())
     end

@@ -6,7 +6,11 @@
 #     lines
 #   - custom reporter that understands functions
 
+# TODO: include luacheck
+
 cd "$(dirname "$0")/.."
+
+LUA=$(luarocks config lua_interpreter)
 
 run()
 {
@@ -25,7 +29,8 @@ run()
     set -- $1
   fi
   echo
-  if busted -f test/busted.lua "$@"
+  if busted --lua="$LUA" -f test/busted.lua "$@" && \
+    luacheck --lua="$LUA" -q src
   then
     luacov -c test/luacov.lua
     if [ "$1" != "test/spec" ]

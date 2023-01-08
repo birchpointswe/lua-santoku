@@ -30,6 +30,58 @@ describe("santoku.gen", function ()
 
     end)
 
+    it("throws errors in ccoroutines", function ()
+
+      -- TODO: annoying that we need the co.yield() in
+      -- here. The genco implementation is always one call
+      -- ahead of what the user wrote in order to detect
+      -- coroutine "dead" state for :done(), so without the
+      -- first yield the error would actually happen when
+      -- the generator is created, which is unexpeted. See
+      -- notes in gen.lua for more details.
+      local gen1 = gen.genco(function (co)
+        co.yield()
+        error("haha")
+      end)
+
+      assert.has_error(gen1)
+
+      -- NOTE: This demonstrates the note above, where
+      -- simply definint an iterator calls it one time,
+      -- which in this case produces an error that we
+      -- capture.
+      assert.has_error(function ()
+        gen.genco(function (co)
+          error("hi")
+        end)
+      end)
+
+    end)
+
+  end)
+
+  describe("genend", function ()
+
+    it("allows one to define sentinal value iterators", function ()
+
+      local n = 0
+
+      local gen = gen.genend(function ()
+        n = n + 1
+        if n > 3 then
+          return gen.END
+        else
+          return n
+        end
+      end)
+
+      assert.equals(1, gen())
+      assert.equals(2, gen())
+      assert.equals(3, gen())
+      assert(gen:done())
+
+    end)
+
   end)
 
   describe("gennil", function ()
@@ -275,6 +327,13 @@ describe("santoku.gen", function ()
       assert(gen:done())
     end)
 
+    it("returns the initial value for a empty generator", function ()
+      local gen = gen.genend(function () return gen.END end)
+      assert(gen:done())
+      local v = gen:reduce(function () end, 10)
+      assert.equals(10, v)
+    end)
+
   end)
 
   describe("filter", function ()
@@ -298,9 +357,24 @@ describe("santoku.gen", function ()
 
   end)
 
+  describe("take", function ()
+
+    it("takes n items from a generator", function ()
+      local gen = gen.genco(function (co)
+        co.yield(1)
+        co.yield(2)
+        co.yield(3)
+      end):take(2)
+      assert.equals(1, gen())
+      assert.equals(2, gen())
+      assert(gen:done())
+    end)
+
+  end)
+
   describe("zip", function ()
 
-    it("should zip generators together", function ()
+    it("zips generators together", function ()
 
       local gen1 = gen.args(1, 2, 3, 4)
       local gen2 = gen.args(1, 2, 3, 4)
@@ -310,16 +384,16 @@ describe("santoku.gen", function ()
       local a, b
 
       a, b = gen()
-      assert.same({ 1, 1 }, { a, b })
+      assert.same({ 1, 1 }, { a(), b() })
 
       a, b = gen()
-      assert.same({ 2, 2 }, { a, b })
+      assert.same({ 2, 2 }, { a(), b() })
 
       a, b = gen()
-      assert.same({ 3, 3 }, { a, b })
+      assert.same({ 3, 3 }, { a(), b() })
 
       a, b = gen()
-      assert.same({ 4, 4 }, { a, b })
+      assert.same({ 4, 4 }, { a(), b() })
 
       assert.equals(true, gen1:done())
       assert.equals(true, gen2:done())
@@ -329,9 +403,56 @@ describe("santoku.gen", function ()
 
   end)
 
+  describe("each", function ()
+
+    it("applies a function to each item", function ()
+      local gen = gen.args(1, 2, 3, 4)
+      local i = 0
+      gen:each(function (x)
+        i = i + 1
+        assert.equals(i, x)
+      end)
+      assert(i == 4 and gen:done())
+    end)
+
+  end)
+
+  describe("flatten", function ()
+
+    it("flattens a generator of generators", function ()
+      local gen = gen.genco(function (co)
+        co.yield(gen.args(1, 2, 3, 4))
+        co.yield(gen.args(5, 6, 7, 8))
+      end):flatten()
+      assert.equals(1, gen())
+      assert.equals(2, gen())
+      assert.equals(3, gen())
+      assert.equals(4, gen())
+      assert.equals(5, gen())
+      assert.equals(6, gen())
+      assert.equals(7, gen())
+      assert.equals(8, gen())
+      assert(gen:done())
+    end)
+
+  end)
+
+  describe("slice", function ()
+
+    it("slices the generator", function ()
+
+      local gen = gen.args("file", ".txt"):slice(2)
+
+      assert.equals(".txt", gen())
+      assert.equals(true, gen:done())
+
+    end)
+
+  end)
+
   describe("tabulate", function ()
 
-    it("should create a table from a generator", function ()
+    it("creates a table from a generator", function ()
 
       local vals = gen.args(1, 2, 3, 4)
       local keys = { "one", "two", "three", "four" }
@@ -345,16 +466,190 @@ describe("santoku.gen", function ()
 
     end)
 
+    it("captures remaining values in a 'rest' property", function ()
+
+      local vals = gen.args(1, 2, 3, 4)
+      local keys = { "one"  }
+
+      local tbl = vals:tabulate(keys, { rest = "others" })
+
+      assert.equals(1, tbl.one)
+      assert.same({ 2, 3, 4 }, tbl.others)
+
+    end)
+
   end)
 
-  describe("slice", function ()
+  describe("all", function ()
 
-    it("should slice the generator", function ()
+    it("reduces with and", function ()
 
-      local gen = gen.args("file", ".txt"):slice(2)
+      local gen1 = gen.args(true, true, true)
+      local gen2 = gen.args(true, false, true)
 
-      assert.equals(".txt", gen())
-      assert.equals(true, gen:done())
+      assert(gen1:all())
+      assert(not gen2:all())
+
+    end)
+
+  end)
+
+  describe("none", function ()
+
+    it("reduces with not and", function ()
+
+      local gen1 = gen.args(false, false, false)
+      local gen2 = gen.args(true, false, true)
+
+      assert(gen1:none())
+      assert(not gen2:none())
+
+    end)
+
+  end)
+
+  describe("equals", function ()
+
+    it("checks if two generators have equal values", function ()
+
+      local gen1 = gen.args(1, 2, 3, 4)
+      local gen2 = gen.args(5, 6, 7, 8)
+
+      assert.equals(false, gen1:equals(gen2))
+      assert(gen1:done())
+      assert(gen2:done())
+
+    end)
+
+    it("checks if two generators have equal values", function ()
+
+      local gen1 = gen.args(1, 2, 3, 4)
+      local gen2 = gen.args(1, 2, 3, 4)
+
+      assert.equals(true, gen1:equals(gen2))
+      assert(gen1:done())
+      assert(gen2:done())
+
+    end)
+
+    it("checks if two generators have equal values", function ()
+
+      local gen1 = gen.args(1, 2, 3, 4)
+
+      -- NOTE: this might seem unexpected but
+      -- generators are not immutable. This will
+      -- result in comparing 1 to 2 and 3 to 4 due to
+      -- repeated invocations of the same generator.
+      assert.equals(false, gen1:equals(gen1))
+
+    end)
+
+    it("handles odd length generators", function ()
+
+      local gen1 = gen.args(1, 2, 3)
+      local gen2 = gen.args(1, 2, 3, 4)
+
+      assert.equals(false, gen1:equals(gen2))
+      assert(gen1:done())
+
+      -- TODO: See the note on the implementation of
+      -- gen:equals() for why these are commented out.
+      --
+      -- assert(not gen2:done())
+      -- assert.equals(4, gen2())
+      -- assert(gen2:done())
+
+    end)
+
+  end)
+
+  describe("find", function ()
+
+    it("finds by a predicate", function ()
+
+      local gen = gen.args(1, 2, 3, 4)
+
+      local v = gen:find(function (a) return a == 3 end)
+
+      assert.equals(3, v)
+
+    end)
+
+  end)
+
+  describe("pick", function ()
+
+    it("picks the nth value from a generator", function ()
+
+      local gen = gen.args(1, 2, 3, 4)
+
+      local v = gen:pick(2)
+
+      assert.equals(2, v)
+
+    end)
+
+  end)
+
+  describe("chain", function ()
+
+    it("chains generators", function ()
+
+      local gen1 = gen.args(1, 2)
+      local gen2 = gen.args(3, 4)
+      local gen = gen.chain(gen1, gen2)
+
+      assert.equals(1, gen())
+      assert.equals(2, gen())
+      assert.equals(3, gen())
+      assert.equals(4, gen())
+      assert(gen:done())
+
+    end)
+
+  end)
+
+  describe("collect", function ()
+
+    it("collects generator returns into a table", function ()
+
+      local gen = gen.genco(function (co)
+        co.yield(1, 2, 3)
+        co.yield(4, 5, 6)
+      end)
+
+      local ret = gen:collect()
+
+      assert.same({{ 1, 2, 3 }, { 4, 5, 6 }}, ret)
+
+    end)
+
+  end)
+
+  describe("max", function ()
+
+    it("returns the max value in a generator", function ()
+
+      local gen = gen.args(1, 6, 3, 9, 2, 10, 4)
+
+      local max = gen:max()
+
+      assert.equals(10, max)
+      assert(gen:done())
+
+    end)
+
+  end)
+
+  describe("tail", function ()
+
+    it("simply drops the first element", function ()
+
+      local gen = gen.args(1, 2, 3):tail()
+
+      assert.equals(2, gen())
+      assert.equals(3, gen())
+      assert(gen:done())
 
     end)
 

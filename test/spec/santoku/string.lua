@@ -1,4 +1,4 @@
-local str = require("santoku.str")
+local str = require("santoku.string")
 
 describe("match", function ()
 

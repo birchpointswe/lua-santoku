@@ -4,42 +4,50 @@
 -- TODO: mergeWith, deep merge, etc, walk a
 -- table
 
+local tup = require("santoku.tuple")
+
 local M = {}
 
--- TODO: Warn if using this. Should try to use
--- tuple instead
 M.unpack = unpack or table.unpack
 
-M.tuple = function (...)
-  local n = select('#', ...)
-  return M.tupleh(nil, 0, n, ...), n
+M.narg = function (...)
+  local idx = tup(...)
+  return function (fn)
+    return function (...)
+      local args0 = tup(...)
+      local args1 = tup()
+      for i = 1, idx:len() do
+        local narg = select(select(i, idx()), args0())
+        args1 = args1:append(narg)
+      end
+      return fn(args1())
+    end
+  end
 end
 
--- TODO: Generalize to accept N tuples
--- TODO: Do we really need to iterate both
--- tuples to concatenate them?
-M.tuples = function (a, b)
-  local nxt, nnxt = M.tupleh(nil, 0, select("#", b()), b())
-  local ret, nret = M.tupleh(nxt, nnxt, select("#", a()), a())
-  return ret, nret
+M.nret = function (...)
+  local idx = tup(...)
+  return function (...)
+    local args = tup(...)
+    local rets = tup()
+    for i = 1, idx:len() do
+      local nret = select(select(i, idx()), args())
+      rets = rets:append(nret)
+    end
+    return rets()
+  end
 end
 
-M.tupleh = function (nxt, m, n, first, ...)
-  if n == 0 then
-    nxt = nxt or function () end
-    return function ()
-      return nxt()
-    end, m
-  elseif n == 1 then
-    nxt = nxt or function () end
-    return function()
-      return first, nxt()
-    end, m + 1
-  else
-    local rest, m = M.tupleh(nxt, m, n - 1, ...)
-    return function()
-      return first, rest()
-    end, m + 1
+M.compose = function (...)
+  local fns = tup(...)
+  return function(...)
+    local vs = tup(...)
+    for i = fns:len(), 1, -1 do
+      local fn = select(i, fns())
+      assert(type(fn) == "function")
+      vs = tup(fn(vs()))
+    end
+    return vs()
   end
 end
 
@@ -48,42 +56,14 @@ M.id = function (...)
 end
 
 M.const = function (...)
-  local val = M.tuple(...)
+  local args = tup(...)
   return function ()
-    return val()
-  end
-end
-
-M.narg = function (...)
-  local idx, n = M.tuple(...)
-  return function (fn)
-    return function (...)
-      local args0 = M.tuple(...)
-      local args1 = M.tuple()
-      for i = 1, n do
-        local narg = select(select(i, idx()), args0())
-        args1 = M.tuples(args1, M.tuple(narg))
-      end
-      return fn(args1())
-    end
-  end
-end
-
-M.nret = function (...)
-  local idx, n = M.tuple(...)
-  return function (...)
-    local args = M.tuple(...)
-    local rets = M.tuple()
-    for i = 1, n do
-      local nret = select(select(i, idx()), args())
-      rets = M.tuples(rets, M.tuple(nret))
-    end
-    return rets()
+    return args()
   end
 end
 
 M.interpreter = function (args)
-  arg = arg or {}
+  local arg = arg or {}
   local i_min = 0
   while arg[i_min] do
     i_min = i_min - 1
@@ -101,41 +81,26 @@ M.interpreter = function (args)
   return ret
 end
 
--- TODO: simplify with recursion
--- TODO: Should we silently drop nil args?
-M.compose = function (...)
-  local fns, n = M.tuple(...)
-  return function(...)
-    local vs = M.tuple(...)
-    for i = n, 1, -1 do
-      local fn = select(i, fns())
-      assert(type(fn) == "function")
-      vs = M.tuple(fn(vs()))
-    end
-    return vs()
-  end
-end
-
 -- TODO: allow composition
 -- TODO: allow setting a nested value that
 -- doesnt exist
 M.lens = function (...)
-  local keys, n = M.tuple(...)
+  local keys = tup(...)
   return function (fn)
     fn = fn or M.id
     return function(t)
-      if n == 0 then
+      if keys:len() == 0 then
         return t, fn(t)
       else
         local t0 = t
-        for i = 1, n - 1 do
+        for i = 1, keys:len() - 1 do
           if t0 == nil then
             return t, nil
           end
           t0 = t0[select(i, keys())]
         end
-        local val = fn(t0[select(n, keys())])
-        t0[select(n, keys())] = val
+        local val = fn(t0[select(keys:len(), keys())])
+        t0[select(keys:len(), keys())] = val
         return t, val
       end
     end
@@ -151,7 +116,7 @@ M.get = function (t, ...)
 end
 
 M.setter = function (...)
-  local keys = M.tuple(...)
+  local keys = tup(...)
   return function (v)
     return M.lens(keys())(M.const(v))
   end
@@ -199,7 +164,7 @@ end
 -- nils as expected.
 M.extend = function (t0, ...)
   local n = 0
-  for k, v in pairs(t0) do
+  for k in pairs(t0) do
     assert(type(k) == "number")
     if k > n then
       n = k
@@ -217,13 +182,12 @@ M.extend = function (t0, ...)
       end
     end
     n = n + m
-    m = 0
   end
   return t0
 end
 
 M.appender = function (...)
-  local args = M.tuple(...)
+  local args = tup(...)
   return function (a)
     return M.extend(a, { args() })
   end

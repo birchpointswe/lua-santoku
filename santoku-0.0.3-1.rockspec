@@ -32,6 +32,7 @@ build = {
     ["santoku"] = "src/santoku.lua",
 
     ["santoku.co"] = "src/santoku/co.lua",
+    ["santoku.tuple"] = "src/santoku/tuple.lua",
     ["santoku.err"] = "src/santoku/err.lua",
     ["santoku.fs"] = "src/santoku/fs.lua",
     ["santoku.gen"] = "src/santoku/gen.lua",

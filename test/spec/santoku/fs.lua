@@ -1,5 +1,4 @@
 local fs = require("santoku.fs")
-local utils = require("santoku.utils")
 
 describe("santoku.fs", function ()
 
@@ -27,8 +26,7 @@ describe("santoku.fs", function ()
     it("should handle nils", function ()
 
       local delim = "/"
-      local parts = utils.tuple(nil, "a", nil, "b")
-      local result = fs.joinwith(delim, parts())
+      local result = fs.joinwith(delim, nil, "a", nil, "b")
 
       assert.equals("a/b", result)
 

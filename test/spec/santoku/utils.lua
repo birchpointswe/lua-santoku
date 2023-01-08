@@ -2,64 +2,6 @@ local utils = require("santoku.utils")
 
 describe("utils", function ()
 
-  describe("tuple", function ()
-
-    it("should store arguments", function ()
-
-      local args = utils.tuple(1, 2, 3, nil, 4, nil)
-      local a, b, c, d, e, f = args()
-      assert.equals(1, a)
-      assert.equals(2, b)
-      assert.equals(3, c)
-      assert.is_nil(d)
-      assert.equals(4, e)
-      assert.is_nil(f)
-
-    end)
-
-  end)
-
-  describe("tuples", function ()
-
-    it("should concatenate tuples", function ()
-
-      local arg0, n0 = utils.tuple(1, 2, 3)
-      local arg1, n1 = utils.tuple(4, 5, 6)
-      local args, n = utils.tuples(arg0, arg1)
-
-      assert.equals(3, n0)
-      assert.equals(3, n1)
-
-      local a, b, c, d, e, f = args()
-
-      assert.equals(1, a)
-      assert.equals(2, b)
-      assert.equals(3, c)
-      assert.equals(4, d)
-      assert.equals(5, e)
-      assert.equals(6, f)
-
-      assert.equals(6, n)
-
-    end)
-
-    it("should handle empty tuples", function ()
-
-      local arg0, n0 = utils.tuple()
-      local arg1, n1 = utils.tuple(4, 5, 6)
-      local args, n = utils.tuples(arg0, arg1)
-
-      local a, b, c = args()
-
-      assert.equals(3, n)
-      assert.equals(4, a)
-      assert.equals(5, b)
-      assert.equals(6, c)
-
-    end)
-
-  end)
-
   describe("id", function ()
 
     it("should return the argments", function ()
