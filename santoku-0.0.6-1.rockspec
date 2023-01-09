@@ -1,5 +1,5 @@
 package = "santoku"
-version = "0.0.5-1"
+version = "0.0.6-1"
 rockspec_format = "3.0"
 
 -- TODO: Should this source be local?
@@ -29,23 +29,24 @@ test_dependencies = {
 build = {
 
   type = "builtin",
+
   modules = {
 
-    ["santoku"] = "src/santoku.lua",
-
-    ["santoku.co"] = "src/santoku/co.lua",
-    ["santoku.tuple"] = "src/santoku/tuple.lua",
-    ["santoku.err"] = "src/santoku/err.lua",
-    ["santoku.fs"] = "src/santoku/fs.lua",
     ["santoku.gen"] = "src/santoku/gen.lua",
+    ["santoku.string"] = "src/santoku/string.lua",
+    ["santoku.table"] = "src/santoku/table.lua",
+    ["santoku.fun"] = "src/santoku/fun.lua",
+
+    ["santoku.statistics"] = "src/santoku/statistics.lua",
+    ["santoku.validation"] = "src/santoku/validation.lua",
+
+    ["santoku.env"] = "src/santoku/env.lua",
+    ["santoku.fs"] = "src/santoku/fs.lua",
     ["santoku.inherit"] = "src/santoku/inherit.lua",
     ["santoku.op"] = "src/santoku/op.lua",
-    ["santoku.statistics"] = "src/santoku/statistics.lua",
-    ["santoku.string"] = "src/santoku/string.lua",
-    ["santoku.utils"] = "src/santoku/utils.lua",
-    ["santoku.validation"] = "src/santoku/validation.lua",
     ["santoku.assert"] = "src/santoku/assert.lua",
-    ["santoku.tree"] = "src/santoku/tree.lua",
+    ["santoku.co"] = "src/santoku/co.lua",
+    ["santoku.err"] = "src/santoku/err.lua",
 
     ["santoku.posix"] = "src/santoku/posix.lua",
     ["santoku.socket"] = "src/santoku/socket.lua",

@@ -1,5 +1,5 @@
 -- TODO: Probably shouldn't import this
-local tup = require("santoku.tuple")
+local tbl = require("santoku.table")
 
 local M = {}
 
@@ -25,10 +25,10 @@ M.len = function (a) return #a end
 M.cat = function (a, b) return a .. b end
 
 M.caller = function (...)
-  local args = tup(...)
+  local args = tbl.pack(...)
   return function (f)
     assert(type(f) == "function")
-    return f(args())
+    return f(args:unpack())
   end
 end
 

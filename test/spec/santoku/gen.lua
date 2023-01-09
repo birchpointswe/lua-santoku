@@ -1,4 +1,5 @@
 local gen = require("santoku.gen")
+local tbl = require("santoku.table")
 
 describe("santoku.gen", function ()
 
@@ -404,16 +405,16 @@ describe("santoku.gen", function ()
       local a, b
 
       a, b = gen()
-      assert.same({ 1, 1 }, { a(), b() })
+      assert.same({ 1, 1 }, { a[1], b[1] })
 
       a, b = gen()
-      assert.same({ 2, 2 }, { a(), b() })
+      assert.same({ 2, 2 }, { a[1], b[1] })
 
       a, b = gen()
-      assert.same({ 3, 3 }, { a(), b() })
+      assert.same({ 3, 3 }, { a[1], b[1] })
 
       a, b = gen()
-      assert.same({ 4, 4 }, { a(), b() })
+      assert.same({ 4, 4 }, { a[1], b[1] })
 
       assert.equals(true, gen1:done())
       assert.equals(true, gen2:done())

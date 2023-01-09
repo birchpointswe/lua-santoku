@@ -1,5 +1,5 @@
 local fs = require("lfs")
-local utils = require("santoku.utils")
+local fun = require("santoku.fun")
 local str = require("santoku.string")
 local gen = require("santoku.gen")
 
@@ -53,7 +53,7 @@ end
 -- that directory contents are returned before
 -- directories themselves
 M.walk = function (dir, opts)
-  local prune = (opts or {}).prune or utils.const(false)
+  local prune = (opts or {}).prune or fun.const(false)
   local prunekeep = (opts or {}).prunekeep or false
   return gen.genco(function (co)
     local ok, entries = M.dir(dir)

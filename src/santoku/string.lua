@@ -1,7 +1,12 @@
 local gen = require("santoku.gen")
 
--- TODO: Should we use tuple instead of gen for these
--- functions since they're usually strict?
+-- TODO: Consider using table instead of gen for
+-- these functions since they're usually strict
+-- TODO: Provide a wrapper function so that
+-- strings can be used in an oop style.
+--   - setmetatable({ s = s }, { ... })
+--   - Use inherit so that we can inherit bot
+--     this library and "string"
 
 local M = {}
 

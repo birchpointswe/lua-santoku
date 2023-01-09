@@ -23,8 +23,8 @@
 -- TODO: Don't cache a value on generator
 -- creation, but instead cache on :done()
 
-local tup = require("santoku.tuple")
-local utils = require("santoku.utils")
+local tbl = require("santoku.table")
+local fun = require("santoku.fun")
 local op = require("santoku.op")
 local co = require("santoku.co")
 
@@ -47,9 +47,9 @@ M.genco = function (fn, ...)
   local co = co.make()
   local cor = co.create(fn)
   local idx = 0
-  local val = tup(co.resume(cor, co, ...))
-  if not (select(1, val())) then
-    error((select(2, val())))
+  local val = tbl.pack(co.resume(cor, co, ...))
+  if not val[1] then
+    error(val[2])
   end
   local gen = {
     tag = M.GEN,
@@ -66,14 +66,14 @@ M.genco = function (fn, ...)
       if gen:done() then
         return
       end
-      local nval = tup(co.resume(cor, ...))
-      if not (select(1, nval())) then
-        error((select(2, nval())))
+      local nval = tbl.pack(co.resume(cor, ...))
+      if not nval[1] then
+        error(nval[2])
       else
         local ret = val
         val = nval
         idx = idx + 1
-        return select(2, ret())
+        return select(2, ret:unpack())
       end
     end
   })
@@ -84,7 +84,7 @@ end
 M.gensent = function (fn, sent, ...)
   assert(type(fn) == "function")
   local idx = 0
-  local val = tup(fn(...))
+  local val = tbl.pack(fn(...))
   local gen = {
     tag = M.GEN,
     idx = function ()
@@ -93,7 +93,7 @@ M.gensent = function (fn, sent, ...)
     done = function ()
       -- TODO: This only checks the first value
       -- when it should really check all values
-      return val() == sent
+      return val:unpack() == sent
     end
   }
   return setmetatable(gen, {
@@ -102,11 +102,11 @@ M.gensent = function (fn, sent, ...)
       if gen:done() then
         return
       end
-      local nval = tup(fn(...))
+      local nval = tbl.pack(fn(...))
       local ret = val
       val = nval
       idx = idx + 1
-      return ret()
+      return ret:unpack()
     end
   })
 end
@@ -147,7 +147,7 @@ M.pairs = function(t)
 end
 
 M.args = function (...)
-  local args = tup(...)
+  local args = tbl.pack(...)
   return M.genco(function (co)
     args:each(co.yield)
   end)
@@ -155,32 +155,32 @@ end
 
 M.vals = function (t)
   assert(type(t) == "table")
-  return M.pairs(t):map(utils.nret(2))
+  return M.pairs(t):map(fun.nret(2))
 end
 
 M.keys = function (t)
   assert(type(t) == "table")
-  return M.pairs(t):map(utils.nret(1))
+  return M.pairs(t):map(fun.nret(1))
 end
 
 M.ivals = function (t)
   assert(type(t) == "table")
-  return M.ipairs(t):map(utils.nret(2))
+  return M.ipairs(t):map(fun.nret(2))
 end
 
 M.ikeys = function (t)
   assert(type(t) == "table")
-  return M.ipairs(t):map(utils.nret(1))
+  return M.ipairs(t):map(fun.nret(1))
 end
 
 M.mapper = function (fn, ...)
-  fn = fn or utils.id
-  local args = tup(...)
+  fn = fn or fun.id
+  local args = tbl.pack(...)
   return function (gen)
     return M.genco(function (co)
       while not gen:done() do
-        local allargs = args:append(gen())
-        co.yield(fn(allargs()))
+        local val = tbl.pack(gen())
+        co.yield(fn(val:extend(args):unpack()))
       end
     end)
   end
@@ -192,20 +192,19 @@ end
 
 M.reducer = function (acc, ...)
   assert(type(acc) == "function")
-  local val = tup(...)
+  local val = tbl.pack(...)
   return function (gen)
     assert(type(gen) == "table")
     assert(gen.tag == M.GEN)
     if gen:done() then
-      return val()
+      return val:unpack()
     elseif val:len() == 0 then
-      val = tup(gen())
+      val = tbl.pack(gen())
     end
     while not gen:done() do
-      val = val:append(gen())
-      val = tup(acc(val()))
+      val = tbl.pack(acc(val:append(gen()):unpack()))
     end
-    return val()
+    return val:unpack()
   end
 end
 
@@ -214,16 +213,15 @@ M.reduce = function (gen, acc, ...)
 end
 
 M.filterer = function (fn, ...)
-  fn = fn or utils.id
+  fn = fn or fun.id
   assert(type(fn) == "function")
-  local args = tup(...)
+  local args = tbl.pack(...)
   return function (gen)
     return M.genco(function (co)
       while not gen:done() do
-        local val = tup(gen())
-        local allargs = val:append(args())
-        if fn(allargs()) then
-          co.yield(val())
+        local val = tbl.pack(gen())
+        if fn(val:extend(args):unpack()) then
+          co.yield(val:unpack())
         end
       end
     end)
@@ -238,26 +236,26 @@ M.zipper = function (opts)
   local mode = (opts or {}).mode or "first"
   assert(mode == "first" or mode == "longest")
   return function (...)
-    local gens = tup(...)
+    local gens = tbl.pack(...)
     return M.genco(function (co)
       while true do
         local nb = 0
-        local ret = tup()
+        local ret = tbl.pack()
         for i = 1, gens:len() do
-          local gen = gens:get(i)
+          local gen = gens[i]
           if not gen:done() then
             nb = nb + 1
-            ret = ret:append((tup(gen())))
+            ret = ret:append(tbl.pack(gen()))
           elseif i == 1 and mode == "first" then
             return
           else
-            ret = ret:append((tup()))
+            ret = ret:append(tbl.pack())
           end
         end
         if nb == 0 then
           break
         else
-          co.yield(ret())
+          co.yield(ret:unpack())
         end
       end
     end)
@@ -291,9 +289,9 @@ M.take = function (gen, n)
 end
 
 M.finder = function (...)
-  local args = tup(...)
+  local args = tbl.pack(...)
   return function (gen)
-    return gen:filter(args()):head()
+    return gen:filter(args:unpack()):head()
   end
 end
 
@@ -341,7 +339,7 @@ M.tabulator = function (keys, opts)
     local t = M.ivals(keys)
       :zip(genVals)
       :reduce(function (a, k, v)
-        a[k()] = v()
+        a[k[1]] = v[1]
         return a
       end, {})
     if rest then
@@ -377,16 +375,16 @@ M.all = function (gen)
   end, true)
 end
 
-M.none = utils.compose(op["not"], M.any)
+M.none = fun.compose(op["not"], M.any)
 
 -- TODO: Need some tests to define nil handing
 -- behavior
 M.collect = function (gen)
   return gen:reduce(function (a, ...)
     if select("#", ...) <= 1 then
-      return utils.append(a, ...)
+      return tbl.append(a, ...)
     else
-      return utils.append(a, { ... })
+      return tbl.append(a, { ... })
     end
   end, {})
 end
@@ -401,7 +399,7 @@ end
 -- second. Can we somehow do this without
 -- resorting to a manual implemetation?
 M.equals = function (...)
-  local vals = M.zipper({ mode = "longest" })(...):map(tup.equals):all()
+  local vals = M.zipper({ mode = "longest" })(...):map(tbl.equals):all()
   return vals and M.args(...):map(M.done):all()
 end
 
