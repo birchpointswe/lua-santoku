@@ -137,10 +137,6 @@ M.assign = function (t0, ...)
   return t0
 end
 
--- TODO: There MUST be a better way to do this,
--- but neither ipairs nor 'i = 0, #t' can manage
--- to handle both leading nils and intermixed
--- nils as expected.
 M.extend = function (t0, ...)
   local n = t0.n or M.maxn(t0) or 0
   for i = 1, select("#", ...) do
