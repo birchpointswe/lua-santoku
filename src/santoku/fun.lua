@@ -1,4 +1,5 @@
-local tbl = require("santoku.table")
+local compat = require("santoku.compat")
+local vec = require("santoku.vector")
 
 local M = {}
 
@@ -9,14 +10,21 @@ local M = {}
 -- the new function instead of re-computing the
 -- arglist for every function call. Do the same
 -- with nret below.
+--
+-- TODO: This is not very efficient due to the
+-- above and the creation of a new arglist
 M.narg = function (...)
-  local idx = tbl.pack(...)
+  local idx = vec(...)
   return function (fn, ...)
-    local bound = tbl.pack(...)
+    local bound = vec(...)
     return function (...)
-      local args0 = bound:append(...)
-      args0:bubble(idx:unpack())
-      return fn(args0:unpack())
+      local args = vec(...):extend(bound)
+      local nargs = vec()
+      idx:each(function (i)
+        nargs:move(args, nargs.n + 1, i, i)
+      end)
+      nargs:move(args)
+      return fn(nargs:unpack())
     end
   end
 end
@@ -24,11 +32,11 @@ end
 -- TODO: Could an index of 0 mean something
 -- useful?
 M.nret = function (...)
-  local idx = tbl.pack(...)
+  local idx = vec(...)
   return function (...)
-    local args = tbl.pack(...)
-    local rets = tbl.pack()
-    for i = 1, idx:len() do
+    local args = vec(...)
+    local rets = vec()
+    for i = 1, idx.n do
       local nret = args[idx[i]]
       rets = rets:append(nret)
     end
@@ -37,32 +45,20 @@ M.nret = function (...)
 end
 
 M.compose = function (...)
-  local fns = tbl.pack(...)
+  local fns = vec(...)
   return function(...)
-    local vs = tbl.pack(...)
-    for i = fns:len(), 1, -1 do
-      local fn = fns[i]
-      assert(type(fn) == "function")
-      vs = tbl.pack(fn(vs:unpack()))
+    local args = vec(...)
+    for i = fns.n, 1, -1 do
+      assert(type(fns[i]) == "function")
+      args = vec(fns[i](args:unpack()))
     end
-    return vs:unpack()
-  end
-end
-
-M.id = function (...)
-  return ...
-end
-
-M.const = function (...)
-  local args = tbl.pack(...)
-  return function ()
     return args:unpack()
   end
 end
 
 M.maybe = function (a, f, g)
-  f = f or M.id
-  g = g or M.const(a)
+  f = f or compat.id
+  g = g or compat.const(a)
   if a then
     return f(a)
   else

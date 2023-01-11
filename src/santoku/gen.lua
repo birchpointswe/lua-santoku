@@ -23,17 +23,28 @@
 -- TODO: Don't cache a value on generator
 -- creation, but instead cache on :done()
 
-local tbl = require("santoku.table")
+-- TODO: Add pre-curried functions
+
+local vec = require("santoku.vector")
+local err = require("santoku.err")
 local fun = require("santoku.fun")
+local compat = require("santoku.compat")
 local op = require("santoku.op")
 local co = require("santoku.co")
 
 local M = {}
 
--- TODO: Hide these from the user. For M.END,
--- see the note on M.genend
+-- TODO: Hide from the user. See the note on
+-- M.genend
 M.END = {}
-M.GEN = {}
+
+-- TODO use inherit
+M.isgen = function (t)
+  if type(t) ~= "table" then
+    return false
+  end
+  return (getmetatable(t) or {}).__index == M
+end
 
 -- TODO: Allow the user to provide an error
 -- function, default it to error and ensure only
@@ -47,12 +58,13 @@ M.genco = function (fn, ...)
   local co = co.make()
   local cor = co.create(fn)
   local idx = 0
-  local val = tbl.pack(co.resume(cor, co, ...))
+  local val = vec(co.resume(cor, co, ...))
   if not val[1] then
     error(val[2])
   end
   local gen = {
     tag = M.GEN,
+    -- TODO maybe these shouldnt be functions
     idx = function ()
       return idx
     end,
@@ -66,14 +78,14 @@ M.genco = function (fn, ...)
       if gen:done() then
         return
       end
-      local nval = tbl.pack(co.resume(cor, ...))
+      local nval = vec(co.resume(cor, ...))
       if not nval[1] then
         error(nval[2])
       else
         local ret = val
         val = nval
         idx = idx + 1
-        return select(2, ret:unpack())
+        return ret:unpack(2)
       end
     end
   })
@@ -84,7 +96,7 @@ end
 M.gensent = function (fn, sent, ...)
   assert(type(fn) == "function")
   local idx = 0
-  local val = tbl.pack(fn(...))
+  local val = vec(fn(...))
   local gen = {
     tag = M.GEN,
     idx = function ()
@@ -93,7 +105,7 @@ M.gensent = function (fn, sent, ...)
     done = function ()
       -- TODO: This only checks the first value
       -- when it should really check all values
-      return val:unpack() == sent
+      return val[1] == sent
     end
   }
   return setmetatable(gen, {
@@ -102,7 +114,7 @@ M.gensent = function (fn, sent, ...)
       if gen:done() then
         return
       end
-      local nval = tbl.pack(fn(...))
+      local nval = vec(fn(...))
       local ret = val
       val = nval
       idx = idx + 1
@@ -126,6 +138,7 @@ end
 -- TODO: generator that signals end by returning
 -- zero values. Not sure where we'd use this..
 M.genzero = function ()
+  err.unimplemented("genzero")
 end
 
 M.ipairs = function(t)
@@ -146,8 +159,10 @@ M.pairs = function(t)
   end)
 end
 
+-- TODO: This should just be called gen(...) to
+-- follow the pattern of vec and tbl
 M.args = function (...)
-  local args = tbl.pack(...)
+  local args = vec(...)
   return M.genco(function (co)
     args:each(co.yield)
   end)
@@ -173,184 +188,139 @@ M.ikeys = function (t)
   return M.ipairs(t):map(fun.nret(1))
 end
 
-M.mapper = function (fn, ...)
-  fn = fn or fun.id
-  local args = tbl.pack(...)
-  return function (gen)
-    return M.genco(function (co)
-      while not gen:done() do
-        local val = tbl.pack(gen())
-        co.yield(fn(val:extend(args):unpack()))
-      end
-    end)
-  end
-end
-
 M.map = function (gen, fn, ...)
-  return M.mapper(fn, ...)(gen)
-end
-
-M.reducer = function (acc, ...)
-  assert(type(acc) == "function")
-  local val = tbl.pack(...)
-  return function (gen)
-    assert(type(gen) == "table")
-    assert(gen.tag == M.GEN)
-    if gen:done() then
-      return val:unpack()
-    elseif val:len() == 0 then
-      val = tbl.pack(gen())
-    end
+  assert(M.isgen(gen))
+  fn = fn or fun.id
+  local args = vec(...)
+  return M.genco(function (co)
     while not gen:done() do
-      val = tbl.pack(acc(val:append(gen()):unpack()))
+      local val = vec(gen())
+      co.yield(fn(val:extend(args):unpack()))
     end
-    return val:unpack()
-  end
+  end)
 end
 
 M.reduce = function (gen, acc, ...)
-  return M.reducer(acc, ...)(gen)
-end
-
-M.filterer = function (fn, ...)
-  fn = fn or fun.id
-  assert(type(fn) == "function")
-  local args = tbl.pack(...)
-  return function (gen)
-    return M.genco(function (co)
-      while not gen:done() do
-        local val = tbl.pack(gen())
-        if fn(val:extend(args):unpack()) then
-          co.yield(val:unpack())
-        end
-      end
-    end)
+  assert(M.isgen(gen))
+  assert(type(acc) == "function")
+  local val = vec(...)
+  if gen:done() then
+    return val:unpack()
+  elseif val.n == 0 then
+    val = vec(gen())
   end
+  while not gen:done() do
+    val = vec(acc(val:append(gen()):unpack()))
+  end
+  return val:unpack()
 end
 
 M.filter = function (gen, fn, ...)
-  return M.filterer(fn, ...)(gen)
+  assert(M.isgen(gen))
+  fn = fn or compat.id
+  assert(type(fn) == "function")
+  local args = vec(...)
+  return M.genco(function (co)
+    while not gen:done() do
+      local val = vec(gen())
+      if fn(val:extend(args):unpack()) then
+        co.yield(val:unpack())
+      end
+    end
+  end)
 end
 
-M.zipper = function (opts)
-  local mode = (opts or {}).mode or "first"
+M.zip = function (opts, ...)
+  local gens
+  if M.isgen(opts) then
+    gens = vec(opts, ...)
+    opts = {}
+  else
+    gens = vec(...)
+  end
+  local mode = opts.mode or "first"
   assert(mode == "first" or mode == "longest")
-  return function (...)
-    local gens = tbl.pack(...)
-    return M.genco(function (co)
-      while true do
-        local nb = 0
-        local ret = tbl.pack()
-        for i = 1, gens:len() do
-          local gen = gens[i]
-          if not gen:done() then
-            nb = nb + 1
-            ret = ret:append(tbl.pack(gen()))
-          elseif i == 1 and mode == "first" then
-            return
-          else
-            ret = ret:append(tbl.pack())
-          end
-        end
-        if nb == 0 then
-          break
+  return M.genco(function (co)
+    while true do
+      local nb = 0
+      local ret = vec()
+      for i = 1, gens.n do
+        local gen = gens[i]
+        if not gen:done() then
+          nb = nb + 1
+          local val = vec(gen())
+          ret = ret:append(val)
+        elseif i == 1 and mode == "first" then
+          return
         else
-          co.yield(ret:unpack())
+          ret = ret:append(vec())
         end
       end
-    end)
-  end
-end
-
-M.zip = function (...)
-  return M.zipper()(...)
-end
-
-M.taker = function (n)
-  assert(n == nil or type(n) == "number")
-  return function (gen)
-    assert(type(gen) == "table")
-    assert(gen.tag == M.GEN)
-    if n == nil then
-      return gen
-    else
-      return M.genco(function (co)
-        while n > 0 and not gen:done() do
-          co.yield(gen())
-          n = n - 1
-        end
-      end)
+      if nb == 0 then
+        break
+      else
+        co.yield(ret:unpack())
+      end
     end
-  end
+  end)
 end
 
 M.take = function (gen, n)
-  return M.taker(n)(gen)
-end
-
-M.finder = function (...)
-  local args = tbl.pack(...)
-  return function (gen)
-    return gen:filter(args:unpack()):head()
+  assert(M.isgen(gen))
+  assert(n == nil or type(n) == "number")
+  if n == nil then
+    return gen
+  else
+    return M.genco(function (co)
+      while n > 0 and not gen:done() do
+        co.yield(gen())
+        n = n - 1
+      end
+    end)
   end
 end
 
 M.find = function (gen, ...)
-  return M.finder(...)(gen)
-end
-
-M.picker = function (n)
-  return function (gen)
-    return gen:slice(n, 1):head()
-  end
+  assert(M.isgen(gen))
+  return gen:filter(...):head()
 end
 
 M.pick = function (gen, n)
-  return M.picker(n)(gen)
-end
-
-M.slicer = function (start, num)
-  start = start or 1
-  return function (gen)
-    gen:take(start - 1):collect()
-    return gen:take(num)
-  end
+  assert(M.isgen(gen))
+  return gen:slice(n, 1):head()
 end
 
 M.slice = function (gen, start, num)
-  return M.slicer(start, num)(gen)
+  assert(M.isgen(gen))
+  gen:take((start or 1) - 1):discard()
+  return gen:take(num)
 end
 
-M.eacher = function (fn)
-  return function (gen)
-    while not gen:done() do
-      fn(gen())
-    end
+M.each = function (gen, fn, ...)
+  assert(M.isgen(gen))
+  while not gen:done() do
+    fn(gen(), ...)
   end
 end
 
-M.each = function (gen, fn)
-  return M.eacher(fn)(gen)
-end
-
-M.tabulator = function (keys, opts)
-  local rest = (opts or {}).rest
-  return function (genVals)
-    local t = M.ivals(keys)
-      :zip(genVals)
-      :reduce(function (a, k, v)
-        a[k[1]] = v[1]
-        return a
-      end, {})
-    if rest then
-      t[rest] = genVals:collect()
-    end
-    return t
+M.tabulate = function (gen, opts, ...)
+  assert(M.isgen(gen))
+  local keys
+  if type(opts) == "table" then
+    keys = M.args(...)
+  else
+    keys = M.args(opts, ...)
+    opts = {}
   end
-end
-
-M.tabulate = function (gen, keys, opts)
-  return M.tabulator(keys, opts)(gen)
+  local rest = opts.rest
+  local t = keys:zip(gen):reduce(function (a, k, v)
+    a[k[1]] = v[1]
+    return a
+  end, {})
+  if rest then
+    t[rest] = gen:vec()
+  end
+  return t
 end
 
 M.chain = function (...)
@@ -358,35 +328,59 @@ M.chain = function (...)
 end
 
 M.flatten = function (gengen)
-  assert(type(gengen) == "table")
-  assert(gengen.tag == M.GEN)
+  assert(M.isgen(gengen))
   return M.genco(function (co)
-    M.each(gengen, M.eacher(co.yield))
+    gengen:each(function (gen)
+      gen:each(co.yield)
+    end)
   end)
 end
 
-M.any = M.finder()
+M.chunk = function (gen, n)
+  assert(M.isgen(gen))
+  return M.genco(function (co)
+    while not gen:done() do
+      co.yield(gen:take(n):vec())
+    end
+  end)
+end
+
+M.unlazy = function (gen, n)
+  assert(M.isgen(gen))
+  return M.genco(function (co)
+    gen:take(n):vec():each(co.yield)
+  end)
+end
 
 -- TODO: WHY DOES THIS NOT WORK!?
 -- M.all = M.reducer(op["and"], true)
 M.all = function (gen)
+  assert(M.isgen(gen))
   return gen:reduce(function (a, n)
     return a and n
   end, true)
 end
 
-M.none = fun.compose(op["not"], M.any)
+M.none = fun.compose(op["not"], M.find)
+
+M.discard = function (gen)
+  assert(M.isgen(gen))
+  while not gen:done() do
+    gen()
+  end
+end
 
 -- TODO: Need some tests to define nil handing
 -- behavior
-M.collect = function (gen)
+M.vec = function (gen)
+  assert(M.isgen(gen))
   return gen:reduce(function (a, ...)
     if select("#", ...) <= 1 then
-      return tbl.append(a, ...)
+      return a:append(...)
     else
-      return tbl.append(a, { ... })
+      return a:append({ ... })
     end
-  end, {})
+  end, vec())
 end
 
 -- TODO: Currently the implementation using
@@ -399,11 +393,12 @@ end
 -- second. Can we somehow do this without
 -- resorting to a manual implemetation?
 M.equals = function (...)
-  local vals = M.zipper({ mode = "longest" })(...):map(tbl.equals):all()
+  local vals = M.zip({ mode = "longest" }, ...):map(vec.equals):all()
   return vals and M.args(...):map(M.done):all()
 end
 
 M.max = function (gen, ...)
+  assert(M.isgen(gen))
   return gen:reduce(function(a, b)
     if a > b then
       return a
@@ -414,15 +409,18 @@ M.max = function (gen, ...)
 end
 
 M.head = function (gen)
+  assert(M.isgen(gen))
   return gen()
 end
 
 M.tail = function (gen)
+  assert(M.isgen(gen))
   gen()
   return gen
 end
 
 M.done = function (gen)
+  assert(M.isgen(gen))
   return gen:done()
 end
 

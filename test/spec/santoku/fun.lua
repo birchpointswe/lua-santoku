@@ -1,33 +1,8 @@
 local fun = require("santoku.fun")
+local compat = require("santoku.compat")
 local op = require("santoku.op")
 
 describe("fun", function ()
-
-  describe("id", function ()
-
-    it("should return the argments", function ()
-      local a, b, c, d = fun.id(1, 2, 3)
-      assert.equals(1, a)
-      assert.equals(2, b)
-      assert.equals(3, c)
-      assert.equals(nil, d)
-    end)
-
-  end)
-
-  describe("const", function ()
-
-    it("should a function that returns the arguments", function ()
-      local fn = fun.const(1, 2, 3)
-      for i = 1, 10 do
-        local a, b, c = fn()
-        assert.equals(1, a)
-        assert.equals(2, b)
-        assert.equals(3, c)
-      end
-    end)
-
-  end)
 
   describe("narg", function ()
 
@@ -44,19 +19,28 @@ describe("fun", function ()
     end)
 
     it("should curry the first argument", function ()
-      local add10 = fun.narg(1)(op.add, 10)
+      local add10 = fun.narg()(op.add, 10)
       assert.equals(20, add10(10))
     end)
 
     it("should curry the second argument", function ()
-      local div10 = fun.narg(2)(op.div, 10)
+      local div10 = fun.narg()(op.div, 10)
       assert.equals(10, div10(100))
     end)
 
     it("should curry multiple arguments", function ()
       local fn0 = function (a, b, c) return a, b, c end
-      local fn = fun.narg(2, 3)(fn0, "c", "a")
+      local fn = fun.narg(3)(fn0, "c", "a")
       local a, b, c = fn("b")
+      assert.equals("a", a)
+      assert.equals("b", b)
+      assert.equals("c", c)
+    end)
+
+    it("should specify argument order", function ()
+      local fn0 = function (a, b, c) return a, b, c end
+      local fn = fun.narg()(fn0, "b", "c")
+      local a, b, c = fn("a")
       assert.equals("a", a)
       assert.equals("b", b)
       assert.equals("c", c)
@@ -141,7 +125,7 @@ describe("fun", function ()
       assert.equals(1, fun.maybe(0, add1))
       assert.is_nil(fun.maybe(nil, add1))
       assert.equals(false, fun.maybe(false, add1))
-      assert.equals("b", fun.maybe(false, add1, fun.const("b")))
+      assert.equals("b", fun.maybe(false, add1, compat.const("b")))
 
     end)
 

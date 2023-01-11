@@ -1,7 +1,9 @@
 local fs = require("lfs")
 local fun = require("santoku.fun")
+local compat = require("santoku.compat")
 local str = require("santoku.string")
 local gen = require("santoku.gen")
+local vec = require("santoku.vector")
 
 local M = {}
 
@@ -53,7 +55,7 @@ end
 -- that directory contents are returned before
 -- directories themselves
 M.walk = function (dir, opts)
-  local prune = (opts or {}).prune or fun.const(false)
+  local prune = (opts or {}).prune or compat.const(false)
   local prunekeep = (opts or {}).prunekeep or false
   return gen.genco(function (co)
     local ok, entries = M.dir(dir)
@@ -139,14 +141,14 @@ M.basename = function (fp)
   if not string.match(fp, str.escape(M.pathdelim)) then
     return fp
   else
-    local parts = str.split(fp, M.pathdelim):collect()
-    return parts[#parts]
+    local parts = str.split(fp, M.pathdelim)
+    return parts[parts.n]
   end
 end
 
 M.dirname = function (fp)
-  local parts = str.split(fp, M.pathdelim, { delim = "left" }):collect()
-  local dir = table.concat(parts, "", 1, #parts - 1):gsub("/$", "")
+  local parts = str.split(fp, M.pathdelim, { delim = "left" })
+  local dir = table.concat(parts, "", 1, parts.n - 1):gsub("/$", "")
   if dir == "" then
     return "."
   else
@@ -161,7 +163,7 @@ end
 M.joinwith = function (d, ...)
   local de = str.escape(d)
   local pat = string.format("(%s)*$", de)
-  return gen.args(...)
+  return vec(...)
     :filter()
     :reduce(function (a, n)
       return table.concat({
@@ -173,18 +175,20 @@ M.joinwith = function (d, ...)
     end)
 end
 
+-- TODO: Can probably improve performance by not
+-- splitting so much. Perhaps we need an isplit
+-- function that just returns indices?
 M.splitexts = function (fp)
-  local parts = str.split(fp, M.pathdelim, { delim = "left" }):collect()
-  local last = str.split(parts[#parts], "%.", { delim = "right" }):collect()
+  local parts = str.split(fp, M.pathdelim, { delim = "left" })
+  local last = str.split(parts[parts.n], "%.", { delim = "right" })
+  local lasti = 1
   if last[1] == "" then
-    last = gen.ivals(last):slice(2):collect()
+    lasti = 2
   end
   return {
-    exts = gen.vals(last):slice(2):collect(),
-    name = table.concat(gen.chain(
-      gen.ivals(parts):slice(0, #parts - 1),
-      gen.ivals(last):slice(0, 1))
-        :collect())
+    exts = last:slice(lasti + 1),
+    name = table.concat(parts, "", 1, parts.n - 1)
+        .. table.concat(last, "", lasti, 1)
   }
 end
 

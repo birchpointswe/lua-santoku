@@ -66,4 +66,18 @@ describe("santoku.fs", function ()
 
   end)
 
+  describe("splitexts", function ()
+
+    it("should split a path into namme and extensions", function ()
+
+      local p0 = "/opt/bin/sort.sh"
+      assert.same({ name = "/opt/bin/sort", exts = { ".sh", n = 1} }, fs.splitexts(p0))
+
+      local p1 = "stdio.tar.gz"
+      assert.same({ name = "stdio", exts = { ".tar", ".gz", n = 2 } }, fs.splitexts(p1))
+
+    end)
+
+  end)
+
 end)

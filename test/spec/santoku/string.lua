@@ -6,13 +6,13 @@ describe("string", function ()
 
     it("should return string matches", function ()
 
-      local gen = str.match("this is a test", "%S+")
+      local matches = str.match("this is a test", "%S+")
 
-      assert.equals("this", gen())
-      assert.equals("is", gen())
-      assert.equals("a", gen())
-      assert.equals("test", gen())
-      assert.equals(true, gen:done())
+      assert.equals("this", matches[1])
+      assert.equals("is", matches[2])
+      assert.equals("a", matches[3])
+      assert.equals("test", matches[4])
+      assert.equals(4, matches.n)
 
     end)
 

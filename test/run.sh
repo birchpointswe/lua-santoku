@@ -24,7 +24,7 @@ run()
   fi
   if [ "$#" = "0" ]
   then
-    covmatch="true"
+    covmatch=""
     test_files="test/spec"
     source_files="src"
   else
@@ -33,10 +33,10 @@ run()
     source_files="$@"
   fi
   echo
-  if busted --lua="$LUA" -f test/busted.lua "$test_files" && \
-    luacheck --config test/luacheck.lua "$source_files"
+  if busted --lua="$LUA" -f test/busted.lua "$test_files"
   then
     luacov -c test/luacov.lua
+    luacheck --config test/luacheck.lua "$source_files"
     cat test/luacov.report.out | \
       awk '/^Summary/ { P = NR } P && NR > P + 1' | \
       awk "$covmatch { print }"
