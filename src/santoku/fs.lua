@@ -1,5 +1,4 @@
 local fs = require("lfs")
-local fun = require("santoku.fun")
 local compat = require("santoku.compat")
 local str = require("santoku.string")
 local gen = require("santoku.gen")
@@ -54,6 +53,7 @@ end
 -- TODO: Breadth vs depth, default to depth so
 -- that directory contents are returned before
 -- directories themselves
+-- TODO: Reverse arg order, allow multiple dirs
 M.walk = function (dir, opts)
   local prune = (opts or {}).prune or compat.const(false)
   local prunekeep = (opts or {}).prunekeep or false
@@ -102,6 +102,7 @@ M.lines = function (fp)
   end
 end
 
+-- TODO: Reverse arg order, allow multiple dirs
 M.files = function (dir, opts)
   local recurse = (opts or {}).recurse
   local walkopts = {}
@@ -111,8 +112,12 @@ M.files = function (dir, opts)
     end
   end
   return M.walk(dir, walkopts)
+    :filter(function (ok, _, attr)
+      return not ok or attr.mode == "file"
+    end)
 end
 
+-- TODO: Reverse arg order, allow multiple dirs
 M.dirs = function (dir, opts)
   local recurse = (opts or {}).recurse
   local walkopts = { prunekeep = true }

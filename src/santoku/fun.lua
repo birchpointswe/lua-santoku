@@ -3,16 +3,8 @@ local vec = require("santoku.vector")
 
 local M = {}
 
--- This is effectively a curry/bind function
--- that also allows for argument re-ordering
---
--- TODO: Figure out the arglist before returning
--- the new function instead of re-computing the
--- arglist for every function call. Do the same
--- with nret below.
---
--- TODO: This is not very efficient due to the
--- above and the creation of a new arglist
+-- TODO: Can this be made more efficient?
+-- TODO: Rename/refactor to curry(2, 3, fn, a)
 M.narg = function (...)
   local idx = vec(...)
   return function (fn, ...)
@@ -20,24 +12,24 @@ M.narg = function (...)
     return function (...)
       local args = vec(...):extend(bound)
       local nargs = vec()
-      idx:each(function (i)
-        nargs:move(args, nargs.n + 1, i, i)
-      end)
+      for i = 1, idx.n do
+        nargs:move(args, nargs.n + 1, idx[i], idx[i])
+      end
       nargs:move(args)
       return fn(nargs:unpack())
     end
   end
 end
 
--- TODO: Could an index of 0 mean something
--- useful?
+-- TODO: Use 0 to specify "rest": If its last,
+-- append rest to the end, if it's first, append
+-- rest to the "holes" left by the indices
 M.nret = function (...)
   local idx = vec(...)
   return function (...)
-    local args = vec(...)
     local rets = vec()
     for i = 1, idx.n do
-      local nret = args[idx[i]]
+      local nret = select(idx[i], ...)
       rets = rets:append(nret)
     end
     return rets:unpack()

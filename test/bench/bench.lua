@@ -1,4 +1,4 @@
-local list = require("santoku.list")
+local vec = require("santoku.vector")
 local plist = require("pl.List")
 
 collectgarbage("stop")
@@ -22,21 +22,15 @@ end
 run("plist", function ()
   local l = plist.new()
   for i = 1, 1000000 do
+    -- l:extend({ i, i +1, i +2, i +3, n = 3 })
     l:push(i)
   end
 end)
 
-run("plist", function ()
-  local l = plist.new()
+run("vector", function ()
+  local l = vec()
   for i = 1, 1000000 do
     l:append(i)
-  end
-end)
-
-run("list", function ()
-  local l = list.empty
-  for i = 1, 1000000 do
-    l = list.push(l, i)
   end
 end)
 
@@ -44,12 +38,5 @@ run("table", function ()
   local t = {}
   for i = 1, 1000000 do
     t[i] = i
-  end
-end)
-
-run("table", function ()
-  local t = {}
-  for i = 1, 1000000 do
-    table.insert(t, i)
   end
 end)

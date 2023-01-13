@@ -1,22 +1,19 @@
--- Functions that operate on array-like tables
--- with an 'n' property.
+-- TODO: Add pre-curried functions
 
--- TODO: Should we add N if the user passes
--- in a table without n? Perhaps assert/error is
--- better. After deciding, clean up functions
+-- TODO: Consider abstracting commonalities
+-- between vector and gen
 
--- TODO: Add isvec checks and pre-curried
--- functions
+-- TODO: Review gen todos and see if they apply
+-- here
 
--- TODO: Consider integrating "zip" into the
--- various other existing functions so that map
--- can map over many, reduce, etc. Reconcile
--- multiple implementations of the same function
+-- TODO: Ensure feature pairity between vector
+-- and gen
 
--- TODO: Keep low-level primitives like
--- reduce, zip, etc. in vector.lua and gen.lua,
--- but have a generic.lua that contains the
--- higher-level functions built on them.
+-- TODO: All functions should be optionally
+-- mutable/immutable by specifying a
+-- target/destination?
+
+-- TODO: Add pre-immutable functions?
 
 local compat = require("santoku.compat")
 local tbl = require("santoku.table")
@@ -25,7 +22,7 @@ local M = {}
 
 -- TODO use inherit
 M.isvec = function (t)
-  if type(t) ~= "table" then
+  if type(t) ~= "table" or t.n == nil then
     return false
   end
   return (getmetatable(t) or {}).__index == M
@@ -59,6 +56,7 @@ M.pack = function (...)
 end
 
 M.unpack = function (t, s, e)
+  assert(M.isvec(t))
   s = s or 1
   e = e or t.n
   assert(type(s) == "number")
@@ -109,7 +107,7 @@ M.find = function (t, fn, ...)
   assert(type(fn) == "function")
   for i = 1, t.n do
     if fn(t[i], ...) then
-      return t[i]
+      return t[i], i
     end
   end
 end
@@ -177,19 +175,23 @@ end
 
 M.extend = function (t, ...)
   assert(M.isvec(t))
-  local ts = M.pack(...)
-  for i = 1, ts.n do
-    t:copy(ts[i])
+  local m = select("#", ...)
+  for i = 1, m do
+    local t0 = select(i, ...)
+    assert(M.isvec(t0))
+    t:copy(t0)
   end
   return t
 end
 
 M.append = function (t, ...)
   assert(M.isvec(t))
-  -- TODO would be faster without M.pack(...)? Need
-  -- to profile extend allowing table.move vs
-  -- directly iterating ...
-  return t:extend(M.pack(...))
+  local m = select("#", ...)
+  for i = 1, m do
+    t[t.n + i] = (select(i, ...))
+  end
+  t.n = t.n + m
+  return t
 end
 
 M.each = function (t, fn, ...)
@@ -209,6 +211,7 @@ M.map = function (t, fn, ...)
   return t
 end
 
+-- TODO: Can we eliminate some M.packs()?
 M.reduce = function (t, acc, ...)
   assert(M.isvec(t))
   assert(type(acc) == "function")
@@ -256,26 +259,28 @@ M.filter = function (t, fn, ...)
   return t
 end
 
--- Should this be a zipmap? should we be
--- creating a new array?
-M.zip = function (opts, ...)
-  local vecs
+-- Should this be a zipmap? Should we be
+-- creating a new array? Is there a way to make
+-- this not mutable?
+M.zip = function (...)
+  local start = 1
+  local opts = select(1, ...)
   if M.isvec(opts) then
-    vecs = M.pack(opts, ...)
     opts = {}
   else
-    vecs = M.pack(...)
+    start = 2
   end
   assert(type(opts) == "table")
   local mode = opts.mode or "first"
   assert(mode == "first" or mode == "longest")
   local ret = M.pack()
+  local m = select("#", ...)
   local i = 1
   while true do
     local nxt = M.pack()
     local nils = 0
-    for j = 1, vecs.n do
-      local vec = vecs[j]
+    for j = start, m do
+      local vec = select(j, ...)
       if vec.n < i then
         if j == 1 and mode == "first" then
           return ret
@@ -286,7 +291,7 @@ M.zip = function (opts, ...)
         nxt:append(vec[i])
       end
     end
-    if nils == vecs.n then
+    if nils == m then
       break
     else
       ret:append(nxt)
@@ -296,33 +301,36 @@ M.zip = function (opts, ...)
   return ret
 end
 
-M.tabulate = function (t, opts, ...)
+M.tabulate = function (t, ...)
   assert(M.isvec(t))
-  local keys
+  local start = 1
+  local opts = select(1, ...)
   if type(opts) == "table" then
-    keys = M.pack(...)
+    start = 2
   else
-    keys = M.pack(opts, ...)
     opts = {}
   end
   local rest = opts.rest
-  local z = keys:zip(t)
-  local o = z:reduce(function (a, kv)
-    a[kv[1]] = kv[2]
-    return a
-  end, {})
-  if rest then
-    o[rest] = t:slice(z.n + 1)
+  local ret = {}
+  local i = start
+  local m = select("#", ...)
+  while i <= m and i <= t.n do
+    ret[select(i, ...)] = t[i + 1 - start]
+    i = i + 1
   end
-  return o
+  if rest then
+    ret[rest] = t:slice(i + 1 - start)
+  end
+  return ret
 end
 
 M.equals = function (t, ...)
   assert(M.isvec(t))
-  local ts = M.pack(...)
-  for i = 1, ts.n do
-    assert(M.isvec(ts[i]))
-    if ts[i].n ~= t.n then
+  local m = select("#", ...)
+  for i = 1, m do
+    local t0 = select(i, ...)
+    assert(M.isvec(t0))
+    if t0.n ~= t.n then
       return false
     end
   end

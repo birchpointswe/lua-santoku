@@ -13,8 +13,6 @@
 -- Don't use oop style in here, leave that for
 -- the API user
 
-local compat = require("santoku.compat")
-
 local M = {}
 
 -- TODO use inherit
@@ -36,12 +34,12 @@ end
 
 M.get = function (t, ...)
   assert(type(t) == "table")
-  local keys = compat.pack(...)
-  if keys.n == 0 then
+  local m = select("#", ...)
+  if m == 0 then
     return t
   else
-    for i = 1, keys.n do
-      t = t[keys[i]]
+    for i = 1, m do
+      t = t[select(i, ...)]
       if t == nil then
         break
       end
@@ -52,28 +50,30 @@ end
 
 M.set = function (t, v, ...)
   assert(type(t) == "table")
-  local keys = compat.pack(...)
-  assert(keys.n > 0)
+  local m = select("#", ...)
+  assert(m > 0)
   local t0 = t
-  for i = 1, keys.n - 1 do
+  for i = 1, m - 1 do
+    local k = select(i, ...)
     if t0 == nil then
       return
     end
-    local nxt = t0[keys[i]]
+    local nxt = t0[k]
     if nxt == nil then
       nxt = {}
-      t0[keys[i]] = nxt
+      t0[k] = nxt
     end
-    t0 = t0[keys[i]]
+    t0 = t0[k]
   end
-  t0[keys[keys.n]] = v
+  t0[select(m, ...)] = v
   return t
 end
 
 M.assign = function (t, ...)
-  local ts = compat.pack(...)
-  for i = 1, ts.n do
-    for k, v in pairs(ts[i]) do
+  local m = select("#", ...)
+  for i = 1, m do
+    local t0 = select(i, ...)
+    for k, v in pairs(t0) do
       t[k] = v
     end
   end
@@ -96,9 +96,10 @@ end
 -- TODO: This doesn't check keys that are
 -- present in a but not in ts
 M.equals = function (a, ...)
-  local ts = compat.pack(...)
-  for i = 1, ts.n do
-    for k, v in pairs(ts[i]) do
+  local m = select("#", ...)
+  for i = 1, m do
+    local t0 = select(i, ...)
+    for k, v in pairs(t0) do
       if a[k] ~= v then
         return false
       end

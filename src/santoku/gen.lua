@@ -1,29 +1,16 @@
 -- TODO: Leverage "inherit" to set __index
--- TODO: Consider overloading operators for generators
+
 -- TODO: We should not assign all of M to the
 -- generators, instead, only assign gen-related
 -- functions
--- TODO: genco, gennil, etc names arent great,
--- perhaps gco, gsent, gnil, gend?
--- user-facing APIs for creating iterators
--- TODO: Need an gen:abort() function to early
--- exit iterators that allows for cleanup
--- TODO: Add asserts to all 'er' functions and
--- the non-'er' functions that don't immediately
--- call the 'er' functions
--- TODO: Do we really want the M.GEN thing for
--- asserts? It's a bit ugly
--- TODO: Ensure that we use a simple "return"
--- instead of "return nil" for cases where we
--- just want to end the function or generator.
--- TODO: Refactor to use gensent/genend instead of
--- genco
--- TODO: Leverage tuple library in earnest (map,
--- reduce, each, etc.)
--- TODO: Don't cache a value on generator
--- creation, but instead cache on :done()
+
+-- TODO: Need an abort capability to
+-- early exit iterators that allows for cleanup
 
 -- TODO: Add pre-curried functions
+
+-- TODO: Refactor to avoid coroutines, done, and
+-- idx with closures and gensent
 
 local vec = require("santoku.vector")
 local err = require("santoku.err")
@@ -63,7 +50,6 @@ M.genco = function (fn, ...)
     error(val[2])
   end
   local gen = {
-    tag = M.GEN,
     -- TODO maybe these shouldnt be functions
     idx = function ()
       return idx
@@ -98,7 +84,6 @@ M.gensent = function (fn, sent, ...)
   local idx = 0
   local val = vec(fn(...))
   local gen = {
-    tag = M.GEN,
     idx = function ()
       return idx
     end,
@@ -296,10 +281,12 @@ M.slice = function (gen, start, num)
   return gen:take(num)
 end
 
+-- TODO: Should this be lazy? Doesnt really make
+-- sense, but everything else is..
 M.each = function (gen, fn, ...)
   assert(M.isgen(gen))
   while not gen:done() do
-    fn(gen(), ...)
+    fn(vec(gen()):append(...):unpack())
   end
 end
 
@@ -352,17 +339,6 @@ M.unlazy = function (gen, n)
   end)
 end
 
--- TODO: WHY DOES THIS NOT WORK!?
--- M.all = M.reducer(op["and"], true)
-M.all = function (gen)
-  assert(M.isgen(gen))
-  return gen:reduce(function (a, n)
-    return a and n
-  end, true)
-end
-
-M.none = fun.compose(op["not"], M.find)
-
 M.discard = function (gen)
   assert(M.isgen(gen))
   while not gen:done() do
@@ -396,6 +372,17 @@ M.equals = function (...)
   local vals = M.zip({ mode = "longest" }, ...):map(vec.equals):all()
   return vals and M.args(...):map(M.done):all()
 end
+
+-- TODO: WHY DOES THIS NOT WORK!?
+-- M.all = M.reducer(op["and"], true)
+M.all = function (gen)
+  assert(M.isgen(gen))
+  return gen:reduce(function (a, n)
+    return a and n
+  end, true)
+end
+
+M.none = fun.compose(op["not"], M.find)
 
 M.max = function (gen, ...)
   assert(M.isgen(gen))
