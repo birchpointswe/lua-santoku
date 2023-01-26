@@ -2,6 +2,7 @@
 
 local tbl = require("santoku.table")
 local fun = require("santoku.fun")
+local op = require("santoku.op")
 
 describe("table", function ()
 
@@ -41,6 +42,24 @@ describe("table", function ()
       obj:set("x", "a", "b", 3, 2)
       assert.equals("x", obj.a.b[3][2])
       assert.equals("x", obj:get("a", "b", 3, 2))
+    end)
+
+  end)
+
+  describe("mergeWith", function ()
+
+    it("should merge tables with key-based merged functions", function ()
+
+      local t0 = { a = 1, b = { c = "one" } }
+      local t1 = { a = 2, b = { c = "two" } }
+
+      tbl(t0):mergeWith({
+        a = op.add,
+        b = { c = function (a, b) return a .. ", " .. b end }
+      }, t1)
+
+      assert.same(t0, { a = 3, b = { c = "one, two" } })
+
     end)
 
   end)

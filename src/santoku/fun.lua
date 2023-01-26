@@ -21,6 +21,20 @@ M.narg = function (...)
   end
 end
 
+M.bindr = function (fn, ...)
+  local args = vec(...)
+  return function (...)
+    return fn(vec(...):extend(args):unpack())
+  end
+end
+
+M.bindl = function (fn, ...)
+  local args = vec(...)
+  return function (...)
+    return fn(args:append(...):unpack())
+  end
+end
+
 -- TODO: Use 0 to specify "rest": If its last,
 -- append rest to the end, if it's first, append
 -- rest to the "holes" left by the indices
@@ -41,7 +55,7 @@ M.compose = function (...)
   return function(...)
     local args = vec(...)
     for i = fns.n, 1, -1 do
-      assert(type(fns[i]) == "function")
+      assert(compat.iscallable(fns[i]))
       args = vec(fns[i](args:unpack()))
     end
     return args:unpack()

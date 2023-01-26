@@ -1,5 +1,5 @@
 package = "santoku"
-version = "0.0.8-1"
+version = "0.0.9-1"
 rockspec_format = "3.0"
 
 -- TODO: Should this source be local?
@@ -23,7 +23,8 @@ dependencies = {
 test_dependencies = {
   "busted >= 2.1.1",
   "luacov >= 0.15.0",
-  "luacheck >= 1.1.0-1"
+  "luacheck >= 1.1.0-1",
+  "lsqlite3 >= 0.9.5",
 }
 
 build = {
@@ -50,6 +51,7 @@ build = {
     ["santoku.assert"] = "src/santoku/assert.lua",
     ["santoku.co"] = "src/santoku/co.lua",
     ["santoku.err"] = "src/santoku/err.lua",
+    ["santoku.system"] = "src/santoku/system.lua",
 
     ["santoku.posix"] = "src/santoku/posix.lua",
     ["santoku.socket"] = "src/santoku/socket.lua",

@@ -180,11 +180,15 @@ M.joinwith = function (d, ...)
     end)
 end
 
+M.splitparts = function (fp, opts)
+  return str.split(fp, M.pathdelim, opts)
+end
+
 -- TODO: Can probably improve performance by not
 -- splitting so much. Perhaps we need an isplit
 -- function that just returns indices?
 M.splitexts = function (fp)
-  local parts = str.split(fp, M.pathdelim, { delim = "left" })
+  local parts = M.splitparts(fp, { delim = "left" })
   local last = str.split(parts[parts.n], "%.", { delim = "right" })
   local lasti = 1
   if last[1] == "" then
@@ -195,6 +199,34 @@ M.splitexts = function (fp)
     name = table.concat(parts, "", 1, parts.n - 1)
         .. table.concat(last, "", lasti, 1)
   }
+end
+
+-- TODO: Can we leverage a generalized function
+-- for this?
+M.writefile = function (fp, str, flag)
+  flag = flag or "w"
+  assert(type(flag) == "string")
+  local fh, err = io.open(fp, flag)
+  if not fh then
+    return false, err
+  else
+    fh:write(str)
+    return true
+  end
+end
+
+-- TODO: Leverage fs.chunks or fs.parse
+M.readfile = function (fp, flag)
+  flag = flag or "r"
+  assert(type(flag) == "string")
+  local fh, err = io.open(fp, flag)
+  if not fh then
+    return false, err
+  else
+    local content = fh:read("*all")
+    fh:close()
+    return true, content
+  end
 end
 
 return M

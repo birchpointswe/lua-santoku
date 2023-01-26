@@ -30,6 +30,19 @@ M.pack = table.pack or M._pack -- luacheck: ignore
 M.unpack = unpack or table.unpack -- luacheck: ignore
 M.move = table.move or M._move -- luacheck: ignore
 
+local unpackr
+unpackr = function (t, i)
+  if i == 1 then
+    return t[i]
+  else
+    return t[i], unpackr(t, i - 1)
+  end
+end
+
+M.unpackr = function (t)
+  return unpackr(t, t.n)
+end
+
 M.id = function (...)
   return ...
 end
@@ -38,6 +51,15 @@ M.const = function (...)
   local args = M.pack(...)
   return function ()
     return M.unpack(args, 1, args.n)
+  end
+end
+
+M.iscallable = function (f)
+  if type(f) == "function" then
+    return true
+  elseif type(f) == "table" then
+    local mt = getmetatable(f)
+    return mt and type(mt.__call) == "function"
   end
 end
 

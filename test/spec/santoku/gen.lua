@@ -1,6 +1,10 @@
 -- TODO: Confirm that return values are
 -- correctly vectors when they should be vectors
 
+-- TODO: Seems to be an infinite loop with
+-- each:flatten, perhaps because each returns a
+-- generator when it shouldnt?
+
 local gen = require("santoku.gen")
 local vec = require("santoku.vector")
 

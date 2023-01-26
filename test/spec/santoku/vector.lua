@@ -173,4 +173,18 @@ describe("vector", function ()
 
   end)
 
+  describe("sort", function ()
+
+    it("should sort a vector", function ()
+      local v = vec(10, 5, 2, 38, 1, 4):sort()
+      assert.same({ 1, 2, 4, 5, 10, 38, n = 6 }, v)
+    end)
+
+    it("should unique sort a vector", function ()
+      local v = vec(10, 38, 10, 10, 38, 1, 4):sort({ unique = true })
+      assert.same({ 1, 4, 10, 38, n = 4 }, v:slice(1, v.n))
+    end)
+
+  end)
+
 end)

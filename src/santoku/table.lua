@@ -13,6 +13,8 @@
 -- Don't use oop style in here, leave that for
 -- the API user
 
+local compat = require("santoku.compat")
+
 local M = {}
 
 -- TODO use inherit
@@ -106,6 +108,43 @@ M.equals = function (a, ...)
     end
   end
   return true
+end
+
+local paths
+paths = function (t, fn, stop, ...)
+  for k, v in pairs(t) do
+    if stop(v) then
+      fn(compat.unpackr(compat.pack(k, ...)))
+    else
+      paths(v, fn, stop, k, ...)
+    end
+  end
+end
+
+M.paths = function (t, fn, stop)
+  stop = stop or function (v)
+    return type(v) ~= "table"
+  end
+  assert(compat.iscallable(stop))
+  assert(compat.iscallable(fn))
+  return paths(t, fn, stop)
+end
+
+-- TODO: Can we do this without creating a
+-- vector of path vectors?
+-- TODO: Reduce all of these pack/unpacks
+M.mergeWith = function (t, spec, ...)
+  for i = 1, select("#", ...) do
+    local t0 = select(i, ...)
+    M.paths(spec, function (...)
+      M.set(t,
+        M.get(spec, ...)(
+          M.get(t, ...),
+          M.get(t0, ...)),
+        ...)
+    end)
+  end
+  return t
 end
 
 return setmetatable({}, {
