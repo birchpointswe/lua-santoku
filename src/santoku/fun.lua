@@ -35,6 +35,32 @@ M.bindl = function (fn, ...)
   end
 end
 
+M.bind = M.bindr
+
+M.maybel = function (fn, ...)
+  fn = bindl(fn or compat.id, ...)
+  return function (ok, ...)
+    if ok then
+      return true, fn(...)
+    else
+      return false, ...
+    end
+  end
+end
+
+M.mayber = function (fn, ...)
+  fn = M.bindr(fn or compat.id, ...)
+  return function (ok, ...)
+    if ok then
+      return true, fn(...)
+    else
+      return false, ...
+    end
+  end
+end
+
+M.maybe = M.mayber
+
 -- TODO: Use 0 to specify "rest": If its last,
 -- append rest to the end, if it's first, append
 -- rest to the "holes" left by the indices
@@ -59,16 +85,6 @@ M.compose = function (...)
       args = vec(fns[i](args:unpack()))
     end
     return args:unpack()
-  end
-end
-
-M.maybe = function (a, f, g)
-  f = f or compat.id
-  g = g or compat.const(a)
-  if a then
-    return f(a)
-  else
-    return g()
   end
 end
 

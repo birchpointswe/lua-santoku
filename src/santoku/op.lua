@@ -1,5 +1,6 @@
 -- TODO: Probably shouldn't import this
 local tbl = require("santoku.table")
+local compat = require("santoku.compat")
 
 local M = {}
 
@@ -27,13 +28,13 @@ M.cat = function (a, b) return a .. b end
 M.caller = function (...)
   local args = tbl.pack(...)
   return function (f)
-    assert(type(f) == "function")
+    assert(compat.iscallable(f))
     return f(args:unpack())
   end
 end
 
 M.call = function (f, ...)
-  assert(type(f) == "function")
+  assert(compat.iscallable(f))
   return M.caller(...)(f)
 end
 

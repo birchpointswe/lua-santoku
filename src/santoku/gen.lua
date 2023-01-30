@@ -7,7 +7,11 @@
 -- TODO: Need an abort capability to
 -- early exit iterators that allows for cleanup
 
--- TODO: Add pre-curried functions
+-- TODO: Implement pre-curried functions using
+-- configuration pattern with no gen first arg
+-- resulting in currying behavior. As in:
+--    gen.tabulate("a", "b", "c") -- curry
+--    gen.tabulate(<gen>, "a", "b", "c") -- no curry
 
 -- TODO: Refactor to avoid coroutines, done, and
 -- idx with closures and gensent
@@ -45,7 +49,7 @@ end
 -- TODO: Cache value on :done() not on generator
 -- creation.
 M.genco = function (fn, ...)
-  assert(type(fn) == "function")
+  assert(compat.iscallable(fn))
   local co = co.make()
   local cor = co.create(fn)
   local idx = 0
@@ -84,7 +88,7 @@ end
 -- TODO: Cache value on :done() not on generator
 -- creation.
 M.gensent = function (fn, sent, ...)
-  assert(type(fn) == "function")
+  assert(compat.iscallable(fn))
   local idx = 0
   local val = vec(fn(...))
   local gen = {
@@ -191,7 +195,7 @@ end
 
 M.reduce = function (gen, acc, ...)
   assert(M.isgen(gen))
-  assert(type(acc) == "function")
+  assert(compat.iscallable(acc))
   local val = vec(...)
   if gen:done() then
     return val:unpack()
@@ -207,7 +211,7 @@ end
 M.filter = function (gen, fn, ...)
   assert(M.isgen(gen))
   fn = fn or compat.id
-  assert(type(fn) == "function")
+  assert(compat.iscallable(fn))
   local args = vec(...)
   return M.genco(function (co)
     while not gen:done() do
@@ -423,6 +427,16 @@ end
 M.head = function (gen)
   assert(M.isgen(gen))
   return gen()
+end
+
+-- TODO: Leverage vec reuse
+M.last = function (gen)
+  assert(M.isgen(gen))
+  local last = vec()
+  while not gen:done() do
+    last = vec(gen())
+  end
+  return last:unpack()
 end
 
 M.tail = function (gen)

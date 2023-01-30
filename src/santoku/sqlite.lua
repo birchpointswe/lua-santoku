@@ -17,8 +17,18 @@ local function check (db, res, code, msg)
   end
 end
 
+-- TODO: How does this work if I want to bind a
+-- list of values by position?
+local function bind (stmt, t, ...)
+  if type(t) == "table" then
+    return stmt:bind_names(t)
+  else
+    return stmt:bind_values(t, ...)
+  end
+end
+
 local function query (db, stmt, ...)
-  local ok = stmt:bind_values(...)
+  local ok = bind(stmt, ...)
   if not ok then
     return false, db.db:errmsg(), db.db:errcode()
   else
@@ -45,13 +55,23 @@ local function query (db, stmt, ...)
 end
 
 local function get_one (db, stmt, ...)
-  local ok, vals = query(db, stmt, ...)
-  if ok and vals:done() then
-    return true, nil
-  elseif ok and not vals:done() then
-    return vals()
+  local ok = bind(stmt, ...)
+  if not ok then
+    return false, db.db:errmsg(), db.db:errcode()
   else
-    return false, vals
+    local res = stmt:step()
+    if res == sqlite.ROW then
+      local val = stmt:get_named_values()
+      stmt:reset()
+      return true, val
+    elseif res == sqlite.DONE then
+      stmt:reset()
+      return true
+    else
+      local em, ec = db.db:errmsg(), db.db:errcode()
+      stmt:reset()
+      return false, em, ec
+    end
   end
 end
 
@@ -173,6 +193,22 @@ M.wrap = function (db)
             return get_one(db, stmt, ...)
           end
         end)
+      end
+    end,
+
+    inserter = function (db, sql)
+      local ok, getter, cd = db:getter(sql)
+      if not ok then
+        return false, getter, cd
+      else
+        return true, function (...)
+          local ok, err, cd = getter(...)
+          if ok then
+            return true, db.db:last_insert_rowid()
+          else
+            return false, err, cd
+          end
+        end
       end
     end
 

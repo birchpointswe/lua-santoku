@@ -2,6 +2,10 @@
 
 -- TODO: Add the pre-curried functions
 
+-- TODO: We need a str.inspect(...) or similar
+-- that expands inspect to support multiple
+-- inputs and outputs
+
 local vec = require("santoku.vector")
 
 -- TODO: Consider optionally allowing users to

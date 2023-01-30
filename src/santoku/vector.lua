@@ -39,6 +39,7 @@ end
 M.wrap = function (t)
   t = t or {}
   assert(type(t) == "table")
+  t.n = t.n or #t
   return setmetatable(t, {
     __index = M
   })
@@ -69,6 +70,14 @@ M.unpack = function (t, s, e)
   assert(type(s) == "number")
   assert(type(e) == "number")
   return compat.unpack(t, s, e)
+end
+
+M.concat = function (t, d, s, e)
+  assert(M.isvec(t))
+  d = d or ""
+  s = s or 1
+  e = e or t.n
+  return table.concat(t, d, s, e)
 end
 
 M.insert = function (t, i, v)
@@ -117,13 +126,13 @@ end
 -- TODO
 M.binsert = function (t, cmp)
   assert(M.isvec(t))
-  assert(type(cmp) == "function")
+  assert(compat.iscallable(cmp))
 end
 
 -- TODO
 M.bsearch = function (t, cmp)
   assert(M.isvec(t))
-  assert(type(cmp) == "function")
+  assert(compat.iscallable(cmp))
 end
 
 M.slice = function (s, ss, se)
@@ -133,7 +142,7 @@ end
 
 M.find = function (t, fn, ...)
   assert(M.isvec(t))
-  assert(type(fn) == "function")
+  assert(compat.iscallable(fn))
   for i = 1, t.n do
     if fn(t[i], ...) then
       return t[i], i
@@ -197,7 +206,8 @@ end
 
 M.trunc = function (t, i)
   assert(M.isvec(t))
-  assert(type(i) == "number" and i > 0)
+  i = i or 0
+  assert(type(i) == "number" and i >= 0)
   t.n = i
   return t
 end
@@ -225,7 +235,7 @@ end
 
 M.each = function (t, fn, ...)
   assert(M.isvec(t))
-  assert(type(fn) == "function")
+  assert(compat.iscallable(fn))
   for i = 1, t.n do
     fn(t[i], ...)
   end
@@ -233,7 +243,7 @@ end
 
 M.map = function (t, fn, ...)
   assert(M.isvec(t))
-  assert(type(fn) == "function")
+  assert(compat.iscallable(fn))
   for i = 1, t.n do
     t[i] = fn(t[i], ...)
   end
@@ -243,7 +253,7 @@ end
 -- TODO: Can we eliminate some M.packs()?
 M.reduce = function (t, acc, ...)
   assert(M.isvec(t))
-  assert(type(acc) == "function")
+  assert(compat.iscallable(acc))
   local start = 1
   local val = M.pack(...)
   if t.n == 0 then
@@ -262,7 +272,7 @@ end
 M.filter = function (t, fn, ...)
   assert(M.isvec(t))
   fn = fn or compat.id
-  assert(type(fn) == "function")
+  assert(compat.iscallable(fn))
   local rems = nil
   local reme = nil
   local i = 1

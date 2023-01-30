@@ -1,6 +1,8 @@
-local fs = require("lfs")
+local lfs = require("lfs")
+
 local compat = require("santoku.compat")
 local str = require("santoku.string")
+local err = require("santoku.err")
 local gen = require("santoku.gen")
 local vec = require("santoku.vector")
 
@@ -13,7 +15,7 @@ M.mkdirp = function (dir)
       p1 = M.join(p0, p1)
     end
     p0 = p1
-    local ok, err, code = fs.mkdir(p1)
+    local ok, err, code = lfs.mkdir(p1)
     if not ok and code ~= 17 then
       return ok, err, code
     end
@@ -22,7 +24,7 @@ M.mkdirp = function (dir)
 end
 
 M.exists = function (fp)
-  local mode, err, code = fs.attributes(fp, "mode")
+  local mode, err, code = lfs.attributes(fp, "mode")
   if mode == nil and code == 2 then
     return true, false
   elseif mode ~= nil then
@@ -33,7 +35,7 @@ M.exists = function (fp)
 end
 
 M.dir = function (dir)
-  local ok, entries, state = pcall(fs.dir, dir)
+  local ok, entries, state = pcall(lfs.dir, dir)
   if not ok then
     return false, entries, state
   else
@@ -57,6 +59,7 @@ end
 M.walk = function (dir, opts)
   local prune = (opts or {}).prune or compat.const(false)
   local prunekeep = (opts or {}).prunekeep or false
+  local leaves = (opts or {}).leaves or false
   return gen.genco(function (co)
     local ok, entries = M.dir(dir)
     if not ok then
@@ -65,14 +68,21 @@ M.walk = function (dir, opts)
       for it in entries do
         if it ~= M.dirparent and it ~= M.dirthis then
           it = M.join(dir, it)
-          local attr, err, code = fs.attributes(it)
+          local attr, err, code = lfs.attributes(it)
           if not attr then
             co.yield(false, err, code)
           elseif attr.mode == "directory" then
             if not prune(it, attr) then
-              co.yield(true, it, attr)
-              for ok0, it0, attr0 in M.walk(it, opts) do
-                co.yield(ok0, it0, attr0)
+              if not leaves then
+                co.yield(true, it, attr)
+                for ok0, it0, attr0 in M.walk(it, opts) do
+                  co.yield(ok0, it0, attr0)
+                end
+              else
+                for ok0, it0, attr0 in M.walk(it, opts) do
+                  co.yield(ok0, it0, attr0)
+                end
+                co.yield(true, it, attr)
               end
             elseif prunekeep then
               co.yield(true, it, attr)
@@ -120,7 +130,8 @@ end
 -- TODO: Reverse arg order, allow multiple dirs
 M.dirs = function (dir, opts)
   local recurse = (opts or {}).recurse
-  local walkopts = { prunekeep = true }
+  local leaves = (opts or {}).leaves
+  local walkopts = { prunekeep = true, leaves = leaves }
   if not recurse then
     walkopts.prune = function (_, attr)
       return attr.mode == "directory"
@@ -165,6 +176,7 @@ M.join = function (...)
   return M.joinwith(M.pathdelim, ...)
 end
 
+-- TODO: Remove . and ..
 M.joinwith = function (d, ...)
   local de = str.escape(d)
   local pat = string.format("(%s)*$", de)
@@ -227,6 +239,24 @@ M.readfile = function (fp, flag)
     fh:close()
     return true, content
   end
+end
+
+M.rmdir = function (dir)
+  local ok, err, code = lfs.rmdir(dir)
+  if ok == nil then
+    return false, err, code
+  else
+    return true
+  end
+end
+
+M.rmdirs = function (dir)
+  return err.pwrap(function (check)
+    M.dirs(dir, { recurse = true, leaves = true })
+      :map(check)
+      :map(M.rmdir)
+      :each(check)
+  end)
 end
 
 return M
