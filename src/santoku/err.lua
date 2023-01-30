@@ -34,16 +34,20 @@ end
 
 M.pwrapper = function (co, ...)
   local errs = vec(...)
+  local args = vec()
+  local nargs = 0
   local wrapper = {
     err = function (...)
       return M.pwrapper(co, ...)
     end,
     exists = function (val, ...)
-      local args = vec(...)
       if val ~= nil then
         return val, ...
       else
-        return co.yield(vec():extend(errs, args):unpack())
+        args:trunc():append(...)
+        errs:trunc(errs.n - nargs):extend(args)
+        nargs = args.n
+        return co.yield(errs:unpack())
       end
     end,
     -- TODO: Allow exists to be stacked with ok
@@ -53,19 +57,23 @@ M.pwrapper = function (co, ...)
     --     .exists()
     --     .ok(somefunction())
     okexists = function (ok, val, ...)
-      local args = vec(...)
       if ok and val ~= nil then
         return val, ...
       else
-        return co.yield(vec():extend(errs, args):unpack())
+        args:trunc():append(...)
+        errs:trunc(errs.n - nargs):extend(args)
+        nargs = args.n
+        return co.yield(errs:unpack())
       end
     end,
     ok = function (ok, ...)
-      local args = vec(...)
       if ok then
         return ...
       else
-        return co.yield(vec():extend(errs, args):unpack())
+        args:trunc():append(...)
+        errs:trunc(errs.n - nargs):extend(args)
+        nargs = args.n
+        return co.yield(errs:unpack())
       end
     end
   }
@@ -76,12 +84,14 @@ M.pwrapper = function (co, ...)
   })
 end
 
--- TODO: allow error recovery and passing details to onErr
--- handler
--- TODO: pass uncaught errors to onErr
+-- TODO: Allow user to specify whether unchecked
+-- are re-thrown or returned via the boolean,
+-- ..vals mechanism
 -- TODO: Pick an error level that makes errors
 -- more readable
 -- TODO: Reduce table creations with vec reuse
+-- TODO: Allow user to specify coroutine
+-- implementation
 M.pwrap = function (run, onErr)
   onErr = onErr or function (...)
     return false, ...
@@ -90,17 +100,17 @@ M.pwrap = function (run, onErr)
   local cor = co.create(function ()
     return run(M.pwrapper(co))
   end)
-  local ret
+  local ret = vec()
   local nxt = vec()
   while true do
-    ret = vec(co.resume(cor, nxt:unpack()))
+    ret:trunc():append(co.resume(cor, nxt:unpack()))
     local status = co.status(cor)
     if status == "dead" then
       break
     elseif status == "suspended" then
-      ret = vec(onErr(ret:slice(2):unpack()))
+      ret:trunc():append(onErr(ret:unpack(2)))
       if ret[1] then
-        nxt = ret:slice(2)
+        nxt:trunc():move(ret, 1, 2)
       else
         break
       end

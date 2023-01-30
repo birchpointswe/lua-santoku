@@ -1,3 +1,5 @@
+-- TODO: Add asserts
+
 local lfs = require("lfs")
 
 local compat = require("santoku.compat")
@@ -39,15 +41,8 @@ M.dir = function (dir)
   if not ok then
     return false, entries, state
   else
-    return true, gen.genco(function (co)
-      while true do
-        local ent = entries(state)
-        if ent == nil then
-          break
-        else
-          co.yield(ent)
-        end
-      end
+    return true, gen.gennil(function ()
+      return entries(state)
     end)
   end
 end
@@ -65,30 +60,31 @@ M.walk = function (dir, opts)
     if not ok then
       co.yield(false, entries)
     else
-      for it in entries do
+      while not entries:done() do
+        local it = entries()
         if it ~= M.dirparent and it ~= M.dirthis then
           it = M.join(dir, it)
-          local attr, err, code = lfs.attributes(it)
-          if not attr then
+          local mode, err, code = lfs.attributes(it, "mode")
+          if not mode then
             co.yield(false, err, code)
-          elseif attr.mode == "directory" then
-            if not prune(it, attr) then
+          elseif mode == "directory" then
+            if not prune(it, mode) then
               if not leaves then
-                co.yield(true, it, attr)
-                for ok0, it0, attr0 in M.walk(it, opts) do
-                  co.yield(ok0, it0, attr0)
+                co.yield(true, it, mode)
+                for ok0, it0, mode0 in M.walk(it, opts) do
+                  co.yield(ok0, it0, mode0)
                 end
               else
-                for ok0, it0, attr0 in M.walk(it, opts) do
-                  co.yield(ok0, it0, attr0)
+                for ok0, it0, mode0 in M.walk(it, opts) do
+                  co.yield(ok0, it0, mode0)
                 end
-                co.yield(true, it, attr)
+                co.yield(true, it, mode)
               end
             elseif prunekeep then
-              co.yield(true, it, attr)
+              co.yield(true, it, mode)
             end
           else
-            co.yield(true, it, attr)
+            co.yield(true, it, mode)
           end
         end
       end
@@ -117,13 +113,13 @@ M.files = function (dir, opts)
   local recurse = (opts or {}).recurse
   local walkopts = {}
   if not recurse then
-    walkopts.prune = function (_, attr)
-      return attr.mode == "directory"
+    walkopts.prune = function (_, mode)
+      return mode == "directory"
     end
   end
   return M.walk(dir, walkopts)
-    :filter(function (ok, _, attr)
-      return not ok or attr.mode == "file"
+    :filter(function (ok, _, mode)
+      return not ok or mode == "file"
     end)
 end
 
@@ -133,13 +129,13 @@ M.dirs = function (dir, opts)
   local leaves = (opts or {}).leaves
   local walkopts = { prunekeep = true, leaves = leaves }
   if not recurse then
-    walkopts.prune = function (_, attr)
-      return attr.mode == "directory"
+    walkopts.prune = function (_, mode)
+      return mode == "directory"
     end
   end
   return M.walk(dir, walkopts)
-    :filter(function (ok, _, attr)
-      return not ok or attr.mode == "directory"
+    :filter(function (ok, _, mode)
+      return not ok or mode == "directory"
     end)
 end
 
@@ -154,7 +150,7 @@ M.dirparent = ".."
 M.dirthis = "."
 
 M.basename = function (fp)
-  if not string.match(fp, str.escape(M.pathdelim)) then
+  if not fp:match(str.escape(M.pathdelim)) then
     return fp
   else
     local parts = str.split(fp, M.pathdelim)
@@ -257,6 +253,59 @@ M.rmdirs = function (dir)
       :map(M.rmdir)
       :each(check)
   end)
+end
+
+M.cwd = function ()
+  local dir, err, cd = lfs.currentdir()
+  if not dir then
+    return false, err, cd
+  else
+    return true, dir
+  end
+end
+
+M.absolute = function (fp)
+  assert(type(fp) == "string")
+  if fp[1] == M.pathroot then
+    return M.normalize(fp)
+  elseif fp:sub(1, 2) == "~/" then
+    local home = os.getenv("HOME")
+    if not home then
+      return false, "No home directory"
+    else
+      fp = M.join(home, fp:sub(2))
+    end
+  else
+    local ok, dir, cd = M.cwd()
+    if not ok then
+      return false, dir, cd
+    else
+      fp = M.join(dir, fp)
+    end
+  end
+  return M.normalize(fp)
+end
+
+M.normalize = function (fp)
+  assert(type(fp) == "string")
+  fp = fp:match("^/*(.*)$")
+  local parts = str.split(fp, M.pathdelim)
+  local parts0 = vec()
+  for i = 1, parts.n do
+    if parts0.n == 0 and parts[i] == ".." then
+      return false, "Can't move past root with '..'"
+    elseif parts[i] == ".." then
+      parts0:pop()
+    elseif parts[i] ~= "." and parts[i] ~= "" then
+      parts0:append(parts[i])
+    end
+  end
+  fp = M.join(parts0:unpack())
+  if fp == "" then
+    return true, "."
+  else
+    return true, M.pathroot .. fp
+  end
 end
 
 return M

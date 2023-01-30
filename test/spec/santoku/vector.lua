@@ -119,7 +119,6 @@ describe("vector", function ()
 
     it("captures remaining values in a 'rest' property", function ()
 
-      print("\n----")
       local vals = vec(1, 2, 3, 4)
       local tbl = vals:tabulate({ rest = "others" }, "one")
 

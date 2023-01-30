@@ -26,6 +26,10 @@ M.sh = function (...)
   end
 end
 
+-- TODO: Currently this function accepts a path
+-- to a lua file and calls the interpreter on it
+-- directly. Should this instead accept a module
+-- and use <interp> -e "require(<mod>)"?
 M.lua = function (m, ...)
   local interp = env.interpreter()
   return M.sh(interp:append(m, ...):unpack())

@@ -19,11 +19,15 @@ end
 
 -- TODO: How does this work if I want to bind a
 -- list of values by position?
-local function bind (stmt, t, ...)
+local function bind (stmt, ...)
+  if select("#", ...) == 0 then
+    return stmt
+  end
+  local t = select(1, ...)
   if type(t) == "table" then
     return stmt:bind_names(t)
   else
-    return stmt:bind_values(t, ...)
+    return stmt:bind_values(...)
   end
 end
 

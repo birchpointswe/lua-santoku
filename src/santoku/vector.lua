@@ -115,6 +115,21 @@ end
 
 M.push = M.append
 
+M.get = function (t, i)
+  assert(M.isvec(t))
+  assert(i >= 0)
+  if i == 0 or i > t.n then
+    return
+  else
+    return t[i]
+  end
+end
+
+M.head = function (t)
+  assert(M.isvec(t))
+  return t:get(1)
+end
+
 M.pop = function (t)
   assert(M.isvec(t))
   if t.n > 0 then

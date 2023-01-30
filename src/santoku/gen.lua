@@ -54,6 +54,8 @@ M.genco = function (fn, ...)
   local cor = co.create(fn)
   local idx = 0
   local val = vec(co.resume(cor, co, ...))
+  local nval = vec()
+  local ret = vec()
   if not val[1] then
     error(val[2])
   end
@@ -72,12 +74,12 @@ M.genco = function (fn, ...)
       if gen:done() then
         return
       end
-      local nval = vec(co.resume(cor, ...))
+      nval:trunc():append(co.resume(cor, ...))
       if not nval[1] then
         error(nval[2])
       else
-        local ret = val
-        val = nval
+        ret:trunc():move(val)
+        val:trunc():move(nval)
         idx = idx + 1
         return ret:unpack(2)
       end
@@ -91,6 +93,8 @@ M.gensent = function (fn, sent, ...)
   assert(compat.iscallable(fn))
   local idx = 0
   local val = vec(fn(...))
+  local nval = vec()
+  local ret = vec()
   local gen = {
     idx = function ()
       return idx
@@ -98,7 +102,7 @@ M.gensent = function (fn, sent, ...)
     done = function ()
       -- TODO: This only checks the first value
       -- when it should really check all values
-      return val[1] == sent
+      return val:get(1) == sent
     end
   }
   return setmetatable(gen, {
@@ -107,9 +111,9 @@ M.gensent = function (fn, sent, ...)
       if gen:done() then
         return
       end
-      local nval = vec(fn(...))
-      local ret = val
-      val = nval
+      nval:trunc():append(fn(...))
+      ret:trunc():move(val)
+      val:trunc():move(nval)
       idx = idx + 1
       return ret:unpack()
     end
@@ -377,15 +381,17 @@ end
 
 -- TODO: Need some tests to define nil handing
 -- behavior
-M.vec = function (gen)
+M.vec = function (gen, v)
   assert(M.isgen(gen))
+  v = v or vec()
+  assert(vec.isvec(v))
   return gen:reduce(function (a, ...)
     if select("#", ...) <= 1 then
       return a:append(...)
     else
       return a:append({ ... })
     end
-  end, vec())
+  end, v)
 end
 
 -- TODO: Currently the implementation using
