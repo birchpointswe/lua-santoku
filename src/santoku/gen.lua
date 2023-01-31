@@ -41,6 +41,17 @@ M.isgen = function (t)
   return (getmetatable(t) or {}).__index == M
 end
 
+M.gen = function (iter, done)
+  return setmetatable({}, {
+    __index = M,
+    __call = function (g, ...)
+      return iter(function (...)
+        return g(...)
+      end, done, ...)
+    end
+  })
+end
+
 -- TODO: Allow the user to provide an error
 -- function, default it to error and ensure only
 -- one value is passed
@@ -78,8 +89,8 @@ M.genco = function (fn, ...)
       if not nval[1] then
         error(nval[2])
       else
-        ret:trunc():move(val)
-        val:trunc():move(nval)
+        ret:trunc():copy(val)
+        val:trunc():copy(nval)
         idx = idx + 1
         return ret:unpack(2)
       end
@@ -112,8 +123,8 @@ M.gensent = function (fn, sent, ...)
         return
       end
       nval:trunc():append(fn(...))
-      ret:trunc():move(val)
-      val:trunc():move(nval)
+      ret:trunc():copy(val)
+      val:trunc():copy(nval)
       idx = idx + 1
       return ret:unpack()
     end
@@ -189,10 +200,13 @@ M.map = function (gen, fn, ...)
   assert(M.isgen(gen))
   fn = fn or fun.id
   local args = vec(...)
-  return M.genco(function (co)
-    while not gen:done() do
-      local val = vec(gen())
-      co.yield(fn(val:extend(args):unpack()))
+  local val = vec()
+  return M.gen(function (loop)
+    val:trunc():append(gen())
+    if not val:head() then
+      return
+    else
+      return true, fn(val:extend(args):unpack(2))
     end
   end)
 end
@@ -200,16 +214,21 @@ end
 M.reduce = function (gen, acc, ...)
   assert(M.isgen(gen))
   assert(compat.iscallable(acc))
-  local val = vec(...)
-  if gen:done() then
-    return val:unpack()
-  elseif val.n == 0 then
-    val = vec(gen())
+  local init = vec(...)
+  local val = vec(gen())
+  if not val:head() then
+    return init:unpack()
+  elseif init.n == 0 then
+    init, val = val, init
+    val:trunc():append(gen())
   end
-  while not gen:done() do
-    val = vec(acc(val:append(gen()):unpack()))
+  while val:head() do
+    local n = init.n
+    init:copy(val, init.n + 1, 2)
+    init:appendto(1, acc(init:unpack(2)))
+    val:trunc():append(gen())
   end
-  return val:unpack()
+  return init:unpack(2)
 end
 
 M.filter = function (gen, fn, ...)
@@ -217,11 +236,16 @@ M.filter = function (gen, fn, ...)
   fn = fn or compat.id
   assert(compat.iscallable(fn))
   local args = vec(...)
-  return M.genco(function (co)
-    while not gen:done() do
-      local val = vec(gen())
-      if fn(val:extend(args):unpack()) then
-        co.yield(val:unpack())
+  local val = vec()
+  return M.gen(function (loop)
+    val:trunc():append(gen())
+    if not val:head() then
+      return
+    else
+      if fn(val:extend(args):unpack(2)) then
+        return val:unpack()
+      else
+        return loop()
       end
     end
   end)
@@ -266,12 +290,19 @@ M.take = function (gen, n)
   assert(M.isgen(gen))
   assert(n == nil or type(n) == "number")
   if n == nil then
+    -- TODO: Should we really just return the
+    -- gen here? Perhaps wrapping it would be
+    -- better.
     return gen
   else
-    return M.genco(function (co)
-      while n > 0 and not gen:done() do
-        co.yield(gen())
+    return M.gen(function ()
+      local val = vec(true)
+      if not vec:head() then
+        return
+      else
+        val:trunc():append(gen())
         n = n - 1
+        return val:unpack()
       end
     end)
   end
@@ -297,8 +328,10 @@ end
 -- sense, but everything else is..
 M.each = function (gen, fn, ...)
   assert(M.isgen(gen))
-  while not gen:done() do
-    fn(vec(gen()):append(...):unpack())
+  local val = vec(gen(...))
+  while val:head() do
+    fn(val:append(...):unpack(2))
+    val:trunc():append(gen(...))
   end
 end
 
@@ -355,9 +388,13 @@ end
 
 M.chunk = function (gen, n)
   assert(M.isgen(gen))
-  return M.genco(function (co)
-    while not gen:done() do
-      co.yield(gen:take(n):vec())
+  local val
+  return M.gen(function ()
+    if val and val.n == 0 then
+      return
+    else
+      val = gen:take(n):vec()
+      return true, val
     end
   end)
 end
@@ -449,11 +486,6 @@ M.tail = function (gen)
   assert(M.isgen(gen))
   gen()
   return gen
-end
-
-M.done = function (gen)
-  assert(M.isgen(gen))
-  return gen:done()
 end
 
 return M

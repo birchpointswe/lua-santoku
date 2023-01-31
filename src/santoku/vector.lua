@@ -155,6 +155,13 @@ M.slice = function (s, ss, se)
   return M.pack():copy(s, 1, ss, se)
 end
 
+M.appendto = function (v, i, ...)
+  assert(M.isvec(v))
+  assert(type(i) == "number" and i > 0)
+  v.n = i
+  return v:append(...)
+end
+
 M.find = function (t, fn, ...)
   assert(M.isvec(t))
   assert(compat.iscallable(fn))

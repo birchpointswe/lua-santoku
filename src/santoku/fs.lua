@@ -41,8 +41,14 @@ M.dir = function (dir)
   if not ok then
     return false, entries, state
   else
-    return true, gen.gennil(function ()
-      return entries(state)
+    local ent = true
+    return true, gen.gen(function ()
+      if ent == nil then
+        return
+      else
+        ent = entries(state)
+        return ent ~= nil, ent
+      end
     end)
   end
 end
@@ -52,44 +58,104 @@ end
 -- directories themselves
 -- TODO: Reverse arg order, allow multiple dirs
 M.walk = function (dir, opts)
+
   local prune = (opts or {}).prune or compat.const(false)
   local prunekeep = (opts or {}).prunekeep or false
   local leaves = (opts or {}).leaves or false
-  return gen.genco(function (co)
-    local ok, entries = M.dir(dir)
-    if not ok then
-      co.yield(false, entries)
-    else
-      while not entries:done() do
-        local it = entries()
-        if it ~= M.dirparent and it ~= M.dirthis then
-          it = M.join(dir, it)
-          local mode, err, code = lfs.attributes(it, "mode")
-          if not mode then
-            co.yield(false, err, code)
-          elseif mode == "directory" then
-            if not prune(it, mode) then
-              if not leaves then
-                co.yield(true, it, mode)
-                for ok0, it0, mode0 in M.walk(it, opts) do
-                  co.yield(ok0, it0, mode0)
-                end
-              else
-                for ok0, it0, mode0 in M.walk(it, opts) do
-                  co.yield(ok0, it0, mode0)
-                end
-                co.yield(true, it, mode)
-              end
-            elseif prunekeep then
-              co.yield(true, it, mode)
-            end
-          else
-            co.yield(true, it, mode)
-          end
-        end
+
+  local ok, parents = M.dir(dir)
+
+  if not ok then
+    return false, parents
+  end
+
+  local state = "parent"
+  local val, mode, parent, children, child
+
+  return true, gen.gen(function (loop)
+
+    if state == "done" then
+
+      return
+
+    elseif state == "parent" then
+
+      val, parent = parents()
+
+      if not val then
+
+        state = "done"
+        return
+
+      elseif parent == M.dirparent or parent == M.dirthis then
+
+        return loop()
+
       end
+
+      parent = M.join(dir, parent)
+
+      local err, cd
+      mode, err, cd = lfs.attributes(parent, "mode")
+
+      if not mode then
+        return true, false, err, cd
+      end
+
+      if mode == "directory" then
+
+        if not prune(parent, mode) then
+          state = "children"
+          return true, true, parent, mode
+        elseif prunekeep then
+          return true, true, parent, mode
+        else
+          return loop()
+        end
+
+      else
+
+        return true, true, parent, mode
+
+      end
+
+    elseif state == "children" then
+
+      ok, children = M.walk(parent, opts)
+
+      if not ok then
+        return true, false, children
+      end
+
+      state = "child"
+
+      return loop()
+
+    elseif state == "child" then
+
+      val, ok, child, mode = children()
+
+      if not val then
+        state = "parent"
+        return loop()
+      elseif not ok then
+        return true, false, child, mode
+      else
+        return true, true, child, mode
+      end
+
+    else
+
+      error("this is a bug")
+
     end
+
+  end, function ()
+
+    return state == "done"
+
   end)
+
 end
 
 -- TODO: Avoid pcall by using io.open/read
@@ -117,10 +183,14 @@ M.files = function (dir, opts)
       return mode == "directory"
     end
   end
-  return M.walk(dir, walkopts)
-    :filter(function (ok, _, mode)
+  local ok, walk = M.walk(dir, walkopts)
+  if not ok then
+    return false, walk
+  else
+    return true, walk:filter(function (ok, _, mode)
       return not ok or mode == "file"
     end)
+  end
 end
 
 -- TODO: Reverse arg order, allow multiple dirs
