@@ -288,17 +288,16 @@ M.chunk = function (gen, n)
         ret(chunk)
         m = n
         chunk = vec()
-      else
-        -- TODO: is this logic confusing to the
-        -- user? Should it just always return a
-        -- vec? Performance implications?
-        if select("#", ...) > 1 then
-          chunk:append(vec(...))
-        else
-          chunk:append((select(1, ...)))
-        end
-        m = m - 1
       end
+      -- TODO: is this logic confusing to the
+      -- user? Should it just always return a
+      -- vec? Performance implications?
+      if select("#", ...) > 1 then
+        chunk:append(vec(...))
+      else
+        chunk:append((select(1, ...)))
+      end
+      m = m - 1
     end)
     if chunk.n > 0 then
       ret(chunk)
