@@ -38,11 +38,11 @@ local function query (db, stmt, ...)
   else
     local res = nil
     local err = false
-    return true, gen.genco(function (co)
+    return true, gen.gen(function (ret)
       while true do
         res = stmt:step()
         if res == sqlite.ROW then
-          co.yield(true, stmt:get_named_values())
+          ret(true, stmt:get_named_values())
         elseif res == sqlite.DONE then
           break
         else
@@ -52,7 +52,9 @@ local function query (db, stmt, ...)
       end
       stmt:reset()
       if err then
-        co.yield(false, db.db:errmsg(), db.db:errcode())
+        ret(false, db.db:errmsg(), db.db:errcode())
+      else
+        ret(true)
       end
     end)
   end
@@ -173,14 +175,13 @@ M.wrap = function (db)
           if not ok then
             return false, iter, cd
           end
-          local val
-          while not iter:done() do
-            ok, val, cd = iter()
-            if not ok then
-              return false, val, cd
-            end
-          end
-          return true, val
+          -- TODO: This is terrible. Perhaps we
+          -- need an iter:last() or something
+          local ok, val, cd
+          iter:each(function (ok0, v0, cd0)
+            ok, val, cd = ok0, v0, cd0
+          end)
+          return ok, val, cd
         end)
       end
     end,
