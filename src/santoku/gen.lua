@@ -53,11 +53,10 @@ M.genco = function (fn, ...)
   local co = co.make()
   local cor = co.create(fn)
   local idx = 0
-  local val = vec(co.resume(cor, co, ...))
-  local nval = vec()
   local ret = vec()
-  if not val[1] then
-    error(val[2])
+  local nxt = vec(co.resume(cor, co, ...))
+  if not nxt[1] then
+    error(nxt[2])
   end
   local gen = {
     -- TODO maybe these shouldnt be functions
@@ -74,12 +73,11 @@ M.genco = function (fn, ...)
       if gen:done() then
         return
       end
-      nval:trunc():append(co.resume(cor, ...))
-      if not nval[1] then
-        error(nval[2])
+      ret:trunc():copy(nxt)
+      nxt:trunc():append(co.resume(cor, ...))
+      if not nxt[1] then
+        error(nxt[2])
       else
-        ret:trunc():copy(val)
-        val:trunc():copy(nval)
         idx = idx + 1
         return ret:unpack(2)
       end
@@ -92,17 +90,14 @@ end
 M.gensent = function (fn, sent, ...)
   assert(compat.iscallable(fn))
   local idx = 0
-  local val = vec(fn(...))
-  local nval = vec()
   local ret = vec()
+  local nxt = vec(fn(...))
   local gen = {
     idx = function ()
       return idx
     end,
     done = function ()
-      -- TODO: This only checks the first value
-      -- when it should really check all values
-      return val:get(1) == sent
+      return nxt:get(1) == sent
     end
   }
   return setmetatable(gen, {
@@ -111,9 +106,8 @@ M.gensent = function (fn, sent, ...)
       if gen:done() then
         return
       end
-      nval:trunc():append(fn(...))
-      ret:trunc():copy(val)
-      val:trunc():copy(nval)
+      ret:trunc():copy(nxt)
+      nxt:trunc():append(fn(...))
       idx = idx + 1
       return ret:unpack()
     end
