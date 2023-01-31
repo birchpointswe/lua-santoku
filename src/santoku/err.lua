@@ -103,15 +103,14 @@ M.pwrap = function (run, onErr)
   local ret = vec()
   local nxt = vec()
   while true do
-    ret:trunc():append(co.resume(cor, nxt:unpack()))
+    ret:trunc():append(co.resume(cor, nxt:unpack(2)))
     local status = co.status(cor)
     if status == "dead" then
       break
     elseif status == "suspended" then
-      ret:trunc():append(onErr(ret:unpack(2)))
-      if ret[1] then
-        nxt:trunc():move(ret, 1, 2)
-      else
+      nxt:trunc():append(onErr(ret:unpack(2)))
+      if not nxt[1] then
+        ret = nxt
         break
       end
     end
