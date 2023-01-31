@@ -78,8 +78,8 @@ M.genco = function (fn, ...)
       if not nval[1] then
         error(nval[2])
       else
-        ret:trunc():move(val)
-        val:trunc():move(nval)
+        ret:trunc():copy(val)
+        val:trunc():copy(nval)
         idx = idx + 1
         return ret:unpack(2)
       end
@@ -112,8 +112,8 @@ M.gensent = function (fn, sent, ...)
         return
       end
       nval:trunc():append(fn(...))
-      ret:trunc():move(val)
-      val:trunc():move(nval)
+      ret:trunc():copy(val)
+      val:trunc():copy(nval)
       idx = idx + 1
       return ret:unpack()
     end
