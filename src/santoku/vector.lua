@@ -227,6 +227,7 @@ M.trunc = function (t, i)
   return t
 end
 
+-- TODO: extendo like appendo but for extend
 M.extend = function (t, ...)
   assert(M.isvec(t))
   local m = select("#", ...)
@@ -238,14 +239,20 @@ M.extend = function (t, ...)
   return t
 end
 
+M.appendo = function (t, i, ...)
+  assert(M.isvec(t))
+  assert(type(i) == "number" and i > 0)
+  local m = select("#", ...)
+  for j = 1, m do
+    t[i + j - 1] = (select(j, ...))
+  end
+  t.n = i + m - 1
+  return t
+end
+
 M.append = function (t, ...)
   assert(M.isvec(t))
-  local m = select("#", ...)
-  for i = 1, m do
-    t[t.n + i] = (select(i, ...))
-  end
-  t.n = t.n + m
-  return t
+  return M.appendo(t, t.n + 1, ...)
 end
 
 M.each = function (t, fn, ...)

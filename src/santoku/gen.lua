@@ -74,7 +74,7 @@ M.genco = function (fn, ...)
         return
       end
       ret:trunc():copy(nxt)
-      nxt:trunc():append(co.resume(cor, ...))
+      nxt:appendo(1, co.resume(cor, ...))
       if not nxt[1] then
         error(nxt[2])
       else
@@ -107,7 +107,7 @@ M.gensent = function (fn, sent, ...)
         return
       end
       ret:trunc():copy(nxt)
-      nxt:trunc():append(fn(...))
+      nxt:appendo(1, fn(...))
       idx = idx + 1
       return ret:unpack()
     end
@@ -198,10 +198,11 @@ M.reduce = function (gen, acc, ...)
   if gen:done() then
     return val:unpack()
   elseif val.n == 0 then
-    val = vec(gen())
+    val:append(gen())
   end
   while not gen:done() do
-    val = vec(acc(val:append(gen()):unpack()))
+    val:append(gen())
+    val:appendo(1, acc(val:unpack()))
   end
   return val:unpack()
 end
@@ -287,12 +288,12 @@ M.slice = function (gen, start, num)
   return gen:take(num)
 end
 
--- TODO: Should this be lazy? Doesnt really make
--- sense, but everything else is..
 M.each = function (gen, fn, ...)
   assert(M.isgen(gen))
+  local val = vec()
   while not gen:done() do
-    fn(vec(gen()):append(...):unpack())
+    val:appendo(1, gen()):append(...)
+    fn(val:unpack())
   end
 end
 
