@@ -21,17 +21,11 @@
 -- open files, etc.
 
 local vec = require("santoku.vector")
-local err = require("santoku.err")
 local fun = require("santoku.fun")
 local compat = require("santoku.compat")
 local op = require("santoku.op")
-local co = require("santoku.co")
 
 local M = {}
-
--- TODO: Hide from the user. See the note on
--- M.genend
-M.END = {}
 
 -- TODO use inherit
 M.isgen = function (t)
@@ -41,101 +35,48 @@ M.isgen = function (t)
   return (getmetatable(t) or {}).__index == M
 end
 
--- TODO: Allow the user to provide an error
--- function, default it to error and ensure only
--- one value is passed
--- TODO: Make sure we handle the final return of
--- the coroutine, not just the yields
--- TODO: Cache value on :done() not on generator
--- creation.
-M.genco = function (fn, ...)
-  assert(compat.iscallable(fn))
-  local co = co.make()
-  local cor = co.create(fn)
-  local idx = 0
-  local val = vec(co.resume(cor, co, ...))
-  local nval = vec()
-  local ret = vec()
-  if not val[1] then
-    error(val[2])
-  end
-  local gen = {
-    -- TODO maybe these shouldnt be functions
-    idx = function ()
-      return idx
-    end,
-    done = function ()
-      return co.status(cor) == "dead"
-    end
-  }
-  return setmetatable(gen, {
+M.gen = function (fn)
+  return setmetatable({}, {
     __index = M,
-    __call = function (...)
-      if gen:done() then
-        return
-      end
-      nval:trunc():append(co.resume(cor, ...))
-      if not nval[1] then
-        error(nval[2])
-      else
-        ret:trunc():move(val)
-        val:trunc():move(nval)
-        idx = idx + 1
-        return ret:unpack(2)
-      end
+    __call = function (_, ret, ...)
+      fn(ret, ...)
     end
   })
 end
 
--- TODO: Cache value on :done() not on generator
--- creation.
-M.gensent = function (fn, sent, ...)
+M.each = function (gen, fn, ...)
+  assert(M.isgen(gen))
+  fn = fn or fun.noop
   assert(compat.iscallable(fn))
-  local idx = 0
-  local val = vec(fn(...))
-  local nval = vec()
-  local ret = vec()
-  local gen = {
-    idx = function ()
-      return idx
-    end,
-    done = function ()
-      -- TODO: This only checks the first value
-      -- when it should really check all values
-      return val:get(1) == sent
+  gen(fn, ...)
+end
+
+M.map = function (gen, fn, ...)
+  assert(M.isgen(gen))
+  fn = fn or fun.id
+  assert(compat.iscallable(fn))
+  return M.gen(function (ret, ...)
+    assert(compat.iscallable(ret))
+    gen(function (...)
+      ret(fn(...))
+    end, ...)
+  end, ...)
+end
+
+-- TODO: Need some tests to define nil handing
+-- behavior
+M.vec = function (gen, v)
+  assert(M.isgen(gen))
+  v = v or vec()
+  assert(vec.isvec(v))
+  gen:each(function (...)
+    if select("#", ...) <= 1 then
+      v:append(...)
+    else
+      v:append({ ... })
     end
-  }
-  return setmetatable(gen, {
-    __index = M,
-    __call = function (...)
-      if gen:done() then
-        return
-      end
-      nval:trunc():append(fn(...))
-      ret:trunc():move(val)
-      val:trunc():move(nval)
-      idx = idx + 1
-      return ret:unpack()
-    end
-  })
-end
-
-M.gennil = function (fn, ...)
-  return M.gensent(fn, nil, ...)
-end
-
--- TODO: Instead of relying on the user to
--- return M.END, pass M.END to fn so that the
--- user has it as a first arg to fn and can
--- return it, this hiding M.END from the user
-M.genend = function (fn, ...)
-  return M.gensent(fn, M.END, ...)
-end
-
--- TODO: generator that signals end by returning
--- zero values. Not sure where we'd use this..
-M.genzero = function ()
-  err.unimplemented("genzero")
+  end)
+  return v
 end
 
 M.ipairs = function(t)
@@ -185,18 +126,6 @@ M.ikeys = function (t)
   return M.ipairs(t):map(fun.nret(1))
 end
 
-M.map = function (gen, fn, ...)
-  assert(M.isgen(gen))
-  fn = fn or fun.id
-  local args = vec(...)
-  return M.genco(function (co)
-    while not gen:done() do
-      local val = vec(gen())
-      co.yield(fn(val:extend(args):unpack()))
-    end
-  end)
-end
-
 M.reduce = function (gen, acc, ...)
   assert(M.isgen(gen))
   assert(compat.iscallable(acc))
@@ -216,15 +145,14 @@ M.filter = function (gen, fn, ...)
   assert(M.isgen(gen))
   fn = fn or compat.id
   assert(compat.iscallable(fn))
-  local args = vec(...)
-  return M.genco(function (co)
-    while not gen:done() do
-      local val = vec(gen())
-      if fn(val:extend(args):unpack()) then
-        co.yield(val:unpack())
+  return M.gen(function (ret, ...)
+    assert(compat.iscallable(ret))
+    gen:each(function(...)
+      if fn(...) then
+        ret(...)
       end
-    end
-  end)
+    end, ...)
+  end, ...)
 end
 
 M.zip = function (opts, ...)
@@ -262,25 +190,29 @@ M.zip = function (opts, ...)
   end)
 end
 
-M.take = function (gen, n)
-  assert(M.isgen(gen))
-  assert(n == nil or type(n) == "number")
-  if n == nil then
-    return gen
-  else
-    return M.genco(function (co)
-      while n > 0 and not gen:done() do
-        co.yield(gen())
-        n = n - 1
-      end
-    end)
-  end
-end
+-- TODO: Does this make sense in the cps world?
+-- M.take = function (gen, n)
+--   assert(M.isgen(gen))
+--   assert(n == nil or type(n) == "number")
+--   if n == nil then
+--     return gen
+--   else
+--     return M.genco(function (co)
+--       while n > 0 and not gen:done() do
+--         co.yield(gen())
+--         n = n - 1
+--       end
+--     end)
+--   end
+-- end
 
-M.find = function (gen, ...)
-  assert(M.isgen(gen))
-  return gen:filter(...):head()
-end
+-- TODO: Does this make sense in the cps world?
+-- We would need to stop early.
+--
+-- M.find = function (gen, ...)
+--   assert(M.isgen(gen))
+--   return gen:filter(...):head()
+-- end
 
 M.pick = function (gen, n)
   assert(M.isgen(gen))
@@ -291,15 +223,6 @@ M.slice = function (gen, start, num)
   assert(M.isgen(gen))
   gen:take((start or 1) - 1):discard()
   return gen:take(num)
-end
-
--- TODO: Should this be lazy? Doesnt really make
--- sense, but everything else is..
-M.each = function (gen, fn, ...)
-  assert(M.isgen(gen))
-  while not gen:done() do
-    fn(vec(gen()):append(...):unpack())
-  end
 end
 
 M.tabulate = function (gen, opts, ...)
@@ -355,9 +278,30 @@ end
 
 M.chunk = function (gen, n)
   assert(M.isgen(gen))
-  return M.genco(function (co)
-    while not gen:done() do
-      co.yield(gen:take(n):vec())
+  assert(type(n) == "number" and n > 0)
+  return M.gen(function (ret)
+    assert(compat.iscallable(ret))
+    local m = n
+    local chunk = vec()
+    gen:each(function (...)
+      if m == 0 then
+        ret(chunk)
+        m = n
+        chunk = vec()
+      else
+        -- TODO: is this logic confusing to the
+        -- user? Should it just always return a
+        -- vec? Performance implications?
+        if select("#", ...) > 1 then
+          chunk:append(vec(...))
+        else
+          chunk:append((select(1, ...)))
+        end
+        m = m - 1
+      end
+    end)
+    if chunk.n > 0 then
+      ret(chunk)
     end
   end)
 end
@@ -374,24 +318,7 @@ end
 
 M.discard = function (gen)
   assert(M.isgen(gen))
-  while not gen:done() do
-    gen()
-  end
-end
-
--- TODO: Need some tests to define nil handing
--- behavior
-M.vec = function (gen, v)
-  assert(M.isgen(gen))
-  v = v or vec()
-  assert(vec.isvec(v))
-  return gen:reduce(function (a, ...)
-    if select("#", ...) <= 1 then
-      return a:append(...)
-    else
-      return a:append({ ... })
-    end
-  end, v)
+  gen:each()
 end
 
 -- TODO: Currently the implementation using
@@ -417,7 +344,8 @@ M.all = function (gen)
   end, true)
 end
 
-M.none = fun.compose(op["not"], M.find)
+-- TODO: Does this make sense in the cps world?
+-- M.none = fun.compose(op["not"], M.find)
 
 M.max = function (gen, ...)
   assert(M.isgen(gen))
@@ -430,30 +358,34 @@ M.max = function (gen, ...)
   end, ...)
 end
 
-M.head = function (gen)
-  assert(M.isgen(gen))
-  return gen()
-end
+-- TODO: Does this make sense in the cps world?
+-- M.head = function (gen)
+--   assert(M.isgen(gen))
+--   return gen()
+-- end
 
 -- TODO: Leverage vec reuse
-M.last = function (gen)
-  assert(M.isgen(gen))
-  local last = vec()
-  while not gen:done() do
-    last = vec(gen())
-  end
-  return last:unpack()
-end
+-- TODO: Does this make sense in the cps world?
+-- M.last = function (gen)
+--   assert(M.isgen(gen))
+--   local last = vec()
+--   while not gen:done() do
+--     last = vec(gen())
+--   end
+--   return last:unpack()
+-- end
 
-M.tail = function (gen)
-  assert(M.isgen(gen))
-  gen()
-  return gen
-end
+-- TODO: Does this make sense in the cps world?
+-- M.tail = function (gen)
+--   assert(M.isgen(gen))
+--   gen()
+--   return gen
+-- end
 
-M.done = function (gen)
-  assert(M.isgen(gen))
-  return gen:done()
-end
+-- TODO: Does this make sense in the cps world?
+-- M.done = function (gen)
+--   assert(M.isgen(gen))
+--   return gen:done()
+-- end
 
 return M

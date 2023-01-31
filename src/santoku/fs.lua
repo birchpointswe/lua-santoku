@@ -41,8 +41,16 @@ M.dir = function (dir)
   if not ok then
     return false, entries, state
   else
-    return true, gen.gennil(function ()
-      return entries(state)
+    return true, gen.gen(function (ret)
+      assert(compat.iscallable(ret))
+      while true do
+        local ent = entries(state)
+        if ent == nil then
+          break
+        else
+          ret(ent)
+        end
+      end
     end)
   end
 end
@@ -55,39 +63,35 @@ M.walk = function (dir, opts)
   local prune = (opts or {}).prune or compat.const(false)
   local prunekeep = (opts or {}).prunekeep or false
   local leaves = (opts or {}).leaves or false
-  return gen.genco(function (co)
-    local ok, entries = M.dir(dir)
+  return gen.gen(function (ret)
+    assert(compat.iscallable(ret))
+    local ok, entries, cd = M.dir(dir)
     if not ok then
-      co.yield(false, entries)
+      return false, entries, cd
     else
-      while not entries:done() do
-        local it = entries()
+      return true, entries:each(function (it)
         if it ~= M.dirparent and it ~= M.dirthis then
           it = M.join(dir, it)
           local mode, err, code = lfs.attributes(it, "mode")
           if not mode then
-            co.yield(false, err, code)
+            ret(false, err, code)
           elseif mode == "directory" then
             if not prune(it, mode) then
               if not leaves then
-                co.yield(true, it, mode)
-                for ok0, it0, mode0 in M.walk(it, opts) do
-                  co.yield(ok0, it0, mode0)
-                end
+                ret(true, it, mode)
+                M.walk(it, opts):each(ret)
               else
-                for ok0, it0, mode0 in M.walk(it, opts) do
-                  co.yield(ok0, it0, mode0)
-                end
-                co.yield(true, it, mode)
+                M.walk(it, opts):each(ret)
+                ret(true, it, mode)
               end
             elseif prunekeep then
-              co.yield(true, it, mode)
+              ret(true, it, mode)
             end
           else
-            co.yield(true, it, mode)
+            ret(true, it, mode)
           end
         end
-      end
+      end)
     end
   end)
 end
@@ -102,7 +106,12 @@ end
 M.lines = function (fp)
   local ok, iter, cd = pcall(io.lines, fp)
   if ok then
-    return true, gen.gennil(iter)
+    return true, gen.gen(function (ret)
+      assert(compat.iscallable(ret))
+      for line in iter do
+        ret(line)
+      end
+    end)
   else
     return false, iter, cd
   end

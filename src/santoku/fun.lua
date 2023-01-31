@@ -3,6 +3,8 @@ local vec = require("santoku.vector")
 
 local M = {}
 
+M.noop = function () end
+
 -- TODO: Can this be made more efficient?
 -- TODO: Rename/refactor to curry(2, 3, fn, a)
 M.narg = function (...)
