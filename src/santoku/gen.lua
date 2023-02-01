@@ -35,31 +35,95 @@ M.isgen = function (t)
   return (getmetatable(t) or {}).__index == M
 end
 
+-- TODO: Should this be called wrap? See the
+-- note on gen.args
 M.gen = function (fn)
+  -- TODO: How to eliminate this vec call?
   return setmetatable({}, {
     __index = M,
-    __call = function (_, ret, ...)
-      fn(ret, ...)
+    __call = function (_, each, ret, ...)
+      return fn(each, ret, ...)
     end
   })
 end
 
-M.each = function (gen, fn, ...)
+M.iter = function (iter)
+  local loop
+  loop = function (each, ret, v, ...)
+    if v == nil then
+      return ret()
+    else
+      return each(function ()
+        return loop(each, ret, iter())
+      end, v, ...)
+    end
+  end
+  return M.gen(function (each, ret)
+    return loop(each, ret, iter())
+  end)
+end
+
+-- TODO: Does this make sense in the cps world?
+-- TODO: This should just be called gen(...) to
+-- follow the pattern of vec and tbl
+-- M.args = function (...)
+--   local getarg
+--   getarg = function (each, ret, i, args)
+--     if i == args.n then
+--       ret()
+--     else
+--       i = i + 1
+--       each(function ()
+--         getarg(each, ret, i, args)
+--       end, args[i])
+--     end
+--   end
+--   local args = vec(...)
+--   return M.gen(function (each, ret)
+--     getarg(each, ret, 0, args)
+--   end)
+-- end
+
+M.each = function (gen, each, ret, ...)
   assert(M.isgen(gen))
-  fn = fn or fun.noop
-  assert(compat.iscallable(fn))
-  gen(fn, ...)
+  each = each or function (k) k() end
+  ret = ret or fun.noop
+  assert(compat.iscallable(each))
+  assert(compat.iscallable(ret))
+  return gen(each, ret, ...)
 end
 
 M.map = function (gen, fn, ...)
   assert(M.isgen(gen))
   fn = fn or fun.id
   assert(compat.iscallable(fn))
-  return M.gen(function (ret, ...)
+  return M.gen(function (each, ret, ...)
+    assert(compat.iscallable(each))
     assert(compat.iscallable(ret))
-    gen(function (...)
-      ret(fn(...))
-    end, ...)
+    return gen:each(function (k, ...)
+      return fn(function (...)
+        return each(k, ...)
+      end, ...)
+    end, ret, ...)
+  end, ...)
+end
+
+M.filter = function (gen, fn, ...)
+  assert(M.isgen(gen))
+  fn = fn or function (k, ...) k(..., ...) end
+  assert(compat.iscallable(fn))
+  return M.gen(function (each, ret)
+    assert(compat.iscallable(each))
+    assert(compat.iscallable(ret))
+    return gen:each(function (k, ...)
+      return fn(function (tf, ...)
+        if tf then
+          return each(k, ...)
+        else
+          return k(...)
+        end
+      end, ...)
+    end, ret)
   end, ...)
 end
 
@@ -69,12 +133,13 @@ M.vec = function (gen, v)
   assert(M.isgen(gen))
   v = v or vec()
   assert(vec.isvec(v))
-  gen:each(function (...)
+  gen:each(function (k, ...)
     if select("#", ...) <= 1 then
       v:append(...)
     else
       v:append({ ... })
     end
+    return k()
   end)
   return v
 end
@@ -94,15 +159,6 @@ M.pairs = function(t)
     for k, v in pairs(t) do
       co.yield(k, v)
     end
-  end)
-end
-
--- TODO: This should just be called gen(...) to
--- follow the pattern of vec and tbl
-M.args = function (...)
-  local args = vec(...)
-  return M.genco(function (co)
-    args:each(co.yield)
   end)
 end
 
@@ -139,20 +195,6 @@ M.reduce = function (gen, acc, ...)
     val = vec(acc(val:append(gen()):unpack()))
   end
   return val:unpack()
-end
-
-M.filter = function (gen, fn, ...)
-  assert(M.isgen(gen))
-  fn = fn or compat.id
-  assert(compat.iscallable(fn))
-  return M.gen(function (ret, ...)
-    assert(compat.iscallable(ret))
-    gen:each(function(...)
-      if fn(...) then
-        ret(...)
-      end
-    end, ...)
-  end, ...)
 end
 
 M.zip = function (opts, ...)
@@ -279,16 +321,14 @@ end
 M.chunk = function (gen, n)
   assert(M.isgen(gen))
   assert(type(n) == "number" and n > 0)
-  return M.gen(function (ret)
+  return M.gen(function (each, ret)
+    each = each or function (k) k() end
+    ret = ret or fun.noop
+    assert(compat.iscallable(each))
     assert(compat.iscallable(ret))
     local m = n
     local chunk = vec()
-    gen:each(function (...)
-      if m == 0 then
-        ret(chunk)
-        m = n
-        chunk = vec()
-      end
+    return gen:each(function (k, ...)
       -- TODO: is this logic confusing to the
       -- user? Should it just always return a
       -- vec? Performance implications?
@@ -298,10 +338,22 @@ M.chunk = function (gen, n)
         chunk:append((select(1, ...)))
       end
       m = m - 1
+      if m == 0 then
+        return each(function ()
+          m = n
+          chunk = vec()
+          k()
+        end, chunk)
+      else
+        return k()
+      end
+    end, function ()
+      if chunk.n > 0 then
+        return each(ret, chunk)
+      else
+        return ret()
+      end
     end)
-    if chunk.n > 0 then
-      ret(chunk)
-    end
   end)
 end
 
@@ -317,7 +369,7 @@ end
 
 M.discard = function (gen)
   assert(M.isgen(gen))
-  gen:each()
+  return gen:each()
 end
 
 -- TODO: Currently the implementation using

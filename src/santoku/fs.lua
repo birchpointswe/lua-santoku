@@ -2,6 +2,7 @@
 
 local lfs = require("lfs")
 
+local fun = require("santoku.fun")
 local compat = require("santoku.compat")
 local str = require("santoku.string")
 local err = require("santoku.err")
@@ -41,16 +42,8 @@ M.dir = function (dir)
   if not ok then
     return false, entries, state
   else
-    return true, gen.gen(function (ret)
-      assert(compat.iscallable(ret))
-      while true do
-        local ent = entries(state)
-        if ent == nil then
-          break
-        else
-          ret(ent)
-        end
-      end
+    return true, gen.iter(function ()
+      return entries(state)
     end)
   end
 end
@@ -63,35 +56,40 @@ M.walk = function (dir, opts)
   local prune = (opts or {}).prune or compat.const(false)
   local prunekeep = (opts or {}).prunekeep or false
   local leaves = (opts or {}).leaves or false
-  return gen.gen(function (ret)
+  return gen.gen(function (each, ret)
+    assert(compat.iscallable(each))
     assert(compat.iscallable(ret))
     local ok, entries, cd = M.dir(dir)
     if not ok then
-      return false, entries, cd
+      return each(ret, false, entries, cd)
     else
-      return true, entries:each(function (it)
+      return entries:each(function (k, it)
         if it ~= M.dirparent and it ~= M.dirthis then
           it = M.join(dir, it)
           local mode, err, code = lfs.attributes(it, "mode")
           if not mode then
-            ret(false, err, code)
+            return each(k, false, err, code)
           elseif mode == "directory" then
             if not prune(it, mode) then
               if not leaves then
-                ret(true, it, mode)
-                M.walk(it, opts):each(ret)
+                return each(function ()
+                  return M.walk(it, opts):each(each, k)
+                end, true, it, mode)
               else
-                M.walk(it, opts):each(ret)
-                ret(true, it, mode)
+                return M.walk(it, opts):each(each, function ()
+                  return each(k, true, it, mode)
+                end)
               end
             elseif prunekeep then
-              ret(true, it, mode)
+              return each(k, true, it, mode)
             end
           else
-            ret(true, it, mode)
+            return each(k, true, it, mode)
           end
+        else
+          return k()
         end
-      end)
+      end, ret)
     end
   end)
 end
@@ -106,12 +104,7 @@ end
 M.lines = function (fp)
   local ok, iter, cd = pcall(io.lines, fp)
   if ok then
-    return true, gen.gen(function (ret)
-      assert(compat.iscallable(ret))
-      for line in iter do
-        ret(line)
-      end
-    end)
+    return true, gen.iter(iter)
   else
     return false, iter, cd
   end
@@ -127,8 +120,8 @@ M.files = function (dir, opts)
     end
   end
   return M.walk(dir, walkopts)
-    :filter(function (ok, _, mode)
-      return not ok or mode == "file"
+    :filter(function (k, ok, fp, mode)
+      return k(not ok or mode == "file", ok, fp, mode)
     end)
 end
 
@@ -143,8 +136,8 @@ M.dirs = function (dir, opts)
     end
   end
   return M.walk(dir, walkopts)
-    :filter(function (ok, _, mode)
-      return not ok or mode == "directory"
+    :filter(function (k, ok, fp, mode)
+      return k(not ok or mode == "directory", ok, fp, mode)
     end)
 end
 
@@ -257,10 +250,16 @@ end
 
 M.rmdirs = function (dir)
   return err.pwrap(function (check)
-    M.dirs(dir, { recurse = true, leaves = true })
-      :map(check)
-      :map(M.rmdir)
-      :each(check)
+    return M.dirs(dir, { recurse = true, leaves = true })
+      :map(function (k, ...)
+        return k(check(...))
+      end)
+      :map(function (k, ...)
+        return k(M.rmdir(...))
+      end)
+      :each(function (k, ...)
+        return k(check(...))
+      end)
   end)
 end
 

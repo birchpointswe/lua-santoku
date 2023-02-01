@@ -36,26 +36,24 @@ local function query (db, stmt, ...)
   if not ok then
     return false, db.db:errmsg(), db.db:errcode()
   else
-    local res = nil
-    local err = false
-    return true, gen.gen(function (ret)
-      while true do
-        res = stmt:step()
-        if res == sqlite.ROW then
-          ret(true, stmt:get_named_values())
-        elseif res == sqlite.DONE then
-          break
-        else
-          err = true
-          break
-        end
-      end
-      stmt:reset()
-      if err then
-        ret(false, db.db:errmsg(), db.db:errcode())
-      else
+    local res
+    local getrow
+    getrow = function (each, ret)
+      res = stmt:step()
+      if res == sqlite.ROW then
+        each(function ()
+          getrow(each, ret)
+        end, stmt:get_named_values())
+      elseif res == sqlite.DONE then
+        stmt:reset()
         ret(true)
+      else
+        stmt:reset()
+        ret(false, db.db:errmsg(), db.db:errcode())
       end
+    end
+    return true, gen.gen(function (each, ret)
+      getrow(each, ret)
     end)
   end
 end
@@ -178,7 +176,7 @@ M.wrap = function (db)
           -- TODO: This is terrible. Perhaps we
           -- need an iter:last() or something
           local ok, val, cd
-          iter:each(function (ok0, v0, cd0)
+          iter:each(nil, function (ok0, v0, cd0)
             ok, val, cd = ok0, v0, cd0
           end)
           return ok, val, cd

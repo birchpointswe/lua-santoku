@@ -80,11 +80,12 @@ describe("santoku.fs", function ()
         "test/spec/santoku/fs/b/b.txt")
       local i = 0
       fs.files("test/spec/santoku/fs", { recurse = true })
-        :each(function (ok, fp, mode)
+        :each(function (k, ok, fp, mode)
           assert(ok)
           assert(files:find(fun.bindr(op.eq, fp)))
           assert(mode == "file")
           i = i + 1
+          k()
         end)
         assert(i == 4)
     end)
