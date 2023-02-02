@@ -54,10 +54,11 @@ M.genco = function (fn, ...)
   local co = co()
   local cor = co.create(fn)
   local idx = 0
-  local ret = tup()
+  local ret
   local nxt = tup(co.resume(cor, co, ...))
-  if not nxt.get() then
-    error((nxt.get(2)))
+  local ok, err = nxt() 
+  if not ok then
+    error(err)
   end
   local gen = {
     -- TODO maybe these shouldnt be functions
@@ -74,13 +75,14 @@ M.genco = function (fn, ...)
       if gen:done() then
         return
       end
-      ret.set(nxt.get())
-      nxt.set(co.resume(cor, ...))
-      if not nxt.get() then
-        error((nxt.get(2)))
+      ret = nxt
+      nxt = tup(co.resume(cor, ...))
+      ok, err = nxt()
+      if not ok then
+        error(err)
       else
         idx = idx + 1
-        return ret.get(2)
+        return select(2, ret())
       end
     end
   })
@@ -91,13 +93,15 @@ end
 M.gensent = function (fn, sent, ...)
   assert(compat.iscallable(fn))
   local idx = 0
-  local val = tup(fn(...))
+  local ret
+  local nxt = tup(fn(...))
+  local v = nxt() 
   local gen = {
     idx = function ()
       return idx
     end,
     done = function ()
-      return val.get() == sent
+      return v == sent
     end
   }
   return setmetatable(gen, {
@@ -107,7 +111,10 @@ M.gensent = function (fn, sent, ...)
         return
       end
       idx = idx + 1
-      return val.set(fn(...))
+      ret = nxt
+      nxt = tup(fn(...))
+      v = nxt()
+      return ret()
     end
   })
 end

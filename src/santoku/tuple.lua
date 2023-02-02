@@ -1,33 +1,24 @@
-local co = require("santoku.co")
-
-local function tuple ()
-  local co = co()
-  local function helper (...)
-    co.yield(...)
-    return helper(co.yield(...))
+local arglist = function (n)
+  local args = {}
+  for i = 1, n do
+    args[i] = "arg" .. i
   end
-  local cor = co.create(helper)
-  return function (...)
-    return select(2, co.resume(cor, ...))
-  end
+  return table.concat(args, ",")
 end
 
--- This is absurd
+local tuple = {}
+
 return function (...)
-  local active = tuple()
-  local inactive = tuple()
-  active(...)
-  return {
-    -- Stores a value, returns the stored value
-    set = function (...)
-      inactive(active())
-      active(...)
-      return inactive()
-    end,
-    -- Gets the stored value
-    get = function (i)
-      active, inactive = inactive, active
-      return select(i or 1, active(inactive()))
-    end
-  }
+  local m = select("#", ...)
+  if not tuple[m] then
+    local args = arglist(m)
+    tuple[m] = loadstring(table.concat({[[
+      return function (]], args, [[)
+        return function ()
+          return ]], args, [[
+        end
+      end
+    ]]}))()
+  end
+  return tuple[m](...)
 end
