@@ -41,6 +41,58 @@ describe("vector", function ()
 
   end)
 
+  describe("appendo", function ()
+
+    it("should handle appends to 1st index", function ()
+
+      local v = vec(1, 2, 3)
+      v:appendo(1, 4, 5, 6)
+
+      assert(v[1] == 4)
+      assert(v[2] == 5)
+      assert(v[3] == 6)
+      assert(v.n == 3)
+
+    end)
+
+    it("should handle appends to 2nd index", function ()
+
+      local v = vec(1, 2, 3)
+      v:appendo(2, 4, 5, 6)
+
+      assert(v[1] == 1)
+      assert(v[2] == 4)
+      assert(v[3] == 5)
+      assert(v[4] == 6)
+      assert(v.n == 4)
+
+    end)
+
+    it("should handle empty vectors", function ()
+
+      local v = vec()
+      v:appendo(2, 4, 5, 6)
+
+      assert(v[1] == nil)
+      assert(v[2] == 4)
+      assert(v[3] == 5)
+      assert(v[4] == 6)
+      assert(v.n == 4)
+
+    end)
+  
+    it("should handle empty vectors", function ()
+
+      local v = vec(1, 2, 3)
+      v:appendo(2)
+
+      assert(v[1] == 1)
+      assert(v.n == 1)
+
+    end)
+  
+  end)
+
   describe("append", function ()
 
     it("should append args to array", function ()

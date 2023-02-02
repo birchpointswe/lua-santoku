@@ -38,7 +38,7 @@ end
 M.bind = M.bindr
 
 M.maybel = function (fn, ...)
-  fn = bindl(fn or compat.id, ...)
+  fn = M.bindl(fn or compat.id, ...)
   return function (ok, ...)
     if ok then
       return true, fn(...)

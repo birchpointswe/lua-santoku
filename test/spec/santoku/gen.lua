@@ -151,6 +151,24 @@ describe("santoku.gen", function ()
 
   end)
 
+  describe("vec", function ()
+
+    it("collects generator returns into a vec", function ()
+
+      local gen = gen.genco(function (co)
+        co.yield(1, 2, 3)
+        co.yield(4, 5, 6)
+      end)
+
+      local expected = vec({ 1, 2, 3 }, { 4, 5, 6 })
+      local ret = gen:vec()
+
+      assert.same(expected, ret)
+
+    end)
+
+  end)
+
   describe("pairs", function ()
 
     it("iterates pairs in a table", function ()
@@ -545,45 +563,45 @@ describe("santoku.gen", function ()
 
     end)
 
-   it("checks if two generators have equal values", function ()
+    it("checks if two generators have equal values", function ()
 
-     local gen1 = gen.args(1, 2, 3, 4)
-     local gen2 = gen.args(1, 2, 3, 4)
+      local gen1 = gen.args(1, 2, 3, 4)
+      local gen2 = gen.args(1, 2, 3, 4)
 
-     assert.equals(true, gen1:equals(gen2))
-     assert(gen1:done())
-     assert(gen2:done())
+      assert.equals(true, gen1:equals(gen2))
+      assert(gen1:done())
+      assert(gen2:done())
 
-   end)
+    end)
 
-   it("checks if two generators have equal values", function ()
+    it("checks if two generators have equal values", function ()
 
-     local gen1 = gen.args(1, 2, 3, 4)
+      local gen1 = gen.args(1, 2, 3, 4)
 
-     -- NOTE: this might seem unexpected but
-     -- generators are not immutable. This will
-     -- result in comparing 1 to 2 and 3 to 4 due to
-     -- repeated invocations of the same generator.
-     assert.equals(false, gen1:equals(gen1))
+      -- NOTE: this might seem unexpected but
+      -- generators are not immutable. This will
+      -- result in comparing 1 to 2 and 3 to 4 due to
+      -- repeated invocations of the same generator.
+      assert.equals(false, gen1:equals(gen1))
 
-   end)
+    end)
 
-   it("handles odd length generators", function ()
+    it("handles odd length generators", function ()
 
-     local gen1 = gen.args(1, 2, 3)
-     local gen2 = gen.args(1, 2, 3, 4)
+      local gen1 = gen.args(1, 2, 3)
+      local gen2 = gen.args(1, 2, 3, 4)
 
-     assert.equals(false, gen1:equals(gen2))
-     assert(gen1:done())
+      assert.equals(false, gen1:equals(gen2))
+      assert(gen1:done())
 
-     -- TODO: See the note on the implementation of
-     -- gen:equals() for why these are commented out.
-     --
-     -- assert(not gen2:done())
-     -- assert.equals(4, gen2())
-     -- assert(gen2:done())
+      -- TODO: See the note on the implementation of
+      -- gen:equals() for why these are commented out.
+      --
+      -- assert(not gen2:done())
+      -- assert.equals(4, gen2())
+      -- assert(gen2:done())
 
-   end)
+    end)
 
   end)
 
@@ -628,24 +646,6 @@ describe("santoku.gen", function ()
       assert.equals(3, gen())
       assert.equals(4, gen())
       assert(gen:done())
-
-    end)
-
-  end)
-
-  describe("vec", function ()
-
-    it("collects generator returns into a vec", function ()
-
-      local gen = gen.genco(function (co)
-        co.yield(1, 2, 3)
-        co.yield(4, 5, 6)
-      end)
-
-      local expected = vec({ 1, 2, 3 }, { 4, 5, 6 })
-      local ret = gen:vec()
-
-      assert.same(expected, ret)
 
     end)
 

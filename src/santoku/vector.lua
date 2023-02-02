@@ -239,15 +239,54 @@ M.extend = function (t, ...)
   return t
 end
 
+local arglist = function (n)
+  local args = {}
+  for i = 1, n do
+    args[i] = table.concat({ "arg", i })
+  end
+  return table.concat(args, ", ")
+end
+
+local assignments = function (m)
+  local asngs = {}
+  for j = 1, m do
+    asngs[j] = table.concat({
+      "  t[i + ", j - 1, "] = arg", j
+    })
+  end
+  return table.concat(asngs, "\n")
+end
+
+local appendo = {}
+
 M.appendo = function (t, i, ...)
   assert(M.isvec(t))
   assert(type(i) == "number" and i > 0)
   local m = select("#", ...)
-  for j = 1, m do
-    t[i + j - 1] = (select(j, ...))
+  if m == 0 then
+    t.n = i - 1
+    return t
+  elseif m < 100 and appendo[m] then
+    return appendo[m](t, i, ...)
+  elseif m < 100 then
+    local args = arglist(m)
+    local asngs = assignments(m)
+    appendo[m] = loadstring( -- luacheck: ignore
+      table.concat({
+        "return function (t, i, ", args, ")\n",
+           asngs, "\n",
+        "  t.n = i + ", m - 1, "\n",
+        "  return t", "\n",
+        "end"
+      }))()
+    return appendo[m](t, i, ...)
+  else
+    for j = 1, m do
+      t[i + j - 1] = (select(j, ...))
+    end
+    t.n = i + m - 1
+    return t
   end
-  t.n = i + m - 1
-  return t
 end
 
 M.append = function (t, ...)
