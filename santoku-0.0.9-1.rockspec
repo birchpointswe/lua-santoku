@@ -50,6 +50,7 @@ build = {
     ["santoku.op"] = "src/santoku/op.lua",
     ["santoku.assert"] = "src/santoku/assert.lua",
     ["santoku.co"] = "src/santoku/co.lua",
+    ["santoku.tuple"] = "src/santoku/tuple.lua",
     ["santoku.err"] = "src/santoku/err.lua",
     ["santoku.system"] = "src/santoku/system.lua",
 
