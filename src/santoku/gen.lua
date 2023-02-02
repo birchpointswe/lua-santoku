@@ -53,8 +53,8 @@ M.genco = function (fn, ...)
   local co = co.make()
   local cor = co.create(fn)
   local idx = 0
-  local ret = vec()
-  local nxt = vec(co.resume(cor, co, ...))
+  local ret
+  local nxt = compat.pack(co.resume(cor, co, ...))
   if not nxt[1] then
     error(nxt[2])
   end
@@ -73,13 +73,13 @@ M.genco = function (fn, ...)
       if gen:done() then
         return
       end
-      ret:trunc():copy(nxt)
-      nxt:appendo(1, co.resume(cor, ...))
+      ret = nxt
+      nxt = compat.pack(co.resume(cor, ...))
       if not nxt[1] then
         error(nxt[2])
       else
         idx = idx + 1
-        return ret:unpack(2)
+        return compat.unpack(ret, 2, ret.n)
       end
     end
   })
@@ -90,14 +90,14 @@ end
 M.gensent = function (fn, sent, ...)
   assert(compat.iscallable(fn))
   local idx = 0
-  local ret = vec()
-  local nxt = vec(fn(...))
+  local ret
+  local nxt = compat.pack(fn(...))
   local gen = {
     idx = function ()
       return idx
     end,
     done = function ()
-      return nxt:get(1) == sent
+      return nxt[1] == sent
     end
   }
   return setmetatable(gen, {
@@ -106,10 +106,10 @@ M.gensent = function (fn, sent, ...)
       if gen:done() then
         return
       end
-      ret:trunc():copy(nxt)
-      nxt:appendo(1, fn(...))
+      ret = nxt
+      nxt = compat.pack(fn(...))
       idx = idx + 1
-      return ret:unpack()
+      return compat.unpack(ret)
     end
   })
 end
