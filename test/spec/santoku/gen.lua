@@ -77,10 +77,10 @@ describe("santoku.gen", function ()
 
       local n = 0
 
-      local gen = gen.genend(function ()
+      local gen = gen.genend(function (sent)
         n = n + 1
         if n > 3 then
-          return gen.END
+          return sent
         else
           return n
         end
@@ -374,7 +374,7 @@ describe("santoku.gen", function ()
     end)
 
     it("returns the initial value for a empty generator", function ()
-      local gen = gen.genend(function () return gen.END end)
+      local gen = gen.genend(function (sent) return sent end)
       assert(gen:done())
       local v = gen:reduce(function () end, 10)
       assert.equals(10, v)
