@@ -6,7 +6,7 @@ local function tuple ()
     co.yield(...)
     return helper(co.yield(...))
   end
-  local cor = coroutine.create(helper)
+  local cor = co.create(helper)
   return function (...)
     return select(2, co.resume(cor, ...))
   end
