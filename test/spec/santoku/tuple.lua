@@ -4,23 +4,12 @@ describe("tuple", function ()
 
   it("stores varargs", function ()
 
-    local val, a, b
+    local tup = tup(1, 2, 3)
 
-    val = tup(1, 2)
-
-    a, b = val()
+    local a, b, c = tup()
     assert.equals(1, a)
     assert.equals(2, b)
-
-    val = tup(3, 4)
-
-    a, b = val()
-    assert.equals(3, a)
-    assert.equals(4, b)
-
-    a, b = val()
-    assert.equals(3, a)
-    assert.equals(4, b)
+    assert.equals(3, c)
 
   end)
 

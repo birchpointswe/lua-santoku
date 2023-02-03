@@ -59,7 +59,9 @@ M.iscallable = function (f)
     return true
   elseif type(f) == "table" then
     local mt = getmetatable(f)
-    return mt and type(mt.__call) == "function"
+    return mt and M.iscallable(mt.__call)
+  else
+    return false
   end
 end
 

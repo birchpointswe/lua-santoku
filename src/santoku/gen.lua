@@ -30,10 +30,6 @@ local tup = require("santoku.tuple")
 
 local M = {}
 
--- TODO: Hide from the user. See the note on
--- M.genend
-M.END = {}
-
 -- TODO use inherit
 M.isgen = function (t)
   if type(t) ~= "table" then
@@ -56,9 +52,8 @@ M.genco = function (fn, ...)
   local idx = 0
   local ret
   local nxt = tup(co.resume(cor, co, ...))
-  local ok, err = nxt() 
-  if not ok then
-    error(err)
+  if not nxt() then
+    error((nxt(2)))
   end
   local gen = {
     -- TODO maybe these shouldnt be functions
@@ -77,12 +72,11 @@ M.genco = function (fn, ...)
       end
       ret = nxt
       nxt = tup(co.resume(cor, ...))
-      ok, err = nxt()
-      if not ok then
-        error(err)
+      if not nxt() then
+        error((nxt(2)))
       else
         idx = idx + 1
-        return select(2, ret())
+        return ret(2)
       end
     end
   })
@@ -94,14 +88,13 @@ M.gensent = function (fn, sent, ...)
   assert(compat.iscallable(fn))
   local idx = 0
   local ret
-  local nxt = tup(fn(...))
-  local v = nxt() 
+  local val = tup(fn(sent, ...))
   local gen = {
     idx = function ()
       return idx
     end,
     done = function ()
-      return v == sent
+      return val() == sent
     end
   }
   return setmetatable(gen, {
@@ -110,10 +103,9 @@ M.gensent = function (fn, sent, ...)
       if gen:done() then
         return
       end
+      ret = val
+      val = tup(fn(sent, ...))
       idx = idx + 1
-      ret = nxt
-      nxt = tup(fn(...))
-      v = nxt()
       return ret()
     end
   })
@@ -123,12 +115,8 @@ M.gennil = function (fn, ...)
   return M.gensent(fn, nil, ...)
 end
 
--- TODO: Instead of relying on the user to
--- return M.END, pass M.END to fn so that the
--- user has it as a first arg to fn and can
--- return it, this hiding M.END from the user
 M.genend = function (fn, ...)
-  return M.gensent(fn, M.END, ...)
+  return M.gensent(fn, M, ...)
 end
 
 -- TODO: generator that signals end by returning
