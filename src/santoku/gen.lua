@@ -30,10 +30,6 @@ local tup = require("santoku.tuple")
 
 local M = {}
 
--- TODO: Hide from the user. See the note on
--- M.genend
-M.END = {}
-
 -- TODO use inherit
 M.isgen = function (t)
   if type(t) ~= "table" then
@@ -54,10 +50,10 @@ M.genco = function (fn, ...)
   local co = co()
   local cor = co.create(fn)
   local idx = 0
-  local ret = tup()
+  local ret
   local nxt = tup(co.resume(cor, co, ...))
-  if not nxt.get() then
-    error((nxt.get(2)))
+  if not nxt() then
+    error((nxt(2)))
   end
   local gen = {
     -- TODO maybe these shouldnt be functions
@@ -74,13 +70,13 @@ M.genco = function (fn, ...)
       if gen:done() then
         return
       end
-      ret.set(nxt.get())
-      nxt.set(co.resume(cor, ...))
-      if not nxt.get() then
-        error((nxt.get(2)))
+      ret = nxt
+      nxt = tup(co.resume(cor, ...))
+      if not nxt() then
+        error((nxt(2)))
       else
         idx = idx + 1
-        return ret.get(2)
+        return ret(2)
       end
     end
   })
@@ -91,13 +87,14 @@ end
 M.gensent = function (fn, sent, ...)
   assert(compat.iscallable(fn))
   local idx = 0
-  local val = tup(fn(...))
+  local ret
+  local val = tup(fn(sent, ...))
   local gen = {
     idx = function ()
       return idx
     end,
     done = function ()
-      return val.get() == sent
+      return val() == sent
     end
   }
   return setmetatable(gen, {
@@ -106,8 +103,10 @@ M.gensent = function (fn, sent, ...)
       if gen:done() then
         return
       end
+      ret = val
+      val = tup(fn(sent, ...))
       idx = idx + 1
-      return val.set(fn(...))
+      return ret()
     end
   })
 end
@@ -116,12 +115,8 @@ M.gennil = function (fn, ...)
   return M.gensent(fn, nil, ...)
 end
 
--- TODO: Instead of relying on the user to
--- return M.END, pass M.END to fn so that the
--- user has it as a first arg to fn and can
--- return it, this hiding M.END from the user
 M.genend = function (fn, ...)
-  return M.gensent(fn, M.END, ...)
+  return M.gensent(fn, M, ...)
 end
 
 -- TODO: generator that signals end by returning

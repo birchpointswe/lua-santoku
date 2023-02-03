@@ -1,35 +1,14 @@
-local co = require("santoku.co")
-
-local function tuple ()
-  local co = co()
-  -- TODO: Can we pull this out as a top-level
-  -- declaration? How to we pass it "co"?
-  local function helper (...)
-    co.yield(...)
-    return helper(co.yield(...))
-  end
-  local cor = co.create(helper)
-  return function (...)
-    return select(2, co.resume(cor, ...))
+local function tuple (n, a, ...)
+  if n == 0 then
+    return function () end
+  else 
+    local rest = tuple(n - 1, ...)
+    return function (n)
+      return select(n or 1, a, rest())
+    end
   end
 end
 
--- This is absurd
 return function (...)
-  local active = tuple()
-  local inactive = tuple()
-  active(...)
-  return {
-    -- Stores a value, returns the stored value
-    set = function (...)
-      inactive(active())
-      active(...)
-      return inactive()
-    end,
-    -- Gets the stored value
-    get = function (i)
-      active, inactive = inactive, active
-      return select(i or 1, active(inactive()))
-    end
-  }
+  return tuple(select("#", ...), ...)
 end
