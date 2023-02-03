@@ -29,10 +29,6 @@ local co = require("santoku.co")
 
 local M = {}
 
--- TODO: Hide from the user. See the note on
--- M.genend
-M.END = {}
-
 -- TODO use inherit
 M.isgen = function (t)
   if type(t) ~= "table" then
@@ -91,7 +87,7 @@ M.gensent = function (fn, sent, ...)
   assert(compat.iscallable(fn))
   local idx = 0
   local ret
-  local nxt = compat.pack(fn(...))
+  local nxt = compat.pack(fn(sent, ...))
   local gen = {
     idx = function ()
       return idx
@@ -107,7 +103,7 @@ M.gensent = function (fn, sent, ...)
         return
       end
       ret = nxt
-      nxt = compat.pack(fn(...))
+      nxt = compat.pack(fn(sent, ...))
       idx = idx + 1
       return compat.unpack(ret)
     end
@@ -118,12 +114,8 @@ M.gennil = function (fn, ...)
   return M.gensent(fn, nil, ...)
 end
 
--- TODO: Instead of relying on the user to
--- return M.END, pass M.END to fn so that the
--- user has it as a first arg to fn and can
--- return it, this hiding M.END from the user
 M.genend = function (fn, ...)
-  return M.gensent(fn, M.END, ...)
+  return M.gensent(fn, M, ...)
 end
 
 -- TODO: generator that signals end by returning
