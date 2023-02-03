@@ -2,6 +2,8 @@ local co = require("santoku.co")
 
 local function tuple ()
   local co = co()
+  -- TODO: Can we pull this out as a top-level
+  -- declaration? How to we pass it "co"?
   local function helper (...)
     co.yield(...)
     return helper(co.yield(...))
