@@ -14,7 +14,6 @@ local function tuple ()
   end
 end
 
--- This is absurd
 return function (...)
   local active = tuple()
   local inactive = tuple()
