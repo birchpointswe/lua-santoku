@@ -46,7 +46,7 @@ end
 -- creation.
 M.genco = function (fn, ...)
   assert(compat.iscallable(fn))
-  local co = co.make()
+  local co = co()
   local cor = co.create(fn)
   local idx = 0
   local ret

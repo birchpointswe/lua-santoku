@@ -96,7 +96,7 @@ M.pwrap = function (run, onErr)
   onErr = onErr or function (...)
     return false, ...
   end
-  local co = co.make()
+  local co = co()
   local cor = co.create(function ()
     return run(M.pwrapper(co))
   end)
