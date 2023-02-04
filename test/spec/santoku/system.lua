@@ -8,10 +8,18 @@ describe("system", function ()
 
       local ok, iter = sys.sh("printf 'a\\nb\\nc\\n'")
       assert(ok)
-      assert.equals(iter(), "a")
-      assert.equals(iter(), "b")
-      assert.equals(iter(), "c")
-      assert(iter:done())
+
+      assert(iter:step())
+      assert.equals(iter.vals:get(1), "a")
+
+      assert(iter:step())
+      assert.equals(iter.vals:get(1), "b")
+
+      assert(iter:step())
+      assert.equals(iter.vals:get(1), "c")
+
+      assert(not iter:step())
+      assert(iter.done)
 
     end)
 

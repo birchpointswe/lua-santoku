@@ -41,7 +41,7 @@ M.dir = function (dir)
   if not ok then
     return false, entries, state
   else
-    return true, gen.gennil(function ()
+    return true, gen.iter(function ()
       return entries(state)
     end)
   end
@@ -52,44 +52,106 @@ end
 -- directories themselves
 -- TODO: Reverse arg order, allow multiple dirs
 M.walk = function (dir, opts)
+
   local prune = (opts or {}).prune or compat.const(false)
   local prunekeep = (opts or {}).prunekeep or false
   local leaves = (opts or {}).leaves or false
-  return gen.genco(function (co)
-    local ok, entries = M.dir(dir)
-    if not ok then
-      co.yield(false, entries)
-    else
-      while not entries:done() do
-        local it = entries()
-        if it ~= M.dirparent and it ~= M.dirthis then
-          it = M.join(dir, it)
-          local mode, err, code = lfs.attributes(it, "mode")
-          if not mode then
-            co.yield(false, err, code)
-          elseif mode == "directory" then
-            if not prune(it, mode) then
-              if not leaves then
-                co.yield(true, it, mode)
-                for ok0, it0, mode0 in M.walk(it, opts) do
-                  co.yield(ok0, it0, mode0)
+
+  local ok = true
+  local state = "init"
+  local parent, parents, children
+  local it, mode, err, cd
+
+  return gen(function (gen)
+    if state == "init" then
+      ok, parents, cd = M.dir(dir)
+      if not ok then
+        state = "done"
+        return gen:yield(false, parents, cd)
+      else
+        state = "parents"
+        return gen:step()
+      end
+    elseif state == "parents" then
+      if parents:step() then
+        return parents.vals:span(function (it)
+          if it ~= M.dirparent and it ~= M.dirthis then
+            parent = M.join(dir, it)
+            mode, err, cd = lfs.attributes(parent, "mode")
+            if not mode then
+              return gen:yield(false, parent, err, cd)
+            elseif mode == "directory" then
+              if not prune(parent, mode) then
+                if not leaves then
+                  state = "children"
+                  children = M.walk(parent, opts)
+                  return gen:yield(true, parent, mode)
+                else
+                  state = "children"
+                  children = M.walk(parent, opts)
+                  return gen:step()
                 end
-              else
-                for ok0, it0, mode0 in M.walk(it, opts) do
-                  co.yield(ok0, it0, mode0)
-                end
-                co.yield(true, it, mode)
+              elseif prunekeep then
+                return gen:yield(true, parent, mode)
               end
-            elseif prunekeep then
-              co.yield(true, it, mode)
+            else
+              return gen:yield(true, parent, mode)
             end
           else
-            co.yield(true, it, mode)
+            return gen:step()
           end
-        end
+        end)
+      else
+        return gen:stop()
+      end
+    elseif state == "children" then
+      if children:step() then
+        return gen:pass(children)
+      elseif leaves then
+        state = "parents"
+        return gen:yield(true, parent, mode)
+      else
+        state = "parents"
+        return gen:step()
       end
     end
   end)
+
+  -- return gen(function ()
+  --   if not ok then
+  --     co.yield(false, entries)
+  --   else
+  --     while not entries:done() do
+  --       local it = entries()
+  --       if it ~= M.dirparent and it ~= M.dirthis then
+  --         it = M.join(dir, it)
+  --         local mode, err, code = lfs.attributes(it, "mode")
+  --         if not mode then
+  --           co.yield(false, err, code)
+  --         elseif mode == "directory" then
+  --           if not prune(it, mode) then
+  --             if not leaves then
+  --               co.yield(true, it, mode)
+  --               for ok0, it0, mode0 in M.walk(it, opts) do
+  --                 co.yield(ok0, it0, mode0)
+  --               end
+  --             else
+  --               for ok0, it0, mode0 in M.walk(it, opts) do
+  --                 co.yield(ok0, it0, mode0)
+  --               end
+  --               co.yield(true, it, mode)
+  --             end
+  --           elseif prunekeep then
+  --             co.yield(true, it, mode)
+  --           end
+  --         else
+  --           co.yield(true, it, mode)
+  --         end
+  --       end
+  --     end
+  --   end
+  -- end)
+
 end
 
 -- TODO: Avoid pcall by using io.open/read
@@ -100,11 +162,11 @@ end
 -- max line size, etc.
 -- TODO: Need a way to abort this iterator and close the file
 M.lines = function (fp)
-  local ok, iter, cd = pcall(io.lines, fp)
-  if ok then
-    return true, gen.gennil(iter)
+  local ok, lines, cd = pcall(io.lines, fp)
+  if not ok then
+    return false, lines, cd
   else
-    return false, iter, cd
+    return true, gen.iter(lines)
   end
 end
 
@@ -248,7 +310,7 @@ end
 
 M.rmdirs = function (dir)
   return err.pwrap(function (check)
-    M.dirs(dir, { recurse = true, leaves = true })
+   return M.dirs(dir, { recurse = true, leaves = true })
       :map(check)
       :map(M.rmdir)
       :each(check)

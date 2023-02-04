@@ -47,6 +47,8 @@ M.id = function (...)
   return ...
 end
 
+M.noop = function () end
+
 M.const = function (...)
   local args = M.pack(...)
   return function ()
