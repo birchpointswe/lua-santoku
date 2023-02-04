@@ -28,7 +28,7 @@ local err = require("santoku.err")
 local fun = require("santoku.fun")
 local compat = require("santoku.compat")
 local op = require("santoku.op")
-local co = require("santoku.co")
+local tup = require("santoku.tuple")
 
 local M = {}
 
@@ -50,12 +50,12 @@ end
 M.gen = function (run, ...)
   run = run or compat.noop
   assert(compat.iscallable(run))
-  local args = vec(...)
+  local args = tup(...)
   return setmetatable({
       run = function (yield, ...)
         yield = yield or compat.noop
         assert(compat.iscallable(yield))
-        return run(yield, args:append(...):unpack())
+        return run(yield, args(...))
       end
   }, {
     __index = M,
@@ -64,13 +64,17 @@ end
 
 M.iter = function (fn)
   return M.gen(function (yield)
-    local val
-    while true do
-      val = fn()
-      if val ~= nil then
-        yield(val)
-      else
-        break
+    if yield == compat.noop then
+      while fn() ~= nil do end
+    else
+      local val
+      while true do
+        val = fn()
+        if val ~= nil then
+          yield(val)
+        else
+          break
+        end
       end
     end
   end)
@@ -149,17 +153,18 @@ M.reduce = function (gen, acc, ...)
   assert(M.isgen(gen))
   assert(compat.iscallable(acc))
   local ready = false
-  local val = vec(...)
+  local val, m = tup(...)
   gen:each(function (...)
-    if not ready and val.n == 0 then
+    if not ready and m == 0 then
       ready = true
-      return val:append(...)
+      val = tup(...)
+      return 
     elseif not ready then
       ready = true
     end
-    return val:overlay(acc(val:append(...):unpack()))
+    val = tup(acc(val(...)))
   end)
-  return val:unpack()
+  return val()
 end
 
 M.filter = function (gen, fn)
@@ -355,6 +360,17 @@ M.vec = function (gen, v)
   end, v)
 end
 
+M.tup = function (gen)
+  assert(M.isgen(gen))
+  return gen:reduce(function (t, ...)
+    if select("#", ...) <= 1 then
+      return (tup(t(...)))
+    else
+      return (tup(t((tup(...)))))
+    end
+  end, (tup()))
+end
+
 -- TODO: Currently the implementation using
 -- zip:map results in one extra generator read.
 -- If, for example, you have two generators, one
@@ -399,11 +415,11 @@ end
 
 M.last = function (gen)
   assert(M.isgen(gen))
-  local last = vec()
+  local last = tup()
   gen:each(function (...)
-    last:overlay(...)
+    last = tup(...)
   end)
-  return last:unpack()
+  return last()
 end
 
 -- TODO: Should return a new gen that skips the

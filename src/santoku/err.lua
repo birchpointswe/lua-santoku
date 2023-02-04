@@ -1,4 +1,4 @@
-local vec = require("santoku.vector")
+local tup = require("santoku.tuple")
 local compat = require("santoku.compat")
 local co = require("santoku.co")
 
@@ -33,9 +33,7 @@ M.error = function (...)
 end
 
 M.pwrapper = function (co, ...)
-  local errs = vec(...)
-  local args = vec()
-  local nargs = 0
+  local errs = tup(...)
   local wrapper = {
     err = function (...)
       return M.pwrapper(co, ...)
@@ -44,10 +42,7 @@ M.pwrapper = function (co, ...)
       if val ~= nil then
         return val, ...
       else
-        args:trunc():append(...)
-        errs:trunc(errs.n - nargs):extend(args)
-        nargs = args.n
-        return co.yield(errs:unpack())
+        return co.yield(errs(...))
       end
     end,
     -- TODO: Allow exists to be stacked with ok
@@ -60,20 +55,14 @@ M.pwrapper = function (co, ...)
       if ok and val ~= nil then
         return val, ...
       else
-        args:trunc():append(...)
-        errs:trunc(errs.n - nargs):extend(args)
-        nargs = args.n
-        return co.yield(errs:unpack())
+        return co.yield(errs(...))
       end
     end,
     ok = function (ok, ...)
       if ok then
         return ...
       else
-        args:trunc():append(...)
-        errs:trunc(errs.n - nargs):extend(args)
-        nargs = args.n
-        return co.yield(errs:unpack())
+        return co.yield(errs(...))
       end
     end
   }
@@ -100,22 +89,22 @@ M.pwrap = function (run, onErr)
   local cor = co.create(function ()
     return run(M.pwrapper(co))
   end)
-  local ret = vec()
-  local nxt = vec()
+  local ret
+  local nxt = tup()
   while true do
-    ret:trunc():append(co.resume(cor, nxt:unpack(2)))
+    ret = tup(co.resume(cor, select(2, nxt())))
     local status = co.status(cor)
     if status == "dead" then
       break
     elseif status == "suspended" then
-      nxt:trunc():append(onErr(ret:unpack(2)))
-      if not nxt[1] then
+      nxt = tup(onErr(select(2, ret)))
+      if not nxt() then
         ret = nxt
         break
       end
     end
   end
-  return ret:unpack()
+  return ret()
 end
 
 return M
