@@ -4,7 +4,8 @@ describe("tuple", function ()
 
   it("stores varargs", function ()
 
-    local tup = tup(1, 2, 3)
+    local tup, m = tup(1, 2, 3)
+    assert(m == 3)
 
     local a, b, c = tup()
     assert.equals(1, a)
@@ -15,7 +16,8 @@ describe("tuple", function ()
 
   it("allows append", function ()
 
-    local tup = tup(1)
+    local tup, m = tup(1)
+    assert(m == 1)
 
     local a, b, c = tup(2, 3)
     assert.equals(1, a)

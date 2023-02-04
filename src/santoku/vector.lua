@@ -22,6 +22,7 @@
 -- TODO: Fn for reusing a vec
 
 local compat = require("santoku.compat")
+local tup = require("santoku.tuple")
 local op = require("santoku.op")
 local tbl = require("santoku.table")
 
@@ -282,23 +283,21 @@ M.map = function (t, fn, ...)
   return t
 end
 
--- TODO: Can we eliminate some M.packs()?
 M.reduce = function (t, acc, ...)
   assert(M.isvec(t))
   assert(compat.iscallable(acc))
   local start = 1
-  local val = M.pack(...)
+  local val, n = tup(...)
   if t.n == 0 then
-    return val:unpack()
-  elseif val.n == 0 then
+    return val()
+  elseif n == 0 then
     start = 2
-    val = M.pack(t[1])
+    val = tup(t[1])
   end
   for i = start, t.n do
-    val:append(t[i])
-    val = M.pack(acc(val:unpack()))
+    val = tup(acc(val(t[i])))
   end
-  return val:unpack()
+  return val()
 end
 
 M.filter = function (t, fn, ...)
@@ -344,32 +343,32 @@ M.zip = function (...)
   assert(type(opts) == "table")
   local mode = opts.mode or "first"
   assert(mode == "first" or mode == "longest")
-  local ret = M.pack()
+  local ret = tup()
   local m = select("#", ...)
   local i = 1
   while true do
-    local nxt = M.pack()
+    local nxt = tup()
     local nils = 0
     for j = start, m do
       local vec = select(j, ...)
       if vec.n < i then
         if j == 1 and mode == "first" then
-          return ret
+          return ret()
         end
         nils = nils + 1
-        nxt:append(nil)
+        nxt = tup(nxt(nil))
       else
-        nxt:append(vec[i])
+        nxt = tup(nxt(vec[i]))
       end
     end
     if nils == m then
       break
     else
-      ret:append(nxt)
+      ret = tup(ret(nxt))
     end
     i = i + 1
   end
-  return ret
+  return ret()
 end
 
 M.span = function (t, fn)
