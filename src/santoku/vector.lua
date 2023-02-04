@@ -255,6 +255,16 @@ M.append = function (t, ...)
   return M.appendo(t, t.n + 1, ...)
 end
 
+M.overlay = function (t, ...)
+  assert(M.isvec(t))
+  return M.appendo(t, 1, ...)
+end
+
+M.apply = function (t, fn, ...)
+  assert(M.isvec(t))
+  return t:overlay(t:span(fn, ...))
+end
+
 M.each = function (t, fn, ...)
   assert(M.isvec(t))
   assert(compat.iscallable(fn))
@@ -360,6 +370,13 @@ M.zip = function (...)
     i = i + 1
   end
   return ret
+end
+
+M.span = function (t, fn)
+  assert(M.isvec(t))
+  fn = fn or compat.id
+  assert(compat.iscallable(fn))
+  return fn(t:unpack())
 end
 
 M.tabulate = function (t, ...)

@@ -38,11 +38,11 @@ local function query (db, stmt, ...)
   else
     local res = nil
     local err = false
-    return true, gen.genco(function (co)
+    return true, gen(function (yield)
       while true do
         res = stmt:step()
         if res == sqlite.ROW then
-          co.yield(true, stmt:get_named_values())
+          yield(true, stmt:get_named_values())
         elseif res == sqlite.DONE then
           break
         else
@@ -52,7 +52,7 @@ local function query (db, stmt, ...)
       end
       stmt:reset()
       if err then
-        co.yield(false, db.db:errmsg(), db.db:errcode())
+        yield(false, db.db:errmsg(), db.db:errcode())
       end
     end)
   end
@@ -174,13 +174,10 @@ M.wrap = function (db)
             return false, iter, cd
           end
           local val
-          while not iter:done() do
-            ok, val, cd = iter()
-            if not ok then
-              return false, val, cd
-            end
-          end
-          return true, val
+          iter:each(function (ok0, val0, cd0)
+            ok, val, cd = ok0, val0, cd0
+          end)
+          return ok, val, cd
         end)
       end
     end,

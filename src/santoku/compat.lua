@@ -43,6 +43,8 @@ M.unpackr = function (t)
   return unpackr(t, t.n)
 end
 
+M.noop = function () end
+
 M.id = function (...)
   return ...
 end

@@ -1,3 +1,6 @@
+-- TODO: With the callback version there doesn't
+-- seem to be an easy way to exit early
+
 -- TODO: Leverage "inherit" to set __index
 
 -- TODO: We should not assign all of M to the
@@ -44,84 +47,33 @@ end
 -- the coroutine, not just the yields
 -- TODO: Cache value on :done() not on generator
 -- creation.
-M.genco = function (fn, ...)
-  assert(compat.iscallable(fn))
-  local co = co()
-  local cor = co.create(fn)
-  local idx = 0
-  local ret = vec()
-  local nxt = vec(co.resume(cor, co, ...))
-  if not nxt[1] then
-    error(nxt[2])
-  end
-  local gen = {
-    -- TODO maybe these shouldnt be functions
-    idx = function ()
-      return idx
-    end,
-    done = function ()
-      return co.status(cor) == "dead"
-    end
-  }
-  return setmetatable(gen, {
-    __index = M,
-    __call = function (...)
-      if gen:done() then
-        return
+M.gen = function (run, ...)
+  run = run or compat.noop
+  assert(compat.iscallable(run))
+  local args = vec(...)
+  return setmetatable({
+      run = function (yield, ...)
+        yield = yield or compat.noop
+        assert(compat.iscallable(yield))
+        return run(yield, args:append(...):unpack())
       end
-      nxt, ret = ret, nxt
-      nxt:appendo(1, co.resume(cor, ...))
-      if not nxt[1] then
-        error(nxt[2])
+  }, {
+    __index = M,
+  })
+end
+
+M.iter = function (fn)
+  return M.gen(function (yield)
+    local val
+    while true do
+      val = fn()
+      if val ~= nil then
+        yield(val)
       else
-        idx = idx + 1
-        return ret:unpack(2)
+        break
       end
     end
-  })
-end
-
--- TODO: Cache value on :done() not on generator
--- creation.
-M.gensent = function (fn, sent, ...)
-  assert(compat.iscallable(fn))
-  local idx = 0
-  local ret = vec()
-  local nxt = vec(fn(sent, ...))
-  local gen = {
-    idx = function ()
-      return idx
-    end,
-    done = function ()
-      return nxt:get(1) == sent
-    end
-  }
-  return setmetatable(gen, {
-    __index = M,
-    __call = function (...)
-      if gen:done() then
-        return
-      end
-      nxt, ret = ret, nxt
-      nxt:appendo(1, fn(sent, ...))
-      idx = idx + 1
-      return ret:unpack()
-    end
-  })
-end
-
-M.gennil = function (fn, ...)
-  return M.gensent(fn, nil, ...)
-end
-
-M.genend = function (fn, ...)
-  return M.gensent(fn, M, ...)
-end
-
--- TODO: generator that signals end by returning
--- zero values. Not sure where we'd use this..
-M.genzero = function ()
-  err.unimplemented("genzero")
+  end)
 end
 
 M.ipairs = function(t)
@@ -145,10 +97,11 @@ end
 -- TODO: This should just be called gen(...) to
 -- follow the pattern of vec and tbl
 M.args = function (...)
-  local args = vec(...)
-  return M.genco(function (co)
-    args:each(co.yield)
-  end)
+  return M.gen(function (yield, ...)
+    for i = 1, select("#", ...) do
+      yield((select(i, ...)))
+    end
+  end, ...)
 end
 
 M.vals = function (t)
@@ -171,54 +124,54 @@ M.ikeys = function (t)
   return M.ipairs(t):map(fun.nret(1))
 end
 
-M.map = function (gen, fn, ...)
+M.index = function (gen)
+  assert(M.isgen(gen))
+  local idx = 0
+  return M.gen(function (each)
+    return gen:each(function (...)
+      idx = idx + 1
+      return each(idx, ...)
+    end)
+  end)
+end
+
+M.map = function (gen, fn)
   assert(M.isgen(gen))
   fn = fn or fun.id
-  local val = vec()
-  local args = vec(...)
-  return M.genco(function (co)
-    -- TODO: Potential perf improvement by
-    -- prepending gen() rets into args, moving
-    -- args around as needed. 
-    while not gen:done() do
-      val:appendo(1, gen())
-      co.yield(fn(val:extend(args):unpack()))
-    end
+  return M.gen(function (yield)
+    return gen:each(function (...)
+      return yield(fn(...))
+    end)
   end)
 end
 
 M.reduce = function (gen, acc, ...)
   assert(M.isgen(gen))
   assert(compat.iscallable(acc))
+  local ready = false
   local val = vec(...)
-  if gen:done() then
-    return val:unpack()
-  elseif val.n == 0 then
-    val:append(gen())
-  end
-  while not gen:done() do
-    val:append(gen())
-    val:appendo(1, acc(val:unpack()))
-  end
+  gen:each(function (...)
+    if not ready and val.n == 0 then
+      ready = true
+      return val:append(...)
+    elseif not ready then
+      ready = true
+    end
+    return val:overlay(acc(val:append(...):unpack()))
+  end)
   return val:unpack()
 end
 
-M.filter = function (gen, fn, ...)
+M.filter = function (gen, fn)
   assert(M.isgen(gen))
   fn = fn or compat.id
   assert(compat.iscallable(fn))
-  local val = vec()
-  local args = vec(...)
-  return M.genco(function (co)
-    -- TODO: Potential perf improvement by
-    -- prepending gen() rets into args, moving
-    -- args around as needed. 
-    while not gen:done() do
-      val:appendo(1, gen())
-      if fn(val:extend(args):unpack()) then
-        co.yield(val:unpack())
+  return M.gen(function (yield)
+    return gen:each(function (...)
+      if fn(...) then
+        return yield(...)
       end
-    end
+    end)
   end)
 end
 
@@ -259,20 +212,25 @@ M.zip = function (opts, ...)
   end)
 end
 
-M.take = function (gen, n)
-  assert(M.isgen(gen))
-  assert(n == nil or type(n) == "number")
-  if n == nil then
-    return gen
-  else
-    return M.genco(function (co)
-      while n > 0 and not gen:done() do
-        co.yield(gen())
-        n = n - 1
-      end
-    end)
-  end
-end
+-- TODO: Doesn't work in callback world
+-- M.take = function (gen, n)
+--   assert(M.isgen(gen))
+--   assert(n == nil or type(n) == "number")
+--   if n == nil then
+--     return gen:clone()
+--   else
+--     return M.gen(function (yield)
+--       return gen:each(function (...)
+--         if n > 0 then
+--           n = n - 1
+--           return yield(...)
+--         else
+--           return gen:stop()
+--         end
+--       end)
+--     end)
+--   end
+-- end
 
 M.find = function (gen, ...)
   assert(M.isgen(gen))
@@ -292,11 +250,9 @@ end
 
 M.each = function (gen, fn, ...)
   assert(M.isgen(gen))
-  local val = vec()
-  while not gen:done() do
-    val:appendo(1, gen()):append(...)
-    fn(val:unpack())
-  end
+  fn = fn or compat.noop
+  assert(compat.iscallable(fn))
+  return gen.run(fn, ...)
 end
 
 M.tabulate = function (gen, opts, ...)
@@ -352,9 +308,19 @@ end
 
 M.chunk = function (gen, n)
   assert(M.isgen(gen))
-  return M.genco(function (co)
-    while not gen:done() do
-      co.yield(gen:take(n):vec())
+  assert(type(n) == "number" and n > 0)
+  local chunk = vec()
+  return M.gen(function (yield)
+    gen:each(function(...)
+      if chunk.n >= n then
+        yield(chunk)
+        chunk = vec(...)
+      else
+        chunk:append(...)
+      end
+    end)
+    if chunk.n > 0 then
+      yield(chunk)
     end
   end)
 end
@@ -371,9 +337,7 @@ end
 
 M.discard = function (gen)
   assert(M.isgen(gen))
-  while not gen:done() do
-    gen()
-  end
+  return gen:each()
 end
 
 -- TODO: Need some tests to define nil handing
@@ -386,7 +350,7 @@ M.vec = function (gen, v)
     if select("#", ...) <= 1 then
       return a:append(...)
     else
-      return a:append({ ... })
+      return a:append(vec(...))
     end
   end, v)
 end
@@ -427,30 +391,32 @@ M.max = function (gen, ...)
   end, ...)
 end
 
-M.head = function (gen)
-  assert(M.isgen(gen))
-  return gen()
-end
+-- TODO: Should return new gen
+-- M.head = function (gen)
+--   assert(M.isgen(gen))
+--   return gen()
+-- end
 
--- TODO: Leverage vec reuse
 M.last = function (gen)
   assert(M.isgen(gen))
   local last = vec()
-  while not gen:done() do
-    last:appendo(1, gen())
-  end
+  gen:each(function (...)
+    last:overlay(...)
+  end)
   return last:unpack()
 end
 
-M.tail = function (gen)
-  assert(M.isgen(gen))
-  gen()
-  return gen
-end
+-- TODO: Should return a new gen that skips the
+-- first
+-- M.tail = function (gen)
+--   assert(M.isgen(gen))
+--   gen()
+--   return gen
+-- end
 
-M.done = function (gen)
-  assert(M.isgen(gen))
-  return gen:done()
-end
-
-return M
+return setmetatable({}, {
+  __index = M,
+  __call = function (_, ...)
+    return M.gen(...)
+  end
+})

@@ -38,12 +38,12 @@ end
 
 M.dir = function (dir)
   local ok, entries, state = pcall(lfs.dir, dir)
-  if not ok then
-    return false, entries, state
-  else
-    return true, gen.gennil(function ()
+  if ok then
+    return true, gen.iter(function ()
       return entries(state)
     end)
+  else
+    return false, entries, state
   end
 end
 
@@ -55,39 +55,34 @@ M.walk = function (dir, opts)
   local prune = (opts or {}).prune or compat.const(false)
   local prunekeep = (opts or {}).prunekeep or false
   local leaves = (opts or {}).leaves or false
-  return gen.genco(function (co)
-    local ok, entries = M.dir(dir)
+  return gen(function (each)
+    local ok, entries, cd = M.dir(dir)
     if not ok then
-      co.yield(false, entries)
+      return each(false, entries, cd)
     else
-      while not entries:done() do
-        local it = entries()
+      return entries:each(function (it)
         if it ~= M.dirparent and it ~= M.dirthis then
           it = M.join(dir, it)
           local mode, err, code = lfs.attributes(it, "mode")
           if not mode then
-            co.yield(false, err, code)
+            return each(false, err, code)
           elseif mode == "directory" then
             if not prune(it, mode) then
               if not leaves then
-                co.yield(true, it, mode)
-                for ok0, it0, mode0 in M.walk(it, opts) do
-                  co.yield(ok0, it0, mode0)
-                end
+                each(true, it, mode)
+                return M.walk(it, opts):each(each)
               else
-                for ok0, it0, mode0 in M.walk(it, opts) do
-                  co.yield(ok0, it0, mode0)
-                end
-                co.yield(true, it, mode)
+                M.walk(it, opts):each(each)
+                return each(true, it, mode)
               end
             elseif prunekeep then
-              co.yield(true, it, mode)
+              return each(true, it, mode)
             end
           else
-            co.yield(true, it, mode)
+            return each(true, it, mode)
           end
         end
-      end
+      end)
     end
   end)
 end
@@ -102,7 +97,7 @@ end
 M.lines = function (fp)
   local ok, iter, cd = pcall(io.lines, fp)
   if ok then
-    return true, gen.gennil(iter)
+    return true, gen.iter(iter)
   else
     return false, iter, cd
   end

@@ -74,17 +74,11 @@ describe("sqlite", function ()
     local ok, states = getstates()
     assert.equals(true, ok, states)
 
-    local ok, st = states()
-    assert.equals(true, ok, st)
-    assert.same(st, { name = "New York", state = "New York" })
-
-    local ok, st = states()
-    assert.equals(true, ok, st)
-    assert.same(st, { name = "Buffalo", state = "New York" })
-
-    local ok, st = states()
-    assert.equals(true, ok, st)
-    assert.same(st, { name = "Albany", state = "New York" })
+    states = states:vec()
+    assert.same(states[1], { true, { name = "New York", state = "New York" }, n = 2 })
+    assert.same(states[2], { true, { name = "Buffalo", state = "New York" }, n = 2 })
+    assert.same(states[3], { true, { name = "Albany", state = "New York" }, n = 2 })
+    assert.equals(states.n, 5)
 
   end)
 
