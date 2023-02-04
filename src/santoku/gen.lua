@@ -81,47 +81,18 @@ M.genco = function (fn, ...)
   })
 end
 
--- TODO: Cache value on :done() not on generator
--- creation.
-M.gensent = function (fn, sent, ...)
-  assert(compat.iscallable(fn))
-  local idx = 0
-  local ret = vec()
-  local nxt = vec(fn(sent, ...))
-  local gen = {
-    idx = function ()
-      return idx
-    end,
-    done = function ()
-      return nxt:get(1) == sent
-    end
-  }
-  return setmetatable(gen, {
-    __index = M,
-    __call = function (...)
-      if gen:done() then
-        return
-      end
-      nxt, ret = ret, nxt
-      nxt:appendo(1, fn(sent, ...))
-      idx = idx + 1
-      return ret:unpack()
-    end
-  })
-end
-
 M.gennil = function (fn, ...)
-  return M.gensent(fn, nil, ...)
-end
-
-M.genend = function (fn, ...)
-  return M.gensent(fn, M, ...)
-end
-
--- TODO: generator that signals end by returning
--- zero values. Not sure where we'd use this..
-M.genzero = function ()
-  err.unimplemented("genzero")
+  return M.genco(function (co, ...) 
+    while true do
+      -- TODO: allow multi-arg return
+      local ent = fn(...)
+      if ent ~= nil then
+        co.yield(ent)
+      else
+        break
+      end
+    end
+  end, ...)
 end
 
 M.ipairs = function(t)

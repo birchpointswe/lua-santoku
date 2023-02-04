@@ -71,39 +71,6 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("genend", function ()
-
-    it("allows one to define sentinal value iterators", function ()
-
-      local n = 0
-
-      local gen = gen.genend(function (sent)
-        n = n + 1
-        if n > 3 then
-          return sent
-        else
-          return n
-        end
-      end)
-
-      assert.equals(0, gen:idx())
-      assert(not gen:done())
-
-      assert.equals(1, gen())
-      assert.equals(1, gen:idx())
-
-      assert.equals(2, gen())
-      assert.equals(2, gen:idx())
-
-      assert.equals(3, gen())
-      assert.equals(3, gen:idx())
-
-      assert(gen:done())
-
-    end)
-
-  end)
-
   describe("gennil", function ()
 
     it("is 'done' when nil returned", function ()
@@ -353,13 +320,6 @@ describe("santoku.gen", function ()
       end)
       assert.equals(t, 6)
       assert(gen:done())
-    end)
-
-    it("returns the initial value for a empty generator", function ()
-      local gen = gen.genend(function (sent) return sent end)
-      assert(gen:done())
-      local v = gen:reduce(function () end, 10)
-      assert.equals(10, v)
     end)
 
   end)
