@@ -1,12 +1,14 @@
 local function tuple (n, a, ...)
   if n == 0 then
-    return function (...) 
-      return ... 
+    return function (k, ...)
+      return k(...)
     end, 0
-  else 
+  else
     local rest = tuple(n - 1, ...)
-    return function (...)
-      return a, rest(...)
+    return function (k, ...)
+      return rest(function (...)
+        return k(a, ...)
+      end, ...)
     end, n
   end
 end

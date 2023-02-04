@@ -128,9 +128,10 @@ describe("santoku.gen", function ()
 
     it("takes n items from a generator", function ()
       local vals = gen.args(1, 2, 3):chunk(2):tup()
-      local a, b = vals()
-      assert.same(a, { 1, 2, n = 2 })
-      assert.same(b, { 3, n = 1 })
+      vals(function (a, b)
+        assert.same(a, { 1, 2, n = 2 })
+        assert.same(b, { 3, n = 1 })
+      end)
     end)
 
   end)

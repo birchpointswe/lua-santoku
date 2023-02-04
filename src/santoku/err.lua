@@ -42,7 +42,9 @@ M.pwrapper = function (co, ...)
       if val ~= nil then
         return val, ...
       else
-        return co.yield(errs(...))
+        return errs(function (...)
+          return co.yield(...)
+        end, ...)
       end
     end,
     -- TODO: Allow exists to be stacked with ok
@@ -55,14 +57,18 @@ M.pwrapper = function (co, ...)
       if ok and val ~= nil then
         return val, ...
       else
-        return co.yield(errs(...))
+        return errs(function (...)
+          return co.yield(...)
+        end, ...)
       end
     end,
     ok = function (ok, ...)
       if ok then
         return ...
       else
-        return co.yield(errs(...))
+        return errs(function (...)
+          return co.yield(...)
+        end, ...)
       end
     end
   }
@@ -92,19 +98,23 @@ M.pwrap = function (run, onErr)
   local ret
   local nxt = tup()
   while true do
-    ret = tup(co.resume(cor, select(2, nxt())))
+    ret = nxt(function (...)
+      return tup(co.resume(cor, select(2, ...)))
+    end)
     local status = co.status(cor)
     if status == "dead" then
       break
     elseif status == "suspended" then
-      nxt = tup(onErr(select(2, ret)))
-      if not nxt() then
+      nxt = ret(function (...)
+        return tup(onErr(select(2, ...)))
+      end)
+      if not nxt(compat.id) then
         ret = nxt
         break
       end
     end
   end
-  return ret()
+  return ret(compat.id)
 end
 
 return M

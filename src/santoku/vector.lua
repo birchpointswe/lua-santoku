@@ -289,15 +289,17 @@ M.reduce = function (t, acc, ...)
   local start = 1
   local val, n = tup(...)
   if t.n == 0 then
-    return val()
+    return val(compat.id)
   elseif n == 0 then
     start = 2
     val = tup(t[1])
   end
   for i = start, t.n do
-    val = tup(acc(val(t[i])))
+    val = val(function (...)
+      return tup(acc(...))
+    end, t[i])
   end
-  return val()
+  return val(compat.id)
 end
 
 M.filter = function (t, fn, ...)

@@ -170,7 +170,7 @@ end
 M.joinwith = function (d, ...)
   local de = str.escape(d)
   local pat = string.format("(%s)*$", de)
-  return vec(...)
+  local ret = vec(...)
     :filter()
     :reduce(function (a, n)
       return table.concat({
@@ -180,6 +180,7 @@ M.joinwith = function (d, ...)
         (n:gsub(pat, ""))
       }, d)
     end)
+  return ret
 end
 
 M.splitparts = function (fp, opts)

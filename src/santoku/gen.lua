@@ -24,7 +24,6 @@
 -- open files, etc.
 
 local vec = require("santoku.vector")
-local err = require("santoku.err")
 local fun = require("santoku.fun")
 local compat = require("santoku.compat")
 local op = require("santoku.op")
@@ -55,7 +54,9 @@ M.gen = function (run, ...)
       run = function (yield, ...)
         yield = yield or compat.noop
         assert(compat.iscallable(yield))
-        return run(yield, args(...))
+        return args(function (...)
+          return run(yield, ...)
+        end, ...)
       end
   }, {
     __index = M,
@@ -155,16 +156,18 @@ M.reduce = function (gen, acc, ...)
   local ready = false
   local val, m = tup(...)
   gen:each(function (...)
-    if not ready and m == 0 then
-      ready = true
-      val = tup(...)
-      return 
-    elseif not ready then
-      ready = true
-    end
-    val = tup(acc(val(...)))
+    return val(function (...)
+      if not ready and m == 0 then
+        ready = true
+        val = tup(...)
+        return
+      elseif not ready then
+        ready = true
+      end
+      val = tup(acc(...))
+    end, ...)
   end)
-  return val()
+  return val(compat.id)
 end
 
 M.filter = function (gen, fn)
@@ -364,9 +367,13 @@ M.tup = function (gen)
   assert(M.isgen(gen))
   return gen:reduce(function (t, ...)
     if select("#", ...) <= 1 then
-      return (tup(t(...)))
+      return t(function (...)
+        return (tup(...))
+      end, ...)
     else
-      return (tup(t((tup(...)))))
+      return t(function (...)
+        return (tup(...))
+      end, (tup(...)))
     end
   end, (tup()))
 end
@@ -419,7 +426,7 @@ M.last = function (gen)
   gen:each(function (...)
     last = tup(...)
   end)
-  return last()
+  return last(compat.id)
 end
 
 -- TODO: Should return a new gen that skips the
