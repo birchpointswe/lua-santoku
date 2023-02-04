@@ -39,9 +39,7 @@ end
 M.dir = function (dir)
   local ok, entries, state = pcall(lfs.dir, dir)
   if ok then
-    return true, gen.iter(function ()
-      return entries(state)
-    end)
+    return true, gen.iter(entries, state)
   else
     return false, entries, state
   end
@@ -97,7 +95,7 @@ end
 M.lines = function (fp)
   local ok, iter, cd = pcall(io.lines, fp)
   if ok then
-    return true, gen.iter(iter)
+    return true, gen.iter(compat.const(iter))
   else
     return false, iter, cd
   end

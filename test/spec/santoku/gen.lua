@@ -10,145 +10,148 @@ local vec = require("santoku.vector")
 
 describe("santoku.gen", function ()
 
-  -- describe("gen", function ()
+  describe("gen", function ()
 
-  --   it("should create a generator", function ()
+    it("should create a generator", function ()
 
-  --     local vals = gen(function (yield)
-  --       yield(1)
-  --       yield(2)
-  --     end)
+      local vals = gen(function (yield)
+        yield(1)
+        yield(2)
+      end)
 
-  --     local called = 0
-  --     vals:index():each(function (idx, i)
-  --       called = called + 1
-  --       assert(idx == i)
-  --     end)
+      local called = 0
+      vals:index():each(function (idx, i)
+        called = called + 1
+        assert(idx == i)
+      end)
 
-  --     assert(called == 2)
+      assert(called == 2)
 
-  --   end)
+    end)
 
-  --   it("shouldnt call the callback if empty", function ()
+    it("shouldnt call the callback if empty", function ()
 
-  --     local vals = gen()
+      local vals = gen()
 
-  --     local called = 0
+      local called = 0
 
-  --     vals:each(function ()
-  --       called = called + 1
-  --     end)
+      vals:each(function ()
+        called = called + 1
+      end)
 
-  --     assert(called == 0)
+      assert(called == 0)
 
-  --   end)
+    end)
 
-  -- end)
+    it("allows for early exit", function ()
 
-  -- describe("vec", function ()
+      local gen = gen.args(1, 2, 3)
+      local two = gen:take(2)
 
-  --   it("collects generator returns into a vec", function ()
+      assert.same(vec(1, 2), two:vec())
+      assert.same(vec(3), gen:vec())
 
-  --     local vals = gen(function (yield)
-  --       yield(1, 2, 3)
-  --       yield(4, 5, 6)
-  --     end):vec()
-
-  --     local expected = vec(vec(1, 2, 3), vec(4, 5, 6))
-
-  --     assert.same(expected, vals)
-
-  --   end)
-
-  -- end)
-
-  -- describe("args", function ()
-
-  --   it("iterates over arguments", function ()
-
-  --     local v = gen.args(1, 2, 3, 4):vec()
-
-  --     assert.same(v, { 1, 2, 3, 4, n = 4 })
-
-  --   end)
-
-  --   it("handles arg nils", function ()
-
-  --     local v = gen.args(1, nil, 2, nil, nil):vec()
-
-  --     assert.same(v, { 1, nil, 2, nil, nil, n = 5 })
-
-  --   end)
-
-  -- end)
-
-  -- describe("map", function ()
-
-  --   it("maps over a generator", function ()
-
-  --     local vals = gen.args(1, 2):map(function (a)
-  --       return a * 2
-  --     end):vec()
-
-  --     assert.same(vals, { 2, 4, n = 2 })
-
-  --   end)
-
-  -- end)
-
-  -- describe("reduce", function ()
-
-  --   it("reduces a generator", function ()
-  --     local vals = gen.args(1, 2, 3):reduce(function (a, n)
-  --       return a + n
-  --     end)
-  --     assert.same(vals, 6)
-  --   end)
-
-  -- end)
-
-  -- describe("filter", function ()
-
-  --   it("filters a generator", function ()
-
-  --     local vals = gen
-  --       .args(1, 2, 3, 4, 5, 6)
-  --       :filter(function (n)
-  --         return (n % 2) == 0
-  --       end)
-  --       :vec()
-
-  --     assert.same(vals, vec(2, 4, 6))
-
-  --   end)
-
-  -- end)
-
-  describe("chunk", function ()
-
-    it("takes n items from a generator", function ()
-      local vals = gen.args(1, 2, 3):chunk(2):tup()
-      local a, b = vals()
-      assert.same(a, { 1, 2, n = 2 })
-      assert.same(b, { 3, n = 1 })
     end)
 
   end)
+
+  --describe("vec", function ()
+
+  --  it("collects generator returns into a vec", function ()
+
+  --    local vals = gen(function (yield)
+  --      yield(1, 2, 3)
+  --      yield(4, 5, 6)
+  --    end):vec()
+
+  --    local expected = vec(vec(1, 2, 3), vec(4, 5, 6))
+
+  --    assert.same(expected, vals)
+
+  --  end)
+
+  --end)
+
+  --describe("args", function ()
+
+  --  it("iterates over arguments", function ()
+
+  --    local v = gen.args(1, 2, 3, 4):vec()
+
+  --    assert.same(v, { 1, 2, 3, 4, n = 4 })
+
+  --  end)
+
+  --  it("handles arg nils", function ()
+
+  --    local v = gen.args(1, nil, 2, nil, nil):vec()
+
+  --    assert.same(v, { 1, nil, 2, nil, nil, n = 5 })
+
+  --  end)
+
+  --end)
+
+  --describe("map", function ()
+
+  --  it("maps over a generator", function ()
+
+  --    local vals = gen.args(1, 2):map(function (a)
+  --      return a * 2
+  --    end):vec()
+
+  --    assert.same(vals, { 2, 4, n = 2 })
+
+  --  end)
+
+  --end)
+
+  --describe("reduce", function ()
+
+  --  it("reduces a generator", function ()
+  --    local vals = gen.args(1, 2, 3):reduce(function (a, n)
+  --      return a + n
+  --    end)
+  --    assert.same(vals, 6)
+  --  end)
+
+  --end)
+
+  --describe("filter", function ()
+
+  --  it("filters a generator", function ()
+
+  --    local vals = gen
+  --      .args(1, 2, 3, 4, 5, 6)
+  --      :filter(function (n)
+  --        return (n % 2) == 0
+  --      end)
+  --      :vec()
+
+  --    assert.same(vals, vec(2, 4, 6))
+
+  --  end)
+
+  --end)
+
+  --describe("chunk", function ()
+
+  --  it("takes n items from a generator", function ()
+  --    local vals = gen.args(1, 2, 3):chunk(2):tup()
+  --    local a, b = vals()
+  --    assert.same(a, { 1, 2, n = 2 })
+  --    assert.same(b, { 3, n = 1 })
+  --  end)
+
+  --end)
 
   --describe("pairs", function ()
 
   --  it("iterates pairs in a table", function ()
 
-  --    local gen = gen.pairs({ a = 1, b = 2 })
-  --    local a, b
+  --    local v = gen.pairs({ a = 1, b = 2 }):vec()
 
-  --    a, b = gen()
-  --    assert.same({ "a", 1 }, { a, b })
-
-  --    a, b = gen()
-  --    assert.same({ "b", 2 }, { a, b })
-
-  --    assert(gen:done())
+  --    assert.same(v, vec(vec("a", 1), vec("b", 2)))
 
   --  end)
 
@@ -158,16 +161,8 @@ describe("santoku.gen", function ()
 
   --  it("iterates ipairs in a table", function ()
 
-  --    local gen = gen.ipairs({ 1, 2 })
-  --    local a, b
-
-  --    a, b = gen()
-  --    assert.same({ 1, 1 }, { a, b })
-
-  --    a, b = gen()
-  --    assert.same({ 2, 2 }, { a, b })
-
-  --    assert(gen:done())
+  --    local v = gen.ipairs({ 1, 2 }):vec()
+  --    assert.same(v, vec(vec(1, 1), vec(2, 2)))
 
   --  end)
 
@@ -177,12 +172,8 @@ describe("santoku.gen", function ()
 
   --  it("iterates table values", function ()
 
-  --    local gen = gen.vals({ a = 1, b = 2 })
-
-  --    assert.equals(1, gen())
-  --    assert.equals(2, gen())
-
-  --    assert(gen:done())
+  --    local v = gen.vals({ a = 1, b = 2 }):vec()
+  --    assert.same(v, vec(1, 2))
 
   --  end)
 
@@ -192,12 +183,8 @@ describe("santoku.gen", function ()
 
   --  it("iterates table keys", function ()
 
-  --    local gen = gen.keys({ a = 1, b = 2 })
-
-  --    assert.equals("a", gen())
-  --    assert.equals("b", gen())
-
-  --    assert(gen:done())
+  --    local v = gen.keys({ a = 1, b = 2 }):vec()
+  --    assert.same(v, vec("a", "b"))
 
   --  end)
 
@@ -217,32 +204,17 @@ describe("santoku.gen", function ()
   --    table.insert(array, "c")
   --    table.insert(array, nil)
 
-  --    local vals = gen.ivals(array)
+  --    local v = gen.ivals(array):vec()
 
-  --    assert.equals(false, vals:done())
-  --    assert.equals("a", vals())
-
-  --    assert.equals(false, vals:done())
-  --    assert.equals("b", vals())
-
-  --    assert.equals(false, vals:done())
-  --    assert.equals("c", vals())
-
-  --    assert.equals(true, vals:done())
-  --    assert.is_nil(vals())
-  --    assert.is_nil(vals())
-  --    assert.is_nil(vals())
+  --    assert.same(v, vec("a", "b", "c"))
 
   --  end)
 
   --  it("iterates table ivalues", function ()
 
-  --    local gen = gen.ivals({ 1, 2, a = "b" })
+  --    local v = gen.ivals({ 1, 2, a = "b" }):vec()
 
-  --    assert.equals(1, gen())
-  --    assert.equals(2, gen())
-
-  --    assert(gen:done())
+  --    assert.same(v, vec(1, 2))
 
   --  end)
 
@@ -252,47 +224,32 @@ describe("santoku.gen", function ()
 
   --  it("iterates table keys", function ()
 
-  --    local gen = gen.ikeys({ "a", "b", a = 12 })
+  --    local v = gen.ikeys({ "a", "b", a = 12 }):vec()
 
-  --    assert.equals(1, gen())
-  --    assert.equals(2, gen())
-
-  --    assert(gen:done())
+  --    assert.same(v, vec(1, 2))
 
   --  end)
 
   --end)
 
-  --describe("zip", function ()
+  ---- describe("zip", function ()
 
-  --  it("zips generators together", function ()
+  ----   it("zips generators together", function ()
 
-  --    local gen1 = gen.args(1, 2, 3, 4)
-  --    local gen2 = gen.args(1, 2, 3, 4)
+  ----     local gen1 = gen.args(1, 2, 3, 4)
+  ----     local gen2 = gen.args(1, 2, 3, 4)
 
-  --    local gen = gen1:zip(gen2)
+  ----     local v = gen1:zip(gen2):vec()
 
-  --    local a, b
+  ----     assert.same(v, vec(
+  ----         vec(1, 1), 
+  ----         vec(2, 2), 
+  ----         vec(3, 3),
+  ----         vec(4, 4)))
 
-  --    a, b = gen()
-  --    assert.same({ 1, 1 }, { a[1], b[1] })
+  ----   end)
 
-  --    a, b = gen()
-  --    assert.same({ 2, 2 }, { a[1], b[1] })
-
-  --    a, b = gen()
-  --    assert.same({ 3, 3 }, { a[1], b[1] })
-
-  --    a, b = gen()
-  --    assert.same({ 4, 4 }, { a[1], b[1] })
-
-  --    assert.equals(true, gen1:done())
-  --    assert.equals(true, gen2:done())
-  --    assert.equals(true, gen:done())
-
-  --  end)
-
-  --end)
+  ---- end)
 
   --describe("each", function ()
 
@@ -303,7 +260,7 @@ describe("santoku.gen", function ()
   --      i = i + 1
   --      assert.equals(i, x)
   --    end)
-  --    assert(i == 4 and gen:done())
+  --    assert(i == 4)
   --  end)
 
   --end)
@@ -311,19 +268,11 @@ describe("santoku.gen", function ()
   --describe("flatten", function ()
 
   --  it("flattens a generator of generators", function ()
-  --    local gen = gen.genco(function (co)
-  --      co.yield(gen.args(1, 2, 3, 4))
-  --      co.yield(gen.args(5, 6, 7, 8))
-  --    end):flatten()
-  --    assert.equals(1, gen())
-  --    assert.equals(2, gen())
-  --    assert.equals(3, gen())
-  --    assert.equals(4, gen())
-  --    assert.equals(5, gen())
-  --    assert.equals(6, gen())
-  --    assert.equals(7, gen())
-  --    assert.equals(8, gen())
-  --    assert(gen:done())
+  --    local v = gen(function (yield)
+  --      yield(gen.args(1, 2, 3, 4))
+  --      yield(gen.args(5, 6, 7, 8))
+  --    end):flatten():vec()
+  --    assert.same(v, vec(1, 2, 3, 4, 5, 6, 7, 8))
   --  end)
 
   --end)
@@ -505,20 +454,6 @@ describe("santoku.gen", function ()
   --    local max = gen:max()
 
   --    assert.equals(10, max)
-  --    assert(gen:done())
-
-  --  end)
-
-  --end)
-
-  --describe("tail", function ()
-
-  --  it("simply drops the first element", function ()
-
-  --    local gen = gen.args(1, 2, 3):tail()
-
-  --    assert.equals(2, gen())
-  --    assert.equals(3, gen())
   --    assert(gen:done())
 
   --  end)
