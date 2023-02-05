@@ -43,421 +43,387 @@ describe("santoku.gen", function ()
 
     end)
 
-    it("allows for early exit", function ()
+  end)
 
-      local gen = gen.args(1, 2, 3)
-      local two = gen:take(2)
+  describe("iter", function ()
 
-      assert.same(vec(1, 2), two:vec())
-      assert.same(vec(3), gen:vec())
+    it("should wrap a nil-based generator", function ()
+
+      local it = ("this is a test"):gmatch("%w+")
+      local vals = gen.iter(it):vec()
+
+      assert.same(vec("this", "is", "a", "test"), vals)
+
+    end)
+
+    it("should work without callbacks", function ()
+
+      local it = ("this is a test"):gmatch("%w+")
+      gen.iter(it):each()
 
     end)
 
   end)
 
-  --describe("vec", function ()
+  describe("isgen", function ()
 
-  --  it("collects generator returns into a vec", function ()
+    it("should detect invalid generators", function ()
 
-  --    local vals = gen(function (yield)
-  --      yield(1, 2, 3)
-  --      yield(4, 5, 6)
-  --    end):vec()
+      assert(not gen.isgen(1))
+      assert(not gen.isgen({}))
+      assert(not gen.isgen(vec()))
 
-  --    local expected = vec(vec(1, 2, 3), vec(4, 5, 6))
+    end)
 
-  --    assert.same(expected, vals)
+  end)
 
-  --  end)
+  describe("vec", function ()
 
-  --end)
+    it("collects generator returns into a vec", function ()
 
-  --describe("args", function ()
+      local vals = gen(function (yield)
+        yield(1, 2, 3)
+        yield(4, 5, 6)
+      end):vec()
 
-  --  it("iterates over arguments", function ()
+      local expected = vec(vec(1, 2, 3), vec(4, 5, 6))
 
-  --    local v = gen.args(1, 2, 3, 4):vec()
+      assert.same(expected, vals)
 
-  --    assert.same(v, { 1, 2, 3, 4, n = 4 })
+    end)
 
-  --  end)
+  end)
 
-  --  it("handles arg nils", function ()
+  describe("pack", function ()
 
-  --    local v = gen.args(1, nil, 2, nil, nil):vec()
+    it("iterates over arguments", function ()
 
-  --    assert.same(v, { 1, nil, 2, nil, nil, n = 5 })
+      local v = gen.pack(1, 2, 3, 4):vec()
 
-  --  end)
+      assert.same(v, { 1, 2, 3, 4, n = 4 })
 
-  --end)
+    end)
 
-  --describe("map", function ()
+    it("handles arg nils", function ()
 
-  --  it("maps over a generator", function ()
+      local v = gen.pack(1, nil, 2, nil, nil):vec()
 
-  --    local vals = gen.args(1, 2):map(function (a)
-  --      return a * 2
-  --    end):vec()
+      assert.same(v, { 1, nil, 2, nil, nil, n = 5 })
 
-  --    assert.same(vals, { 2, 4, n = 2 })
+    end)
 
-  --  end)
+  end)
 
-  --end)
+  describe("map", function ()
 
-  --describe("reduce", function ()
+    it("maps over a generator", function ()
 
-  --  it("reduces a generator", function ()
-  --    local vals = gen.args(1, 2, 3):reduce(function (a, n)
-  --      return a + n
-  --    end)
-  --    assert.same(vals, 6)
-  --  end)
+      local vals = gen.pack(1, 2):map(function (a)
+        return a * 2
+      end):vec()
 
-  --end)
+      assert.same(vals, { 2, 4, n = 2 })
 
-  --describe("filter", function ()
+    end)
 
-  --  it("filters a generator", function ()
+  end)
 
-  --    local vals = gen
-  --      .args(1, 2, 3, 4, 5, 6)
-  --      :filter(function (n)
-  --        return (n % 2) == 0
-  --      end)
-  --      :vec()
+  describe("reduce", function ()
 
-  --    assert.same(vals, vec(2, 4, 6))
+    it("reduces a generator", function ()
+      local vals = gen.pack(1, 2, 3):reduce(function (a, n)
+        return a + n
+      end)
+      assert.same(vals, 6)
+    end)
 
-  --  end)
+  end)
 
-  --end)
+  describe("filter", function ()
 
-  --describe("chunk", function ()
+    it("filters a generator", function ()
 
-  --  it("takes n items from a generator", function ()
-  --    local vals = gen.args(1, 2, 3):chunk(2):tup()
-  --    local a, b = vals()
-  --    assert.same(a, { 1, 2, n = 2 })
-  --    assert.same(b, { 3, n = 1 })
-  --  end)
+      local vals = gen
+        .pack(1, 2, 3, 4, 5, 6)
+        :filter(function (n)
+          return (n % 2) == 0
+        end)
+        :vec()
 
-  --end)
+      assert.same(vals, vec(2, 4, 6))
 
-  --describe("pairs", function ()
+    end)
 
-  --  it("iterates pairs in a table", function ()
+  end)
 
-  --    local v = gen.pairs({ a = 1, b = 2 }):vec()
+  describe("chunk", function ()
 
-  --    assert.same(v, vec(vec("a", 1), vec("b", 2)))
+    it("takes n items from a generator", function ()
+      local vals = gen.pack(1, 2, 3):chunk(2):tup()
+      local a, b = vals()
+      assert.same(a, { 1, 2, n = 2 })
+      assert.same(b, { 3, n = 1 })
+    end)
 
-  --  end)
+  end)
 
-  --end)
+  describe("pairs", function ()
 
-  --describe("ipairs", function ()
+    it("iterates pairs in a table", function ()
 
-  --  it("iterates ipairs in a table", function ()
+      local v = gen.pairs({ a = 1, b = 2 }):vec()
 
-  --    local v = gen.ipairs({ 1, 2 }):vec()
-  --    assert.same(v, vec(vec(1, 1), vec(2, 2)))
+      assert.same(v, vec(vec("a", 1), vec("b", 2)))
 
-  --  end)
+    end)
 
-  --end)
+  end)
 
-  --describe("vals", function ()
+  describe("ipairs", function ()
 
-  --  it("iterates table values", function ()
+    it("iterates ipairs in a table", function ()
 
-  --    local v = gen.vals({ a = 1, b = 2 }):vec()
-  --    assert.same(v, vec(1, 2))
+      local v = gen.ipairs({ 1, 2 }):vec()
+      assert.same(v, vec(vec(1, 1), vec(2, 2)))
 
-  --  end)
+    end)
 
-  --end)
+  end)
 
-  --describe("keys", function ()
+  describe("vals", function ()
 
-  --  it("iterates table keys", function ()
+    it("iterates table values", function ()
 
-  --    local v = gen.keys({ a = 1, b = 2 }):vec()
-  --    assert.same(v, vec("a", "b"))
+      local v = gen.vals({ a = 1, b = 2 }):vec()
+      assert.same(v, vec(1, 2))
 
-  --  end)
+    end)
 
-  --end)
+  end)
 
-  --describe("ivals", function ()
+  describe("keys", function ()
 
-  --  it("drops array nils", function ()
+    it("iterates table keys", function ()
 
-  --    local array = {}
+      local v = gen.keys({ a = 1, b = 2 }):vec()
+      assert.same(v, vec("a", "b"))
 
-  --    table.insert(array, "a")
-  --    table.insert(array, nil)
-  --    table.insert(array, "b")
-  --    table.insert(array, nil)
-  --    table.insert(array, nil)
-  --    table.insert(array, "c")
-  --    table.insert(array, nil)
+    end)
 
-  --    local v = gen.ivals(array):vec()
+  end)
 
-  --    assert.same(v, vec("a", "b", "c"))
+  describe("ivals", function ()
 
-  --  end)
+    it("drops array nils", function ()
 
-  --  it("iterates table ivalues", function ()
+      local array = {}
 
-  --    local v = gen.ivals({ 1, 2, a = "b" }):vec()
+      table.insert(array, "a")
+      table.insert(array, nil)
+      table.insert(array, "b")
+      table.insert(array, nil)
+      table.insert(array, nil)
+      table.insert(array, "c")
+      table.insert(array, nil)
 
-  --    assert.same(v, vec(1, 2))
+      local v = gen.ivals(array):vec()
 
-  --  end)
+      assert.same(v, vec("a", "b", "c"))
 
-  --end)
+    end)
 
-  --describe("ikeys", function ()
+    it("iterates table ivalues", function ()
 
-  --  it("iterates table keys", function ()
+      local v = gen.ivals({ 1, 2, a = "b" }):vec()
 
-  --    local v = gen.ikeys({ "a", "b", a = 12 }):vec()
+      assert.same(v, vec(1, 2))
 
-  --    assert.same(v, vec(1, 2))
+    end)
 
-  --  end)
+  end)
 
-  --end)
+  describe("ikeys", function ()
 
-  ---- describe("zip", function ()
+    it("iterates table keys", function ()
 
-  ----   it("zips generators together", function ()
+      local v = gen.ikeys({ "a", "b", a = 12 }):vec()
 
-  ----     local gen1 = gen.args(1, 2, 3, 4)
-  ----     local gen2 = gen.args(1, 2, 3, 4)
+      assert.same(v, vec(1, 2))
 
-  ----     local v = gen1:zip(gen2):vec()
+    end)
 
-  ----     assert.same(v, vec(
-  ----         vec(1, 1), 
-  ----         vec(2, 2), 
-  ----         vec(3, 3),
-  ----         vec(4, 4)))
+  end)
 
-  ----   end)
+  describe("each", function ()
 
-  ---- end)
+    it("applies a function to each item", function ()
+      local gen = gen.pack(1, 2, 3, 4)
+      local i = 0
+      gen:each(function (x)
+        i = i + 1
+        assert.equals(i, x)
+      end)
+      assert(i == 4)
+    end)
 
-  --describe("each", function ()
+  end)
 
-  --  it("applies a function to each item", function ()
-  --    local gen = gen.args(1, 2, 3, 4)
-  --    local i = 0
-  --    gen:each(function (x)
-  --      i = i + 1
-  --      assert.equals(i, x)
-  --    end)
-  --    assert(i == 4)
-  --  end)
+  describe("flatten", function ()
 
-  --end)
+    it("flattens a generator of generators", function ()
+      local v = gen(function (yield)
+        yield(gen.pack(1, 2, 3, 4))
+        yield(gen.pack(5, 6, 7, 8))
+      end):flatten():vec()
+      assert.same(v, vec(1, 2, 3, 4, 5, 6, 7, 8))
+    end)
 
-  --describe("flatten", function ()
+  end)
 
-  --  it("flattens a generator of generators", function ()
-  --    local v = gen(function (yield)
-  --      yield(gen.args(1, 2, 3, 4))
-  --      yield(gen.args(5, 6, 7, 8))
-  --    end):flatten():vec()
-  --    assert.same(v, vec(1, 2, 3, 4, 5, 6, 7, 8))
-  --  end)
+  describe("all", function ()
 
-  --end)
+    it("reduces with and", function ()
 
-  --describe("slice", function ()
+      local gen1 = gen.pack(true, true, true)
+      local gen2 = gen.pack(true, false, true)
 
-  --  it("slices the generator", function ()
+      assert(gen1:all())
+      assert(not gen2:all())
 
-  --    local gen = gen.args("file", ".txt"):slice(2)
+    end)
 
-  --    assert.equals(".txt", gen())
-  --    assert.equals(true, gen:done())
+  end)
 
-  --  end)
+  describe("chain", function ()
 
-  --end)
+    it("chains generators", function ()
 
-  --describe("tabulate", function ()
+      local gen1 = gen.pack(1, 2)
+      local gen2 = gen.pack(3, 4)
+      local vals = gen.chain(gen1, gen2):vec()
 
-  --  it("creates a table from a generator", function ()
+      assert.same(vec(1, 2, 3, 4), vals)
 
-  --    local vals = gen.args(1, 2, 3, 4)
-  --    local tbl = vals:tabulate("one", "two", "three", "four" )
+    end)
 
-  --    assert.equals(1, tbl.one)
-  --    assert.equals(2, tbl.two)
-  --    assert.equals(3, tbl.three)
-  --    assert.equals(4, tbl.four)
+  end)
 
-  --  end)
+  describe("max", function ()
 
-  --  it("captures remaining values in a 'rest' property", function ()
+    it("returns the max value in a generator", function ()
 
-  --    local vals = gen.args(1, 2, 3, 4)
-  --    local tbl = vals:tabulate({ rest = "others" }, "one")
+      local gen = gen.pack(1, 6, 3, 9, 2, 10, 4)
 
-  --    assert.equals(1, tbl.one)
-  --    assert.same({ 2, 3, 4, n = 3 }, tbl.others)
+      local max = gen:max()
 
-  --  end)
+      assert.equals(10, max)
 
-  --end)
+    end)
 
-  --describe("all", function ()
+  end)
 
-  --  it("reduces with and", function ()
+  describe("empty", function ()
 
-  --    local gen1 = gen.args(true, true, true)
-  --    local gen2 = gen.args(true, false, true)
+    it("should produce an empty generator", function ()
 
-  --    assert(gen1:all())
-  --    assert(not gen2:all())
+      local gen = gen.empty()
 
-  --  end)
+      local called = false
 
-  --end)
+      gen:each(function ()
+        called = true
+      end)
 
-  --describe("none", function ()
+      assert(not called)
 
-  --  it("reduces with not and", function ()
+    end)
 
-  --    local gen1 = gen.args(false, false, false)
-  --    local gen2 = gen.args(true, false, true)
+  end)
 
-  --    assert(gen1:none())
-  --    assert(not gen2:none())
+  describe("paster", function () 
 
-  --  end)
+    it("should paste values to the right", function ()
 
-  --end)
+      local vals = gen.pack(1, 2, 3):paster("num"):vec()
 
-  --describe("equals", function ()
+      assert.same(vec(vec(1, "num"), vec(2, "num"), vec(3, "num")), vals)
 
-  --  it("checks if two generators have equal values", function ()
+    end)
 
-  --    local gen1 = gen.args(1, 2, 3, 4)
-  --    local gen2 = gen.args(5, 6, 7, 8)
+  end)
 
-  --    assert.equals(false, gen1:equals(gen2))
-  --    assert(gen1:done())
-  --    assert(gen2:done())
+  describe("pastel", function () 
 
-  --  end)
+    it("should paste values to the left", function ()
 
-  -- it("checks if two generators have equal values", function ()
+      local vals = gen.pack(1, 2, 3):pastel("num"):vec()
 
-  --   local gen1 = gen.args(1, 2, 3, 4)
-  --   local gen2 = gen.args(1, 2, 3, 4)
+      assert.same(vec(vec("num", 1), vec("num", 2), vec("num", 3)), vals)
 
-  --   assert.equals(true, gen1:equals(gen2))
-  --   assert(gen1:done())
-  --   assert(gen2:done())
+    end)
 
-  -- end)
+  end)
 
-  -- it("checks if two generators have equal values", function ()
+  describe("discard", function ()
 
-  --   local gen1 = gen.args(1, 2, 3, 4)
+    it("should run a generator without processing vals", function ()
 
-  --   -- NOTE: this might seem unexpected but
-  --   -- generators are not immutable. This will
-  --   -- result in comparing 1 to 2 and 3 to 4 due to
-  --   -- repeated invocations of the same generator.
-  --   assert.equals(false, gen1:equals(gen1))
+      local called = false
 
-  -- end)
+      local val = gen(function (yield)
+        called = true
+        yield(1)
+        yield(2)
+      end):discard()
 
-  -- it("handles odd length generators", function ()
+      assert(called)
 
-  --   local gen1 = gen.args(1, 2, 3)
-  --   local gen2 = gen.args(1, 2, 3, 4)
+    end)
 
-  --   assert.equals(false, gen1:equals(gen2))
-  --   assert(gen1:done())
+  end)
 
-  --   -- TODO: See the note on the implementation of
-  --   -- gen:equals() for why these are commented out.
-  --   --
-  --   -- assert(not gen2:done())
-  --   -- assert.equals(4, gen2())
-  --   -- assert(gen2:done())
+  describe("tup", function ()
 
-  -- end)
+    it("should convert a generator to multiple tuples", function ()
 
-  --end)
+      local vals = gen(function (yield)
+        yield(1, 2)
+        yield(3, 4)
+      end):tup()
 
-  --describe("find", function ()
+      local a, b = vals()
+      local x, y
 
-  --  it("finds by a predicate", function ()
+      assert.same({ 1, 2 }, { a() })
+      assert.same({ 3, 4 }, { b() })
 
-  --    local gen = gen.args(1, 2, 3, 4)
+    end)
 
-  --    local v = gen:find(function (a) return a == 3 end)
+  end)
 
-  --    assert.equals(3, v)
+  describe("unpack", function ()
 
-  --  end)
+    it("should unpack a generator", function ()
 
-  --end)
+      local gen = gen.pack(1, 2, 3)
 
-  --describe("pick", function ()
+      assert.same({ 1, 2, 3 }, { gen:unpack() })
 
-  --  it("picks the nth value from a generator", function ()
+    end)
 
-  --    local gen = gen.args(1, 2, 3, 4)
+  end)
 
-  --    local v = gen:pick(2)
+  describe("last", function ()
 
-  --    assert.equals(2, v)
+    it("should return the last element in a generator", function ()
 
-  --  end)
+      local gen = gen.pack(1, 2, 3)
 
-  --end)
+      assert(3, gen:last())
 
-  --describe("chain", function ()
+    end)
 
-  --  it("chains generators", function ()
+  end)
 
-  --    local gen1 = gen.args(1, 2)
-  --    local gen2 = gen.args(3, 4)
-  --    local gen = gen.chain(gen1, gen2)
-
-  --    assert.equals(1, gen())
-  --    assert.equals(2, gen())
-  --    assert.equals(3, gen())
-  --    assert.equals(4, gen())
-  --    assert(gen:done())
-
-  --  end)
-
-  --end)
-
-  --describe("max", function ()
-
-  --  it("returns the max value in a generator", function ()
-
-  --    local gen = gen.args(1, 6, 3, 9, 2, 10, 4)
-
-  --    local max = gen:max()
-
-  --    assert.equals(10, max)
-  --    assert(gen:done())
-
-  --  end)
-
-  --end)
 
 end)

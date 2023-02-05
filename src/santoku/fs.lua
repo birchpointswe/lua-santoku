@@ -95,7 +95,7 @@ end
 M.lines = function (fp)
   local ok, iter, cd = pcall(io.lines, fp)
   if ok then
-    return true, gen.iter(compat.const(iter))
+    return true, gen.iter(iter)
   else
     return false, iter, cd
   end
