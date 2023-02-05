@@ -54,11 +54,11 @@ M.gen = function (run, ...)
   assert(compat.iscallable(run))
   local args = tup(...)
   return setmetatable({
-      run = function (yield, ...)
-        yield = yield or compat.noop
-        assert(compat.iscallable(yield))
-        return run(yield, args(...))
-      end
+    run = function (yield, ...)
+      yield = yield or compat.noop
+      assert(compat.iscallable(yield))
+      return run(yield, args(...))
+    end
   }, {
     __index = M,
   })
@@ -81,6 +81,13 @@ M.iter = function (fn, ...)
       end
     end
   end, ...)
+end
+
+M.each = function (gen, fn, ...)
+  assert(M.isgen(gen))
+  fn = fn or compat.noop
+  assert(compat.iscallable(fn))
+  return gen.run(fn, ...)
 end
 
 M.ipairs = function(t)
@@ -275,13 +282,6 @@ M.slice = function (gen, start, num)
   assert(M.isgen(gen))
   gen:take((start or 1) - 1):discard()
   return gen:take(num)
-end
-
-M.each = function (gen, fn, ...)
-  assert(M.isgen(gen))
-  fn = fn or compat.noop
-  assert(compat.iscallable(fn))
-  return gen.run(fn, ...)
 end
 
 M.chain = function (...)
