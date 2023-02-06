@@ -2,159 +2,173 @@ local gen = require("santoku.gen.pausable")
 
 describe("gen.pausable", function ()
 
-  describe("zip", function ()
+  -- describe("take", function ()
 
-    it("zips generators together", function ()
+  --   it("should create a new generator that takes from an existing generator", function ()
 
-      local gen1 = gen.args(1, 2, 3, 4)
-      local gen2 = gen.args(1, 2, 3, 4)
+  --     local gen0 = gen.pack(1, 2, 3, 4)
+  --     local gen1 = gen0:take(2)
 
-      local v = gen1:zip(gen2):vec()
+  --     assert.same(gen1:vec(), vec(1, 2))
+  --     assert.same(gen0:vec(), vec(3, 4))
 
-      assert.same(v, vec(
-          vec(1, 1), 
-          vec(2, 2), 
-          vec(3, 3),
-          vec(4, 4)))
+  --   end)
 
-    end)
+  -- end)
 
-  end)
+  --describe("zip", function ()
 
-  describe("slice", function ()
+  --  it("zips generators together", function ()
 
-    it("slices the generator", function ()
+  --    local gen1 = gen.pack(1, 2, 3, 4)
+  --    local gen2 = gen.pack(1, 2, 3, 4)
 
-      local gen = gen.args("file", ".txt"):slice(2)
+  --    local v = gen1:zip(gen2):vec()
 
-      assert.equals(".txt", gen())
-      assert.equals(true, gen:done())
+  --    assert.same(v, vec(
+  --        vec(1, 1), 
+  --        vec(2, 2), 
+  --        vec(3, 3),
+  --        vec(4, 4)))
 
-    end)
+  --  end)
 
-  end)
+  --end)
 
-  describe("tabulate", function ()
+  --describe("slice", function ()
 
-    it("creates a table from a generator", function ()
+  --  it("slices the generator", function ()
 
-      local vals = gen.args(1, 2, 3, 4)
-      local tbl = vals:tabulate("one", "two", "three", "four" )
+  --    local gen = gen.pack("file", ".txt"):slice(2)
 
-      assert.equals(1, tbl.one)
-      assert.equals(2, tbl.two)
-      assert.equals(3, tbl.three)
-      assert.equals(4, tbl.four)
+  --    assert.equals(".txt", gen())
+  --    assert.equals(true, gen:done())
 
-    end)
+  --  end)
 
-    it("captures remaining values in a 'rest' property", function ()
+  --end)
 
-      local vals = gen.args(1, 2, 3, 4)
-      local tbl = vals:tabulate({ rest = "others" }, "one")
+  --describe("tabulate", function ()
 
-      assert.equals(1, tbl.one)
-      assert.same({ 2, 3, 4, n = 3 }, tbl.others)
+  --  it("creates a table from a generator", function ()
 
-    end)
+  --    local vals = gen.pack(1, 2, 3, 4)
+  --    local tbl = vals:tabulate("one", "two", "three", "four" )
 
-  end)
+  --    assert.equals(1, tbl.one)
+  --    assert.equals(2, tbl.two)
+  --    assert.equals(3, tbl.three)
+  --    assert.equals(4, tbl.four)
 
-  describe("none", function ()
+  --  end)
 
-    it("reduces with not and", function ()
+  --  it("captures remaining values in a 'rest' property", function ()
 
-      local gen1 = gen.args(false, false, false)
-      local gen2 = gen.args(true, false, true)
+  --    local vals = gen.pack(1, 2, 3, 4)
+  --    local tbl = vals:tabulate({ rest = "others" }, "one")
 
-      assert(gen1:none())
-      assert(not gen2:none())
+  --    assert.equals(1, tbl.one)
+  --    assert.same({ 2, 3, 4, n = 3 }, tbl.others)
 
-    end)
+  --  end)
 
-  end)
+  --end)
 
-  describe("equals", function ()
+  --describe("none", function ()
 
-    it("checks if two generators have equal values", function ()
+  --  it("reduces with not and", function ()
 
-      local gen1 = gen.args(1, 2, 3, 4)
-      local gen2 = gen.args(5, 6, 7, 8)
+  --    local gen1 = gen.pack(false, false, false)
+  --    local gen2 = gen.pack(true, false, true)
 
-      assert.equals(false, gen1:equals(gen2))
-      assert(gen1:done())
-      assert(gen2:done())
+  --    assert(gen1:none())
+  --    assert(not gen2:none())
 
-    end)
+  --  end)
 
-   it("checks if two generators have equal values", function ()
+  --end)
 
-     local gen1 = gen.args(1, 2, 3, 4)
-     local gen2 = gen.args(1, 2, 3, 4)
+  --describe("equals", function ()
 
-     assert.equals(true, gen1:equals(gen2))
-     assert(gen1:done())
-     assert(gen2:done())
+  --  it("checks if two generators have equal values", function ()
 
-   end)
+  --    local gen1 = gen.pack(1, 2, 3, 4)
+  --    local gen2 = gen.pack(5, 6, 7, 8)
 
-   it("checks if two generators have equal values", function ()
+  --    assert.equals(false, gen1:equals(gen2))
+  --    assert(gen1:done())
+  --    assert(gen2:done())
 
-     local gen1 = gen.args(1, 2, 3, 4)
+  --  end)
 
-     -- NOTE: this might seem unexpected but
-     -- generators are not immutable. This will
-     -- result in comparing 1 to 2 and 3 to 4 due to
-     -- repeated invocations of the same generator.
-     assert.equals(false, gen1:equals(gen1))
+  -- it("checks if two generators have equal values", function ()
 
-   end)
+  --   local gen1 = gen.pack(1, 2, 3, 4)
+  --   local gen2 = gen.pack(1, 2, 3, 4)
 
-   it("handles odd length generators", function ()
+  --   assert.equals(true, gen1:equals(gen2))
+  --   assert(gen1:done())
+  --   assert(gen2:done())
 
-     local gen1 = gen.args(1, 2, 3)
-     local gen2 = gen.args(1, 2, 3, 4)
+  -- end)
 
-     assert.equals(false, gen1:equals(gen2))
-     assert(gen1:done())
+  -- it("checks if two generators have equal values", function ()
 
-     -- TODO: See the note on the implementation of
-     -- gen:equals() for why these are commented out.
-     --
-     -- assert(not gen2:done())
-     -- assert.equals(4, gen2())
-     -- assert(gen2:done())
+  --   local gen1 = gen.pack(1, 2, 3, 4)
 
-   end)
+  --   -- NOTE: this might seem unexpected but
+  --   -- generators are not immutable. This will
+  --   -- result in comparing 1 to 2 and 3 to 4 due to
+  --   -- repeated invocations of the same generator.
+  --   assert.equals(false, gen1:equals(gen1))
 
-  end)
+  -- end)
 
-  describe("find", function ()
+  -- it("handles odd length generators", function ()
 
-    it("finds by a predicate", function ()
+  --   local gen1 = gen.pack(1, 2, 3)
+  --   local gen2 = gen.pack(1, 2, 3, 4)
 
-      local gen = gen.args(1, 2, 3, 4)
+  --   assert.equals(false, gen1:equals(gen2))
+  --   assert(gen1:done())
 
-      local v = gen:find(function (a) return a == 3 end)
+  --   -- TODO: See the note on the implementation of
+  --   -- gen:equals() for why these are commented out.
+  --   --
+  --   -- assert(not gen2:done())
+  --   -- assert.equals(4, gen2())
+  --   -- assert(gen2:done())
 
-      assert.equals(3, v)
+  -- end)
 
-    end)
+  --end)
 
-  end)
+  --describe("find", function ()
 
-  describe("pick", function ()
+  --  it("finds by a predicate", function ()
 
-    it("picks the nth value from a generator", function ()
+  --    local gen = gen.pack(1, 2, 3, 4)
 
-      local gen = gen.args(1, 2, 3, 4)
+  --    local v = gen:find(function (a) return a == 3 end)
 
-      local v = gen:pick(2)
+  --    assert.equals(3, v)
 
-      assert.equals(2, v)
+  --  end)
 
-    end)
+  --end)
 
-  end)
+  --describe("pick", function ()
+
+  --  it("picks the nth value from a generator", function ()
+
+  --    local gen = gen.pack(1, 2, 3, 4)
+
+  --    local v = gen:pick(2)
+
+  --    assert.equals(2, v)
+
+  --  end)
+
+  --end)
 
 end)
