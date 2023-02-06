@@ -1,3 +1,7 @@
+-- TODO: instead of using coroutines, can this
+-- be implemented by returning a standard
+-- generator with the remaining items?
+
 local err = require("santoku.err")
 local op = require("santoku.op")
 local fun = require("santoku.fun")
