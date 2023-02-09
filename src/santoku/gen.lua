@@ -1,3 +1,5 @@
+-- TODO: Need some kind of done state
+
 -- TODO: With the callback version there doesn't
 -- seem to be an easy way to exit early, but we
 -- will want it for things like tabulate, find,
@@ -25,8 +27,11 @@
 -- close/abort/cleanup for things like closing
 -- open files, etc.
 
+local tbl = require("santoku.table")
 local vec = require("santoku.vector")
 local fun = require("santoku.fun")
+local co = require("santoku.co")
+local op = require("santoku.op")
 local compat = require("santoku.compat")
 local tup = require("santoku.tuple")
 
@@ -38,6 +43,16 @@ M.isgen = function (t)
     return false, "not a generator: not a table", t
   end
   return (getmetatable(t) or {}).__index == M, "not a generator", t
+end
+
+M.iscogen = function (t)
+  if not M.isgen(t) then
+    return false, "not a co-generator: not a generator:", t
+  elseif not (type(t.cor) == "thread" and type(t.co) == "table") then
+    return false, "not a co-generator: missing co and/or cor fields", t
+  else
+    return true
+  end
 end
 
 -- TODO: Allow the user to provide an error
@@ -81,11 +96,39 @@ M.iter = function (fn, ...)
   end, ...)
 end
 
+M.step = function (gen, ...)
+  assert(M.iscogen(gen))
+  if gen.status == "dead" then
+    return false, "coroutine dead"
+  else
+    gen.val = tup(gen.co.resume(gen.cor, gen.co.yield, ...))
+    gen.status = gen.co.status(gen.cor)
+  end
+  -- TODO: Make throw or return configurable
+  if not gen.val() then
+    error((select(2, gen.val())))
+  else
+    gen.val = tup(select(2, gen.val()))
+  end
+  return gen.status ~= "dead"
+end
+
+M.done = function (gen)
+  assert(M.iscogen(gen))
+  return gen.status == "dead"
+end
+
 M.each = function (gen, fn, ...)
   assert(M.isgen(gen))
   fn = fn or compat.noop
   assert(compat.iscallable(fn))
-  return gen.run(fn, ...)
+  if M.iscogen(gen) then
+    while gen:step() do
+      fn(gen.val(...))
+    end
+  else
+    return gen.run(fn, ...)
+  end
 end
 
 M.ipairs = function(t)
@@ -303,8 +346,118 @@ M.last = function (gen)
   return last()
 end
 
-return setmetatable({}, {
-  __index = M,
+M.co = function (gen)
+  assert(M.isgen(gen))
+  gen.co = co()
+  gen.cor = gen.co.create(gen.run)
+  return gen
+end
+
+M.take = function (gen, n)
+  assert(M.iscogen(gen))
+  assert(type(n) == "number" and n >= 0)
+  return M.gen(function (yield)
+    while n > 0 and gen:step() do
+      n = n - 1
+      yield(gen.val())
+    end
+  end)
+end
+
+M.find = function (gen, fn, ...)
+  assert(M.iscogen(gen))
+  fn = fn or compat.id
+  while gen:step() do
+    if fn(gen.val(...)) then
+      return gen.val()
+    end
+  end
+end
+
+M.tabulate = function (gen, opts, ...)
+  assert(M.iscogen(gen))
+  local keys, nkeys
+  if type(opts) == "table" then
+    keys, nkeys = tup(...)
+  else
+    keys, nkeys = tup(opts, ...)
+    opts = {}
+  end
+  local rest = opts.rest
+  local ret = tbl()
+  local idx = 0
+  while idx < nkeys and gen:step() do
+    idx = idx + 1
+    ret[select(idx, keys())] = gen.val()
+  end
+  if rest then
+    ret[rest] = gen:vec()
+  end
+  return ret
+end
+
+M.zip = function (opts, ...)
+  local gens, ngens
+  if M.isgen(opts) then
+    gens, ngens = tup(opts, ...)
+    opts = {}
+  else
+    gens, ngens = tup(...)
+  end
+  local mode = opts.mode or "first"
+  return M.gen(function (yield, ...)
+    while true do
+      local nb = 0
+      local ret = tup()
+      for i = 1, ngens do
+        local gen = select(i, ...)
+        assert(M.iscogen(gen))
+        if gen:step() then
+          nb = nb + 1
+          ret = tup(ret(gen.val))
+        elseif i == 1 and mode == "first" then
+          return
+        else
+          ret = tup(ret((tup())))
+        end
+      end
+      if nb == 0 then
+        break
+      else
+        yield(ret())
+      end
+    end
+  end, gens())
+end
+
+M.slice = function (gen, start, num)
+  assert(M.iscogen(gen))
+  gen:take((start or 1) - 1):discard()
+  if num then
+    return gen:take(num)
+  else
+    return gen
+  end
+end
+
+-- TODO: pausable
+-- TODO: Currently the implementation using
+-- zip:map results in one extra generator read.
+-- If, for example, you have two generators, one
+-- of length 3 and the other of length 4, we
+-- will pull the 4th value off the second
+-- generator instead of just using the fact that
+-- the first generator is :done() before the
+-- second. Can we somehow do this without
+-- resorting to a manual implemetation?
+M.equals = function (...)
+  local vals = M.zip({ mode = "longest" }, ...):map(tup.equals):all()
+  return vals and M.pack(...):map(M.done):all()
+end
+
+M.none = fun.compose(op["not"], M.find)
+
+return setmetatable(M, {
   __call = function (_, ...)
     return M.gen(...)
   end

@@ -1,5 +1,5 @@
 package = "santoku"
-version = "0.0.9-1"
+version = "0.0.10-1"
 rockspec_format = "3.0"
 
 -- TODO: Should this source be local?
@@ -34,7 +34,6 @@ build = {
   modules = {
 
     ["santoku.gen"] = "src/santoku/gen.lua",
-    ["santoku.gen.pausable"] = "src/santoku/gen/pausable.lua",
     ["santoku.string"] = "src/santoku/string.lua",
     ["santoku.table"] = "src/santoku/table.lua",
     ["santoku.vector"] = "src/santoku/vector.lua",
