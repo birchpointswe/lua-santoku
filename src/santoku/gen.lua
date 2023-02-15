@@ -131,7 +131,7 @@ M.each = function (gen, fn, ...)
   end
 end
 
-M.ipairs = function(t)
+M.ipairs = function (t)
   assert(type(t) == "table")
   return M.gen(function (yield)
     for k, v in ipairs(t) do
@@ -140,7 +140,7 @@ M.ipairs = function(t)
   end)
 end
 
-M.pairs = function(t)
+M.pairs = function (t)
   assert(type(t) == "table")
   return M.gen(function (yield)
     for k, v in pairs(t) do
