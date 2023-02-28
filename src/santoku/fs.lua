@@ -257,8 +257,7 @@ M.cwd = function ()
 end
 
 M.absolute = function (fp)
-  assert(type(fp) == "string")
-  if fp[1] == M.pathroot then
+  if fp:sub(1, 1) == M.pathroot then
     return M.normalize(fp)
   elseif fp:sub(1, 2) == "~/" then
     local home = os.getenv("HOME")

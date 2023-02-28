@@ -104,4 +104,18 @@ describe("santoku.fs", function ()
 
   end)
 
+  describe("absolute", function ()
+
+    -- TODO: How can we make this test work
+    -- regardless of where it's run? Do we run
+    -- it in a chroot?
+    it("should return the abolute path of a file", function ()
+
+      -- local path = "/test.txt"
+      -- print(fs.absolute(path))
+
+    end)
+
+  end)
+
 end)
