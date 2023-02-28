@@ -1,5 +1,5 @@
 package = "santoku"
-version = "0.0.11-1"
+version = "0.0.12-1"
 rockspec_format = "3.0"
 
 -- TODO: Should this source be local?
