@@ -1,6 +1,32 @@
 local tup = require("santoku.tuple")
-local compat = require("santoku.compat")
 local co = require("santoku.co")
+
+-- TODO: In some cases, it might make sense to
+-- consider the onErr callback more as a
+-- "finally" or similar. Not sure the right
+-- word.
+--
+-- assert(err.pwrap(function (check)
+--
+--   local token = check
+--     .err(403, "No session token")
+--     .exists(util.get_token())
+--
+--   local id_user = check
+--     .err(403, "No active user")
+--     .okexists(db.get_token_user_id(token))
+--
+--   local todos = check
+--     .err(500, "Couldn't get todos")
+--     .ok(db.get_todos(id_user))
+--
+--   -- TODO: This should pass to the util.exit
+--   -- "finally" callback
+--   check.exit(200, todos:unwrap())
+--
+--   -- util.exit(200, todos:unwrap())
+--
+-- end, util.exit))
 
 -- TODO: pwrap should be renamed to check, and
 -- should work like a derivable/configurable
@@ -97,7 +123,7 @@ M.pwrap = function (run, onErr)
     if status == "dead" then
       break
     elseif status == "suspended" then
-      nxt = tup(onErr(select(2, ret)))
+      nxt = tup(onErr(select(2, ret())))
       if not nxt() then
         ret = nxt
         break
