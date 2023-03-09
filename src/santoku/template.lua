@@ -72,9 +72,13 @@ M.compile = function (tmpl, opts)
   })
 end
 
+-- TODO: Currently this modifies the original
+-- parts table, making this not-repeatable. We
+-- need to create a new table for table.concat
+-- instead of re-using parts.
 M.render = function (tmpl, env)
   tbl.assign(tmpl.env, env or {})
-  local parts = tmpl.parts
+  local parts = vec():copy(tmpl.parts)
   local interps = tmpl.interps
   for i = 1, interps.n do
     parts[interps[i]] = parts[interps[i]]()

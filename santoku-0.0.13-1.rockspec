@@ -34,6 +34,7 @@ build = {
 
     ["santoku.gen"] = "src/santoku/gen.lua",
     ["santoku.string"] = "src/santoku/string.lua",
+    ["santoku.template"] = "src/santoku/template.lua",
     ["santoku.table"] = "src/santoku/table.lua",
     ["santoku.vector"] = "src/santoku/vector.lua",
     ["santoku.tree"] = "src/santoku/tree.lua",
