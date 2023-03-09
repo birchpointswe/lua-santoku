@@ -3,7 +3,7 @@ return {
     pattern = "",
     coverage = true,
     ["keep-going"] = false,
-    ["coverage-config-file"] = "test/luacov.lua"
+    ["coverage-config-file"] = "test/lib/luacov.lua"
   }
 }
 

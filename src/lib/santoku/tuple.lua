@@ -2,10 +2,10 @@ local M = {}
 
 local function tuple (n, a, ...)
   if n == 0 then
-    return function (...) 
-      return ... 
+    return function (...)
+      return ...
     end, 0
-  else 
+  else
     local rest = tuple(n - 1, ...)
     return function (...)
       return a, rest(...)
@@ -21,7 +21,7 @@ M.equals = function (a, ...)
     if b == nil then
       return false
     end
-    local n = select("#", b()) 
+    local n = select("#", b())
     if m ~= n then
       return false
     end
@@ -30,7 +30,7 @@ M.equals = function (a, ...)
     local v = select(i, a())
     for j = 1, ts do
       local b = select(j, ...)
-      local w = select(i, b()) 
+      local w = select(i, b())
       if v ~= w then
         return false
       end
