@@ -1,3 +1,6 @@
+-- TODO: Figure out how to run install.sh even
+-- with the builtin type
+
 package = "santoku-cli"
 version = "0.0.1-1"
 rockspec_format = "3.0"
@@ -16,6 +19,8 @@ dependencies = {
 }
 
 build = {
-  type = "command",
-  command = "sh scripts/cli-install.sh"
+  type = "builtin",
+  modules = {
+    ["santoku.cli"] = "src/cli.lua",
+  }
 }
