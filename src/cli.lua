@@ -1,5 +1,7 @@
 local argparse = require("argparse")
 local err = require("santoku.err")
+local fs = require("santoku.fs")
+local tpl = require("santoku.template")
 
 local parser = argparse()
   :name("toku")
@@ -24,11 +26,17 @@ ctemplate
 
 local args = parser:parse()
 
-function process_file (check, conf, input, output)
+function process_file (check, conf, input, output, isdir)
   local data = check(fs.readfile(input))
   local tmpl = check(tpl(data, conf))
-  local out = check(tmpl(conf.env))
-  check(fs.writefile(output))
+  local out = tmpl(conf.env)
+  if isdir then
+    local outfile = fs.join(output, input)
+    local outdir = fs.dirname(outfile)
+    check(fs.mkdirp(outdir))
+    output = outfile
+  end
+  check(fs.writefile(output, out))
 end
 
 function get_config (check, config)
@@ -39,19 +47,19 @@ function get_config (check, config)
   end
 end
 
-err.pwrap(function (check)
+assert(err.pwrap(function (check)
 
   if args.template then
     local conf = get_config(check, args.config)
     if args.recursive then
-      check(fs.files(args.input, { recurse = true }))
+      fs.files(args.input, { recurse = true })
         :map(check)
         :each(function (fp)
-          process_file(fp, conf, check)
+          process_file(check, conf, fp, args.output, true)
         end)
-    else
-      process_file(args.input, conf, check)
+      else
+        process_file(check, conf, args.input, args.output, false)
+      end
     end
-  end
 
-end, err.error)
+end, err.error))
