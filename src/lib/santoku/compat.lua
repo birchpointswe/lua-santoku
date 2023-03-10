@@ -74,8 +74,10 @@ M.load = function (code, env)
       -- TODO: Add better messages
       return false, err, cd
     else
-      -- TODO: Can we catch an error here?
-      setfenv(f, env)
+      if env then
+        -- TODO: Can we catch an error here?
+        setfenv(f, env)
+      end
       return true, f
     end
   else

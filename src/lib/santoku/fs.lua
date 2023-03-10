@@ -25,6 +25,16 @@ M.mkdirp = function (dir)
   return true
 end
 
+-- TODO: Use this instead of lfs.attributes 
+M.attr = function (fp, attr)
+  local mode, err, code = lfs.attributes(fp, attr)
+  if not mode then
+    return false, err, code
+  else
+    return true, mode
+  end
+end
+
 M.exists = function (fp)
   local mode, err, code = lfs.attributes(fp, "mode")
   if mode == nil and code == 2 then
@@ -296,6 +306,15 @@ M.normalize = function (fp)
     return true, "."
   else
     return true, M.pathroot .. fp
+  end
+end
+
+M.loadfile = function (fp, env)
+  local ok, data, cd = M.readfile(fp)
+  if not ok then
+    return false, data, cd
+  else
+    return compat.load(data, env)
   end
 end
 

@@ -3,11 +3,11 @@
 local str = require("santoku.string")
 local tbl = require("santoku.table")
 local vec = require("santoku.vector")
+local fs = require("santoku.fs")
 local compat = require("santoku.compat")
 
 local M = {}
 
--- TODO: Add a shortcut that prepends "return"
 M.open = "<%"
 M.close = "%>"
 
@@ -27,6 +27,10 @@ M.compile = function (tmpl, opts)
     ss, se = string.find(tmpl, open, ee)
     if not ss then
       local after = tmpl:sub(ee + closelen - 1)
+      local trailing = after:match("^\n[ ]*")
+      if trailing then
+        after = after:sub(string.len(trailing) + 1)
+      end
       parts:append(after)
       break
     else
@@ -42,15 +46,6 @@ M.compile = function (tmpl, opts)
         local before = tmpl:sub(1, ss - openlen + 1)
         local code = tmpl:sub(se + openlen, es - closelen)
         local ok, fn, cd = compat.load(code, env)
-        if not ok then
-          code = "return " .. code
-          -- TODO: Since were re-trying with
-          -- return, we throw away the original
-          -- error. Perhaps we should keep it
-          -- somehow? Might make debuggin
-          -- easier.
-          ok, fn, cd = compat.load(code, env)
-        end
         if not ok then
           return false, fn, cd
         else
@@ -81,9 +76,20 @@ M.render = function (tmpl, env)
   local parts = vec():copy(tmpl.parts)
   local interps = tmpl.interps
   for i = 1, interps.n do
-    parts[interps[i]] = parts[interps[i]]()
+    local ok, str, cd = parts[interps[i]]()
+    if ok == nil then
+      parts[interps[i]] = ""
+    elseif type(ok) == "string" then
+      parts[interps[i]] = ok
+    elseif ok == true then
+      parts[interps[i]] = str
+    elseif ok == false then
+      return false, str, err
+    else
+      return false, "expected string, boolean, or nil: got: " .. type(ok)
+    end
   end
-  return table.concat(parts)
+  return true, table.concat(parts)
 end
 
 return setmetatable(M, {
