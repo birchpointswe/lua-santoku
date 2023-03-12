@@ -25,7 +25,7 @@ M.mkdirp = function (dir)
   return true
 end
 
--- TODO: Use this instead of lfs.attributes 
+-- TODO: Use this instead of lfs.attributes
 M.attr = function (fp, attr)
   local mode, err, code = lfs.attributes(fp, attr)
   if not mode then
@@ -315,6 +315,15 @@ M.loadfile = function (fp, env)
     return false, data, cd
   else
     return compat.load(data, env)
+  end
+end
+
+M.runfile = function (fp, env)
+  local ok, fn, cd = M.loadfile(fp, env)
+  if not ok then
+    return false, fn, cd
+  else
+    return pcall(fn)
   end
 end
 

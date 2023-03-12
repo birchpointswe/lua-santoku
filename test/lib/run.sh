@@ -33,7 +33,10 @@ run()
     source_files="$@"
   fi
   echo
-  if busted --lua="$LUA" -f test/lib/busted.lua "$test_files"
+  if LUA_PATH="./src/lib/?.lua;./src/lib/?/?.lua;$LUA_PATH;" \
+    busted \
+    --lua="$LUA" \
+    -f test/lib/busted.lua "$test_files"
   then
     luacov -c test/lib/luacov.lua
     luacheck --config test/lib/luacheck.lua "$source_files"

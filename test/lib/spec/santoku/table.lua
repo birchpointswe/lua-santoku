@@ -64,4 +64,23 @@ describe("table", function ()
 
   end)
 
+  describe("merge", function ()
+
+    it("should merge tables recursively", function ()
+
+      local t1 = { a = 1, b = { c = 2 } }
+      local t2 = { a = 2, b = { d = 4 } }
+      local t3 = { e = { 1, 2, 3 } }
+      local t4 = { e = { 4, 5, 6, 7, 8, 9 } }
+
+      assert.same(tbl.merge({}, t1, t2, t3, t4), {
+        a = 1, 
+        b = { c = 2, d = 4 },
+        e = { 1, 2, 3, 7, 8, 9 }
+      })
+
+    end)
+
+  end)
+
 end)

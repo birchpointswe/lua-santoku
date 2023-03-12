@@ -1,5 +1,6 @@
 -- Functions that operate on lua strings
 
+-- TODO: quote/unquote
 -- TODO: Add the pre-curried functions
 
 -- TODO: We need a str.inspect(...) or similar

@@ -2,7 +2,7 @@
 
 -- TODO: Add the pre-curried functions
 
--- TODO: mergeWith, deep merge, etc, walk a
+-- TODO: merge, deep merge, etc, walk a
 -- table
 --
 -- TODO: Clarify where n should be added or
@@ -110,6 +110,25 @@ M.equals = function (a, ...)
   return true
 end
 
+M.merge = function (t, ...)
+  assert(type(t) == "table")
+  for i = 1, select("#", ...) do
+    local t0 = select(i, ...)
+    for k, v in pairs(t0) do
+      if t[k] ~= nil and type(t[k]) ~= "table" then -- luacheck: ignore 
+        -- do nothing
+      elseif type(v) == "table" then
+        t[k] = t[k] or {}
+        M.merge(t[k], v)
+      else
+        t[k] = v
+      end
+    end
+  end
+  return t
+end
+
+-- TODO: Reduce all of these pack/unpacks
 local paths
 paths = function (t, fn, stop, ...)
   for k, v in pairs(t) do
@@ -133,6 +152,7 @@ end
 -- TODO: Can we do this without creating a
 -- vector of path vectors?
 -- TODO: Reduce all of these pack/unpacks
+-- TODO: This might be better of called reduce
 M.mergeWith = function (t, spec, ...)
   for i = 1, select("#", ...) do
     local t0 = select(i, ...)

@@ -371,11 +371,11 @@ M.zip = function (...)
   return ret()
 end
 
-M.span = function (t, fn)
+M.span = function (t, fn, ...)
   assert(M.isvec(t))
   fn = fn or compat.id
   assert(compat.iscallable(fn))
-  return fn(t:unpack())
+  return fn(t:unpack(...))
 end
 
 M.tabulate = function (t, ...)

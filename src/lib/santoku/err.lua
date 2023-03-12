@@ -1,6 +1,18 @@
 local tup = require("santoku.tuple")
 local co = require("santoku.co")
 
+-- TODO: We need helper functions to chain
+-- error-returning functions without resorting
+-- to coroutines: something like:
+--
+--    local ok, val = err.pipe(input, fn1, fn2)
+--
+-- ...where fn1 takes "input" and produces a
+-- boolean and a value, and fn2 takes that
+-- value and produces another boolean and value.
+-- Somehow we need to handle additional
+-- arguments.
+
 -- TODO: In some cases, it might make sense to
 -- consider the onErr callback more as a
 -- "finally" or similar. Not sure the right
@@ -131,6 +143,14 @@ M.pwrap = function (run, onErr)
     end
   end
   return ret()
+end
+
+M.check = function (ok, a, ...)
+  if not ok then 
+    error(a)
+  else
+    return a, ...
+  end
 end
 
 return M

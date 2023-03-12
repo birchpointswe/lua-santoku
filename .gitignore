@@ -1,5 +1,5 @@
-test/luacov.report.out
-test/luacov.stats.out
-test/luacov.report.out.index
+test/lib/luacov.report.out
+test/lib/luacov.stats.out
+test/lib/luacov.report.out.index
 lua_modules
 *.rock

@@ -68,15 +68,15 @@ M.iscallable = function (f)
 end
 
 M.load = function (code, env)
-  if setfenv and loadstring then
-    local f, err, cd = loadstring(code)
+  if setfenv and loadstring then -- luacheck: ignore
+    local f, err, cd = loadstring(code) -- luacheck: ignore
     if not f then
       -- TODO: Add better messages
       return false, err, cd
     else
       if env then
         -- TODO: Can we catch an error here?
-        setfenv(f, env)
+        setfenv(f, env) -- luacheck: ignore
       end
       return true, f
     end
