@@ -1,5 +1,5 @@
 package = "santoku"
-version = "0.0.14-1"
+version = "0.0.15-1"
 rockspec_format = "3.0"
 
 source = {
@@ -41,6 +41,7 @@ build = {
     ["santoku.fun"] = "src/lib/santoku/fun.lua",
     ["santoku.compat"] = "src/lib/santoku/compat.lua",
 
+    ["santoku.random"] = "src/lib/santoku/random.lua",
     ["santoku.statistics"] = "src/lib/santoku/statistics.lua",
     ["santoku.validation"] = "src/lib/santoku/validation.lua",
 

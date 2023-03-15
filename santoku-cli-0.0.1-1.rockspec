@@ -1,5 +1,7 @@
 -- TODO: Figure out how to run install.sh even
--- with the builtin type
+-- with the builtin type. Is there a standard
+-- pattern for installing an executable + helper
+-- libraries? 
 
 package = "santoku-cli"
 version = "0.0.1-1"
