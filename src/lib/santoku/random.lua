@@ -11,7 +11,7 @@ M.str = function (n)
   local t = {}
   n = n or 1
   while n > 0 do
-    t[n] = string.char(M.rand(32, 127))
+    t[n] = string.char(math.random(32, 127))
   end
   return table.concat(t)
 end
