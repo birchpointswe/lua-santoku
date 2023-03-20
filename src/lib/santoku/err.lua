@@ -96,6 +96,13 @@ M.pwrapper = function (co, ...)
         return co.yield(errs(...))
       end
     end,
+    noerr = function (ok, ...)
+      if ok == false then
+        return co.yield(errs(...))
+      else
+        return ...
+      end
+    end,
     ok = function (ok, ...)
       if ok then
         return ...

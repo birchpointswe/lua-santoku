@@ -337,6 +337,10 @@ M.max = function (gen, ...)
   end, ...)
 end
 
+M.concat = function (gen, delim)
+  return gen:vec():concat(delim)
+end
+
 M.last = function (gen)
   assert(M.isgen(gen))
   local last = tup()

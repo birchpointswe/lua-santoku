@@ -141,10 +141,38 @@ end
 -- Trim strings
 --   opts = string pattern for string.sub, defaults to
 --   whitespace
---   opts.begin = same as opts but for begin
---   opts.end = same as opts but for end
+--   opts.left = same as opts but for left
+--   opts.right = same as opts but for right
 M.trim = function (s, opts)
-  M.unimplemented("trim")
+  local left = "%s*"
+  local right = "%s*"
+  if opts == nil then
+    -- luacheck: ignore
+    -- do nothing
+  elseif type(opts) == "string" then
+    left = opts
+    right = opts
+  elseif type(opts) == "table" then
+    left = opts.left or left
+    right = opts.right or right
+  else
+    error("unexpected options argument: " .. type(opts))
+  end
+  if left ~= false then
+    s = s:replace("^" .. left, "")
+  end
+  if right ~= false then
+    s = s:replace(right  .. "$", "")
+  end
+  return s
+end
+
+M.isempty = function (s)
+  if s:match("^%s*$") then
+    return true
+  else 
+    return false
+  end
 end
 
 M.endswith = function (str, pat)
