@@ -24,6 +24,7 @@ local M = {}
 
 M.open = "<%"
 M.close = "%>"
+M.tagclose = "%"
 
 M.STR = tup()
 M.FN = tup()
@@ -55,139 +56,192 @@ local function trimwhitespace (parts)
   end
 end
 
-M.compile = function (tmpl, config)
-
-  config = config or {}
-  local fenv = {}
-
-  local open = str.escape(config.open or M.open)
-  local close = str.escape(config.close or M.close)
-  local openlen = string.len(M.open)
-  local closelen = string.len(M.close)
-  local parts = vec()
-  local pos, ss, se, es, ee
-  pos = 0
-
-  while true do
-    ss, se = string.find(tmpl, open, pos)
-    if not ss then
-      local after = tmpl:sub(pos + closelen - 1)
-      if string.len(after) > 0 then
-        parts:append((tup(M.STR, after)))
-      end
-      break
-    else
-      es, ee = string.find(tmpl, close, se)
-      if not es then
-        return false, table.concat({
-          "Invalid template: expecting: ",
-          M.close,
-          " at position ",
-          ss
-        })
-      else
-        local before = tmpl:sub(pos + 1, ss - openlen + 1)
-        if string.len(before) > 0 then
-          parts:append((tup(M.STR, before)))
-        end
-        local code = tmpl:sub(se + openlen, es - closelen)
-        local ok, fn, cd = compat.load(code, fenv)
-        if not ok then
-          return false, fn, cd
-        else
-          parts:append((tup(M.FN, fn)))
-        end
-        pos = ee
-      end
-    end
+M.compilefile = function (parent, ...)
+  local args = tup(...)
+  if not M.istemplate(parent) then
+    args = tup(parent, args())
+    parent = nil
   end
-
-  trimwhitespace(parts)
-
-  return true, setmetatable({
-    fenv = fenv,
-    source = tmpl,
-    config = config,
-    parts = parts,
-  }, {
-    __index = M,
-    __call = function (tmpl, ...)
-      return tmpl:render(...)
+  return err.pwrap(function (check)
+    local fp = args()
+    local data = check(fs.readfile(fp))
+    if parent then
+      return check(parent:compile(data, select(2, args())))
+    else
+      return check(M.compile(data, select(2, args())))
     end
-  })
-
+  end)
 end
 
-M.render = function (tmpl, env, penv, output)
+M.compile = function (parent, ...)
+  local args = tup(...)
+  return err.pwrap(function (check) 
+
+    local tmpl, config
+
+    if not M.istemplate(parent) then
+      tmpl, config = parent, args()
+    else
+      tmpl, config = args(), parent.config
+    end
+
+    config = config or {}
+    local fenv = {}
+
+    local open = str.escape(config.open or M.open)
+    local close = str.escape(config.close or M.close)
+    local tagclose = str.escape(config.tagclose or M.tagclose)
+
+    -- TODO: string.len is definitely wrong since
+    -- open and close are patterns. Instead, use
+    -- (se - ss) and (ee - es).
+    local openlen = string.len(M.open)
+    local closelen = string.len(M.close)
+    local tagcloselen = string.len(M.tagclose)
+
+    local parts = vec()
+    local pos, ss, se, es, ee
+    pos = 0
+
+    local ret = setmetatable({
+      fenv = fenv,
+      source = tmpl,
+      config = config,
+      parent = parent,
+      parts = parts,
+    }, {
+      __index = M,
+      __call = function (tmpl, ...)
+        return tmpl:render(...)
+      end
+    })
+
+    fenv.template = ret
+    fenv.check = check
+
+    while true do
+      ss, se = string.find(tmpl, open, pos)
+      if not ss then
+        local after = tmpl:sub(pos + closelen - 1)
+        if string.len(after) > 0 then
+          parts:append((tup(M.STR, after)))
+        end
+        break
+      else
+        es, ee = string.find(tmpl, close, se)
+        if not es then
+          check(false, table.concat({
+            "Invalid template: expecting: ",
+            M.close,
+            " at position ",
+            ss
+          }))
+        else
+          local before = tmpl:sub(pos + 1, ss - openlen + 1)
+          if string.len(before) > 0 then
+            parts:append((tup(M.STR, before)))
+          end
+          local code = tmpl:sub(se + openlen - 1, es - closelen)
+          local tag = code:match("^([%w%s_-]*)" .. tagclose)
+          if tag then
+            code = code:sub(string.len(tag) + tagcloselen + 1)
+          end
+          local ok, fn, cd = compat.load(code, fenv)
+          if not ok then
+            check(false, fn, cd)
+          elseif tag == nil or tag == "render" then
+            parts:append((tup(M.FN, fn)))
+          elseif tag == "compile" then
+            local res = tup(fn())
+            local ok = res()
+            -- luacheck: ignore
+            if ok == nil then
+              -- do nothing
+            elseif not ok then
+              check(false, select(2, res))
+            else
+              parts:append((tup(M.STR, select(2, res))))
+            end
+          else
+            check(false, "Invalid tag: " .. tag)
+          end
+          pos = ee
+        end
+      end
+    end
+
+    trimwhitespace(parts)
+
+    return ret
+
+  end)
+end
+
+M.renderfile = function (fp, config)
+  return err.pwrap(function (check)
+    local tpl = check(M.compilefile(fp, config))
+    return check(tpl:render())
+  end)
+end
+
+local function insert (output, ok, ...)
+  -- luacheck: ignore
+  if (ok == nil) then 
+    -- do nothing
+    return true
+  elseif type(ok) == "string" then
+    -- TODO: should we check that the remaining
+    -- args are strings?
+    output:append(ok, ...)
+    return true
+  elseif ok == true then 
+    -- TODO: should we check that the remaining
+    -- args are strings?
+    output:append(...)
+    return true
+  elseif ok == false then
+    return false, ...
+  else
+    return false, "expected string, boolean, or nil: got: " .. type(ok)
+  end
+end
+
+M.render = function (tmpl, env)
   assert(M.istemplate(tmpl))
   return err.pwrap(function (check)
 
-    local output = output or vec()
+    tmpl.fenv.check = check
 
-    local rt; rt = {
+    local output = vec()
 
-      insert = function (ok, str, cd)
-        -- luacheck: ignore
-        if (ok == nil) then 
-          -- do nothing
-        elseif type(ok) == "string" then
-          output:append(ok)
-        elseif ok == true and type(str) ~= "string" then
-          check(false, "expected a string, got: " .. type(str))
-        elseif ok == true then 
-          output:append(str)
-        elseif ok == false then
-          check(false, str, cd)
-        else
-          check(false, "expected string, boolean, or nil: got: " .. type(ok))
-        end
-      end,
-
-      extend = function (fp, env)
-        assert(type(fp) == "string")
-        local data = check(fs.readfile(fp))
-        local tpl = check(M.compile(data, tmpl.config))
-        tpl:render(env, tmpl.fenv, output)
-      end
-
-    }
-
-    if penv then
-      inherit.pushindex(tmpl.fenv, penv)
+    if tmpl.parent then
+      inherit.pushindex(tmpl.fenv, tmpl.parent.fenv)
       inherit.pushindex(tmpl.fenv, env or {})
     else
-      inherit.pushindex(tmpl.fenv, rt)
       inherit.pushindex(tmpl.fenv, tmpl.config.env or {})
       inherit.pushindex(tmpl.fenv, env or {})
     end
 
     for i = 1, tmpl.parts.n do
-
       local typ, data = tmpl.parts[i]()
-
       if typ == M.STR then
-        rt.insert(data)
+        check(insert(output, select(2, tmpl.parts[i]())))
       elseif typ == M.FN then
-        check.noerr(rt.insert(data()))
+        check(insert(output, data()))
       else
         error("this is a bug: chunk has an undefined type")
       end
-
     end
 
-    if not penv then
-
-      return output:concat()
-
-    elseif output.n > 0 then
-
+    if tmpl.parent and output.n > 0 then
       local last = output[output.n]
       local trailing = last:match("\n[ ]*$")
       if trailing then
         output[output.n] = last:sub(1, string.len(last) - string.len(trailing))
       end
-
     end
+
+    return output:concat()
 
   end)
 end
