@@ -1,5 +1,7 @@
 # Now 
 
+- Publish updated version
+
 - Template input/output
     - Single source dir: assume dest is dir
     - Single source file: assume dest is file

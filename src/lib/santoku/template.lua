@@ -1,9 +1,3 @@
--- TODO: Currently, child templates are compiled
--- when parent templates are rendered. We should
--- compile all the way down so that the
--- rendering step doesn't require child
--- compilations
-
 -- TODO: Add input validation, istemplate, etc
 -- TODO: Allow line prefixes (like comments) to
 -- be ignored
@@ -11,6 +5,7 @@
 
 -- TODO: Auto-indent lines based on parent
 -- indent
+-- TODO: Refactor/cleanup.
 
 local str = require("santoku.string")
 local err = require("santoku.err")
@@ -75,18 +70,25 @@ end
 
 M.compile = function (parent, ...)
   local args = tup(...)
-  return err.pwrap(function (check) 
+  return err.pwrap(function (check)
 
     local tmpl, config
 
     if not M.istemplate(parent) then
       tmpl, config = parent, args()
+      parent = nil
     else
       tmpl, config = args(), parent.config
     end
 
     config = config or {}
     local fenv = {}
+
+    if parent then
+      inherit.pushindex(fenv, parent.fenv)
+    else
+      inherit.pushindex(fenv, config.env or {})
+    end
 
     local open = str.escape(config.open or M.open)
     local close = str.escape(config.close or M.close)
@@ -157,6 +159,8 @@ M.compile = function (parent, ...)
             -- luacheck: ignore
             if ok == nil then
               -- do nothing
+            elseif type(ok) == "string" then
+              parts:append((tup(M.STR, res())))
             elseif not ok then
               check(false, select(2, res))
             else
@@ -214,13 +218,7 @@ M.render = function (tmpl, env)
 
     local output = vec()
 
-    if tmpl.parent then
-      inherit.pushindex(tmpl.fenv, tmpl.parent.fenv)
-      inherit.pushindex(tmpl.fenv, env or {})
-    else
-      inherit.pushindex(tmpl.fenv, tmpl.config.env or {})
-      inherit.pushindex(tmpl.fenv, env or {})
-    end
+    inherit.pushindex(tmpl.fenv, env or {})
 
     for i = 1, tmpl.parts.n do
       local typ, data = tmpl.parts[i]()
@@ -235,7 +233,7 @@ M.render = function (tmpl, env)
 
     if tmpl.parent and output.n > 0 then
       local last = output[output.n]
-      local trailing = last:match("\n[ ]*$")
+      local trailing = last:match("\n%s*$")
       if trailing then
         output[output.n] = last:sub(1, string.len(last) - string.len(trailing))
       end
