@@ -3,3 +3,4 @@ test/lib/luacov.stats.out
 test/lib/luacov.report.out.index
 lua_modules
 *.rock
+test/lib/spec/santoku/bundle/test

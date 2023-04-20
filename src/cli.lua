@@ -5,11 +5,24 @@ local gen = require("santoku.gen")
 local err = require("santoku.err")
 local fs = require("santoku.fs")
 local tpl = require("santoku.template")
+local bundle = require("santoku.bundle")
 local compat = require("santoku.compat")
 
 local parser = argparse()
   :name("toku")
   :description("A command lind interface to the santoku lua library")
+
+local cbundle = parser
+  :command("bundle", "create standalone executables")
+
+cbundle
+  :argument("input", "the entrypoint lua file")
+  :args(1)
+
+cbundle
+  :option("-o --output", "output directory")
+  :default(".")
+  :count(1)
 
 local ctemplate = parser
   :command("template", "process templates")
@@ -35,6 +48,9 @@ ctemplate
 
 local args = parser:parse()
 
+-- TODO: Consider migrating this logic to
+-- santoku.template or to a santoku.cli.template
+-- sub-module.
 function process_file (check, conf, trim, input, mode, output, recurse)
   if mode == "directory" and recurse then
     fs.files(input, { recurse = true })
@@ -60,6 +76,7 @@ function process_file (check, conf, trim, input, mode, output, recurse)
   end
 end
 
+-- TODO: Same as above
 function get_config (check, config)
   if config then
     return check(fs.loadfile(config))()
@@ -77,6 +94,8 @@ assert(err.pwrap(function (check)
       local mode = check(fs.attr(i, "mode"))
       process_file(check, conf, args.trim, i, mode, args.output, args.recursive)
     end)
+  elseif args.bundle then
+    check(bundle(args.input, args.output))
   end
 
 end, err.error))

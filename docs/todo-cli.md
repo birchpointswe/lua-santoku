@@ -1,5 +1,14 @@
 # Now 
 
+- toku bundle
+    - actually link static libraries
+    - gzip luac 
+    - tree shaking
+    - parse requires in luac files
+    - figure out dependencies in object files
+    - parse lua syntax instead of pattern
+      matching for require statements
+
 - Publish updated version
 
 - Template input/output

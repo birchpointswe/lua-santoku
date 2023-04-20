@@ -31,10 +31,10 @@
 
 # Next
 
-- Create a package module for checking if shell
-  programs are installed and gracefully bailing
-  if not. Futher extend to a generic project
-  scripting tool
+- Extend package module to support checking if
+  shell programs are installed and gracefully
+  bailing if not. Futher extend to a generic
+  project scripting tool
 
 # Eventually
 

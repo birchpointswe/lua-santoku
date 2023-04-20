@@ -103,6 +103,18 @@ M.pwrapper = function (co, ...)
         return ...
       end
     end,
+    any = function (...)
+      local ok, t 
+      for i = 1, select("#", ...) do
+        t = select(i, ...)
+        print(t())
+        ok = t()
+        if ok then 
+          return select(2, t())
+        end
+      end
+      return co.yield(errs(select(2, t())))
+    end,
     ok = function (ok, ...)
       if ok then
         return ...

@@ -54,6 +54,7 @@ build = {
     ["santoku.tuple"] = "src/lib/santoku/tuple.lua",
     ["santoku.err"] = "src/lib/santoku/err.lua",
     ["santoku.system"] = "src/lib/santoku/system.lua",
+    ["santoku.bundle"] = "src/lib/santoku/bundle.lua",
 
     ["santoku.posix"] = "src/lib/santoku/posix.lua",
     ["santoku.socket"] = "src/lib/santoku/socket.lua",
