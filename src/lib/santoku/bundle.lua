@@ -125,7 +125,6 @@ M.bundle = function (infile, outdir, path, cpath)
       :each(function (mod, fp)
         args:append(fp)
       end)
-    print(">", args:concat(" "))
     check(sys.execute(args:unpack()))
   end)
 end

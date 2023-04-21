@@ -9,13 +9,16 @@
     - figure out dependencies in object files
     - parse lua syntax instead of pattern
       matching for require statements
-
-- Publish updated version
+    - test cases for emscripten and normal 
 
 - Template input/output
     - Single source dir: assume dest is dir
     - Single source file: assume dest is file
     - Multiple sources: assume dest is dir
+
+- Publish updated version
+
+# Eventually
 
 - Generator interface 
     - toku files / --span exec md5sum
