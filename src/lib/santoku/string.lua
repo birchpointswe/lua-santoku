@@ -105,13 +105,13 @@ M.printf = function (s, ...)
   return io.write(s:format(...))
 end
 
--- TODO
--- Print interpolated
 M.printi = function (s, t)
   return print(M.interp(s, t))
 end
 
--- TODO
+-- TODO: Handle escaped %s in the format string
+-- like %%s\n, which should output %s\n
+--
 -- Interpolate strings
 --   "Hello %name. %adjective to meet you."
 --   "Name: %name. Age: %d:age"

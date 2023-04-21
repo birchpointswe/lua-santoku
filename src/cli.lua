@@ -24,6 +24,16 @@ cbundle
   :default(".")
   :count(1)
 
+cbundle
+  :option("--path", "override for LUA_PATH")
+  :default(os.getenv("LUA_PATH"))
+  :count(1)
+
+cbundle
+  :option("--cpath", "override for LUA_CPATH")
+  :default(os.getenv("LUA_CPATH"))
+  :count(1)
+
 local ctemplate = parser
   :command("template", "process templates")
 
@@ -95,7 +105,7 @@ assert(err.pwrap(function (check)
       process_file(check, conf, args.trim, i, mode, args.output, args.recursive)
     end)
   elseif args.bundle then
-    check(bundle(args.input, args.output))
+    check(bundle(args.input, args.output, args.path, args.cpath))
   end
 
 end, err.error))

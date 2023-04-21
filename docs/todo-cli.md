@@ -1,8 +1,9 @@
 # Now 
 
 - toku bundle
+    - refactor
     - actually link static libraries
-    - gzip luac 
+    - gzip luac? 
     - tree shaking
     - parse requires in luac files
     - figure out dependencies in object files
