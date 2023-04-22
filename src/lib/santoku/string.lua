@@ -39,6 +39,7 @@ M.match = function (str, pat)
 end
 
 -- Split a string
+--   opts.delim: default == false
 --   opts.delim == false: throw out delimiters
 --   opts.delim == true: keep delimiters as
 --     separate tokens

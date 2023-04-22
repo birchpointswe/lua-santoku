@@ -32,7 +32,14 @@ local function parsemodules (check, infile, modules, path, cpath)
     end)
 end
 
-M.parsemodules = function (infile, path, cpath) 
+M.parsemodules = function (infile, env) 
+  env = vec.wrap(env)
+  local path = (env:find(function (p) 
+    return p[1] == "LUA_PATH" 
+  end) or { "", os.getenv("LUA_PATH") })[2]
+  local cpath = (env:find(function (p) 
+    return p[1] == "LUA_CPATH" 
+  end) or { "", os.getenv("LUA_CPATH") })[2]
   return err.pwrap(function (check) 
     local modules = { c = {}, lua = {} }
     parsemodules(check, infile, modules, path, cpath)
@@ -52,10 +59,11 @@ M.mergelua = function (modules, infile)
   end)
 end
 
-M.bundle = function (infile, outdir, path, cpath)
+M.bundle = function (infile, outdir, env)
+  env = env or {}
   return err.pwrap(function (check) 
     local outprefix = fs.splitexts(fs.basename(infile)).name
-    local modules = check(M.parsemodules(infile, path, cpath))
+    local modules = check(M.parsemodules(infile, env))
     local outluafp = fs.join(outdir, outprefix .. ".lua")
     local outluadata = check(M.mergelua(modules.lua, infile))
     check(fs.writefile(outluafp, outluadata))
@@ -64,7 +72,7 @@ M.bundle = function (infile, outdir, path, cpath)
     check(sys.execute(cmdluac, "-s", "-o", outluacfp, outluafp))
     local outluahfp = fs.join(outdir, outprefix .. ".h")
     local cmdxxd = os.getenv("XXD") or "xxd"
-    check(sys.execute(cmdxxd, "-i", "-n data", outluacfp, outluahfp))
+    check(sys.execute(cmdxxd, "-i", "-n", "data", outluacfp, outluahfp))
     local outcfp = fs.join(outdir, outprefix .. ".c")
     fs.writefile(outcfp, table.concat({[[
       #include "lua.h"
@@ -115,8 +123,9 @@ M.bundle = function (infile, outdir, path, cpath)
     local cmdcflags = os.getenv("CFLAGS") or ""
     local outmainfp = fs.join(outdir, outprefix)
     local args = vec()
-    args:append("LUA_PATH='" .. path .. "'")
-    args:append("LUA_CPATH='" .. cpath .. "'")
+    env:each(function (var) 
+      args:append(table.concat({ var[1], "=\"", var[2], "\"" }))
+    end)
     args:append(cmdcc, outcfp)
     args:append("-lm", "-llua")
     args:append("-o", outmainfp)
