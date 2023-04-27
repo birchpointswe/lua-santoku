@@ -17,7 +17,7 @@ M.pushindex = function (t, i)
   assert(type(t) == "table")
   assert(t ~= i, "setting a table to its own index")
   if not i then
-    return
+    return t
   end
   assert(type(i) == "table")
   local tindex = M.getindex(t)
@@ -25,6 +25,7 @@ M.pushindex = function (t, i)
   if tindex and i ~= tindex then
     M.pushindex(i, tindex)
   end
+  return t
 end
 
 M.popindex = function (t)
@@ -47,6 +48,7 @@ M.setindex = function (t, i)
     setmetatable(t, mt)
   end
   mt.__index = i
+  return t
 end
 
 M.getindex = function (t)

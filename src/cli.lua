@@ -1,6 +1,7 @@
 -- TODO: Write tests for this
 
 local argparse = require("argparse")
+local inherit = require("santoku.inherit")
 local gen = require("santoku.gen")
 local err = require("santoku.err")
 local vec = require("santoku.vector")
@@ -61,11 +62,6 @@ ctemplate
   :args(1)
   :count("0-1")
 
-ctemplate
-  :option("-l --load", "load a module to the global namespace")
-  :args(1)
-  :count("*")
-
 local args = parser:parse()
 
 -- TODO: Move this logic into santoku.template
@@ -99,24 +95,17 @@ function process_files (check, conf, trim, input, mode, output)
 end
 
 -- TODO: Same as above
-function get_config (check, config, libs)
-  local cfg = config and check(fs.loadfile(config))() or {} 
-  cfg.env = cfg.env or {}
-  if libs then
-    gen.ivals(libs):each(function (lib)
-      -- TODO: How does this behave with
-      -- modules that contain dots?
-      cfg.env[lib] = require(lib)
-    end)
-  end
+function get_config (check, config)
+  local lenv = inherit.pushindex({}, _G)
+  local cfg = config and check(fs.loadfile(config, lenv))() or {} 
+  cfg.env = inherit.pushindex(cfg.env or {}, _G)
   return cfg
 end
 
 assert(err.pwrap(function (check)
 
   if args.template then
-    local libs = vec.wrap(args.load or {})
-    local conf = get_config(check, args.config, libs)
+    local conf = get_config(check, args.config)
     if args.directory then
       check(fs.mkdirp(args.output))
       gen.ivals(args.input):each(function (i) 

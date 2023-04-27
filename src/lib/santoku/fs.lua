@@ -4,6 +4,7 @@
 local lfs = require("lfs")
 
 local compat = require("santoku.compat")
+local inherit = require("santoku.inherit")
 local str = require("santoku.string")
 local err = require("santoku.err")
 local gen = require("santoku.gen")
@@ -320,7 +321,8 @@ M.loadfile = function (fp, env)
 end
 
 M.runfile = function (fp, env)
-  local ok, fn, cd = M.loadfile(fp, env)
+  local lenv = inherit.pushindex(env or {}, _G)
+  local ok, fn, cd = M.loadfile(fp, lenv)
   if not ok then
     return false, fn, cd
   else
