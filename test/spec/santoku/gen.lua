@@ -187,7 +187,11 @@ describe("santoku.gen", function ()
 
       local v = gen.pairs({ a = 1, b = 2 }):vec()
 
-      assert.same(v, vec(vec("a", 1), vec("b", 2)))
+      local apair = v:find(function (p) return p[1] == "a" end)
+      local bpair = v:find(function (p) return p[1] == "b" end)
+
+      assert(apair[2] == 1)
+      assert(bpair[2] == 2)
 
     end)
 
@@ -198,6 +202,7 @@ describe("santoku.gen", function ()
     it("iterates ipairs in a table", function ()
 
       local v = gen.ipairs({ 1, 2 }):vec()
+
       assert.same(v, vec(vec(1, 1), vec(2, 2)))
 
     end)
@@ -209,7 +214,9 @@ describe("santoku.gen", function ()
     it("iterates table values", function ()
 
       local v = gen.vals({ a = 1, b = 2 }):vec()
-      assert.same(v, vec(1, 2))
+
+      assert.equals(1, v:find(function (a) return a == 1 end))
+      assert.equals(2, v:find(function (a) return a == 2 end))
 
     end)
 
@@ -220,7 +227,9 @@ describe("santoku.gen", function ()
     it("iterates table keys", function ()
 
       local v = gen.keys({ a = 1, b = 2 }):vec()
-      assert.same(v, vec("a", "b"))
+
+      assert.equals("a", v:find(function (a) return a == "a" end))
+      assert.equals("b", v:find(function (b) return b == "b" end))
 
     end)
 
@@ -650,4 +659,15 @@ describe("santoku.gen", function ()
 
   end)
 
+  describe("intersperse", function ()
+
+    it("intersperses values into a generator", function ()
+
+      local v = gen.pack(1, 2, 3, 4):intersperse("x"):vec()
+
+      assert.same(v, vec(1, "x", 2, "x", 3, "x", 4))
+
+    end)
+
+  end)
 end)

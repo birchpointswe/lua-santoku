@@ -1,6 +1,5 @@
-test/lib/luacov.report.out
-test/lib/luacov.stats.out
-test/lib/luacov.report.out.index
-lua_modules
-*.rock
-test/lib/spec/santoku/bundle/test
+test/luacov.report.out
+test/luacov.stats.out
+test/luacov.report.out.index
+test/spec/santoku/bundle/test
+build

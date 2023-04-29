@@ -24,12 +24,8 @@ M.tagclose = "%"
 M.STR = tup()
 M.FN = tup()
 
--- TODO use inherit
 M.istemplate = function (t)
-  if type(t) ~= "table" then
-    return false
-  end
-  return (getmetatable(t) or {}).__index == M
+  return inherit.hasindex(t, M)
 end
 
 local function trimwhitespace (parts)
@@ -105,16 +101,31 @@ M.compile = function (parent, ...)
     local pos, ss, se, es, ee
     pos = 0
 
+    local deps = vec()
+
     local ret = setmetatable({
       fenv = fenv,
       source = tmpl,
+      deps = deps,
       config = config,
       parent = parent,
       parts = parts,
     }, {
-      __index = M,
       __call = function (tmpl, ...)
         return tmpl:render(...)
+      end
+    })
+
+    inherit.pushindex(ret, M)
+
+    inherit.pushindex(ret, {
+      compilefile = function (a, b, ...)
+        if not M.istemplate(a) then
+          deps:append(a)
+        else
+          deps:append(b)
+        end
+        return M.compilefile(a, b, ...)
       end
     })
 

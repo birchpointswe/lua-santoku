@@ -7,6 +7,16 @@ local fs = require("santoku.fs")
 
 local M = {}
 
+local function write_deps (check, modules, infile, outfile)
+  local depsfile = outfile .. ".d"
+  local out = gen.chain(
+      gen.pack(infile, ": "),
+      gen.vals(modules):map(gen.vals):flatten():intersperse(" "),
+      gen.pack("\n", depsfile, ": ", infile))
+    :vec():concat()
+  check(fs.writefile(depsfile, out))
+end
+
 local function parsemodules (check, infile, modules, path, cpath) 
   local data = check(fs.readfile(infile))
   gen.ivals(str.match(data, "require%(?[^%S\n]*\"([^\"]*)\"[^%S\n]*%)?"))
@@ -59,7 +69,7 @@ M.mergelua = function (modules, infile)
   end)
 end
 
-M.bundle = function (infile, outdir, env)
+M.bundle = function (infile, outdir, env, deps)
   env = env or {}
   return err.pwrap(function (check) 
     local outprefix = fs.splitexts(fs.basename(infile)).name
@@ -74,7 +84,8 @@ M.bundle = function (infile, outdir, env)
     local cmdxxd = os.getenv("XXD") or "xxd"
     check(sys.execute(cmdxxd, "-i", "-n", "data", outluacfp, outluahfp))
     local outcfp = fs.join(outdir, outprefix .. ".c")
-    fs.writefile(outcfp, table.concat({[[
+    write_deps(check, modules, infile, outluafp)
+    check(fs.writefile(outcfp, table.concat({[[
       #include "lua.h"
       #include "lualib.h"
       #include "lauxlib.h"
@@ -118,7 +129,7 @@ M.bundle = function (infile, outdir, env)
         lua_close(L);
         return rc;
       }
-    ]]}))
+    ]]})))
     local cmdcc = os.getenv("CC") or "cc"
     local cmdcflags = os.getenv("CFLAGS") or ""
     local outmainfp = fs.join(outdir, outprefix)

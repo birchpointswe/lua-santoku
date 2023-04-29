@@ -1,7 +1,5 @@
 # Now
 
-- Convert to makefile-driven build 
-
 - Pwrap
     - Refactor and move to "check" module that
       exports a function with the following

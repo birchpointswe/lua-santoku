@@ -1,5 +1,7 @@
 # Now 
 
+- Split to separate project entirely
+
 - toku cli help info and args table fixes
     - toku template -h shows "-l --load <load>"
       when it should be like "-l --load <module>"

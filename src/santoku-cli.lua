@@ -28,6 +28,10 @@ cbundle
   :count(1)
 
 cbundle
+  :flag("-M --deps", "generate a make .d file")
+  :count("0-1")
+
+cbundle
   :option("-o --output", "output directory")
   :args(1)
   :count(1)
@@ -53,6 +57,10 @@ ctemplate
   :count(1)
 
 ctemplate
+  :flag("-M --deps", "generate a make .d file")
+  :count("0-1")
+
+ctemplate
   :option("-t --trim", "prefix to remove from directory prefix before output (only used when -d is provided)")
   :args(1)
   :count("?")
@@ -65,21 +73,36 @@ ctemplate
 local args = parser:parse()
 
 -- TODO: Move this logic into santoku.template
-function process_file (check, conf, input, output)
+function write_deps (check, deps, input, output)
+  local depsfile = output .. ".d"
+  local out = gen.chain(
+      gen.pack(output, ": "),
+      gen.ivals(deps):intersperse(" "),
+      gen.pack("\n", depsfile, ": ", input, "\n"))
+    :vec()
+    :concat()
+  check(fs.writefile(depsfile, out))
+end
+
+-- TODO: Same as above
+function process_file (check, conf, input, output, deps)
   local data = check(fs.readfile(input))
   local tmpl = check(tpl(data, conf))
   local out = check(tmpl(conf.env))
   check(fs.mkdirp(fs.dirname(output)))
   check(fs.writefile(output, out))
+  if deps then
+    write_deps(check, tmpl.deps, input, output)
+  end
 end
 
 -- TODO: Same as above
-function process_files (check, conf, trim, input, mode, output)
+function process_files (check, conf, trim, input, mode, output, deps)
   if mode == "directory" then
     fs.files(input, { recurse = true })
       :map(check)
       :each(function (fp, mode)
-        process_files(check, conf, trim, fp, mode, output, recurse)
+        process_files(check, conf, trim, fp, mode, output, recurse, deps)
       end)
   elseif mode == "file" then
     local trimlen = trim and string.len(trim)
@@ -88,7 +111,7 @@ function process_files (check, conf, trim, input, mode, output)
       outfile = outfile:sub(trimlen + 1)
     end
     output = fs.join(output, outfile)
-    process_file(check, conf, input, output)
+    process_file(check, conf, input, output, deps)
   else
     error("Unexpected mode: " .. mode .. " for file: " .. input)
   end
@@ -110,15 +133,15 @@ assert(err.pwrap(function (check)
       check(fs.mkdirp(args.output))
       gen.ivals(args.input):each(function (i) 
         local mode = check(fs.attr(i, "mode"))
-        process_files(check, conf, args.trim, i, mode, args.output)
+        process_files(check, conf, args.trim, i, mode, args.output, args.deps)
       end)
     elseif args.file then 
-      process_file(check, conf, args.file, args.output)
+      process_file(check, conf, args.file, args.output, args.deps)
     else
       parser:error("either -f --file or -d --directory must be provided")
     end
   elseif args.bundle then
-    check(bundle(args.file, args.output, args.env))
+    check(bundle(args.file, args.output, args.env, args.deps))
   else
     -- Not possible
     error("This is a bug")

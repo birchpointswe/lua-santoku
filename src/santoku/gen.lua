@@ -1,3 +1,8 @@
+-- TODO: CLEAN UP THESE TODOs
+
+-- TODO: Add append, extend, etc. functions for
+-- basic generators by wrapping
+
 -- TODO: Need some kind of done state
 
 -- TODO: With the callback version there doesn't
@@ -246,6 +251,21 @@ M.pastel = function (gen, ...)
   local args = tup(...)
   return gen:map(function (...)
     return args(...)
+  end)
+end
+
+M.intersperse = function (gen, ...)
+  assert(M.isgen(gen))
+  local args = tup(...)
+  local isfirst = true
+  return M.gen(function (yield)
+    return gen:each(function (...)
+      if not isfirst then
+        yield(args())
+      end
+      yield(...)
+      isfirst = false
+    end)
   end)
 end
 

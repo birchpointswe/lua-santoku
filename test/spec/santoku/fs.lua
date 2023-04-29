@@ -9,7 +9,7 @@ describe("santoku.fs", function ()
 
     it("should return the correct number of lines", function ()
 
-      local fp = "./test/lib/spec/santoku/fs.tst1.txt"
+      local fp = "./test/spec/santoku/fs.tst1.txt"
       local ok, gen = fs.lines(fp)
       assert(ok)
 
@@ -73,12 +73,12 @@ describe("santoku.fs", function ()
 
     it("should list directory files", function ()
       local files = vec(
-        "test/lib/spec/santoku/fs/a/a.txt",
-        "test/lib/spec/santoku/fs/b/a.txt",
-        "test/lib/spec/santoku/fs/a/b.txt",
-        "test/lib/spec/santoku/fs/b/b.txt")
+        "test/spec/santoku/fs/a/a.txt",
+        "test/spec/santoku/fs/b/a.txt",
+        "test/spec/santoku/fs/a/b.txt",
+        "test/spec/santoku/fs/b/b.txt")
       local i = 0
-      fs.files("test/lib/spec/santoku/fs", { recurse = true })
+      fs.files("test/spec/santoku/fs", { recurse = true })
         :each(function (ok, fp, mode)
           assert(ok)
           assert(files:find(fun.narg()(op.eq, fp)))

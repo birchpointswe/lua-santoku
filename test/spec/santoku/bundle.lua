@@ -7,8 +7,8 @@ describe("santoku.bundle", function ()
   describe("bundle", function ()
 
     it("should produce a standalone executable from a lua file", function ()
-      local infile = "test/lib/spec/santoku/bundle/test.lua"
-      local outdir = "test/lib/spec/santoku/bundle/test"
+      local infile = "test/spec/santoku/bundle/test.lua"
+      local outdir = "test/spec/santoku/bundle/test"
       assert(err.pwrap(function (check) 
         check(fs.mkdirp(outdir))
         fs.files(outdir):map(check):map(os.remove):each(check)
