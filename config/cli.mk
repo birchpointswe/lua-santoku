@@ -14,11 +14,8 @@ cli-install: $(CLI_ROCKSPEC)
 luarocks-cli-install: $(CLI_DEST)
 
 cli-upload: $(CLI_ROCKSPEC)
-	@if test -z "$(LUAROCKS_API_KEY)"; then echo "Missing LUAROCKS_API_KEY variable"; exit 1; fi
-	@if ! git diff --quiet; then echo "Commit your changes first"; exit 1; fi
-	git tag "$(VERSION)"
-	git push --tags 
-	luarocks upload --api-key "$(LUAROCKS_API_KEY)" "$(CLI_ROCKSPEC)"
+	cd "$(BUILD_DIR)" && \
+		luarocks upload --api-key "$(LUAROCKS_API_KEY)" "../$(CLI_ROCKSPEC)"
 
 $(CLI_DEST): $(CLI_SRC)
 	test -n "$(INST_LUADIR)"

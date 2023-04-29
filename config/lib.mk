@@ -18,11 +18,8 @@ lib-install: $(LIB_ROCKSPEC)
 luarocks-lib-install: $(LIB_DIST)
 
 lib-upload: $(LIB_ROCKSPEC)
-	@if test -z "$(LUAROCKS_API_KEY)"; then echo "Missing LUAROCKS_API_KEY variable"; exit 1; fi
-	@if ! git diff --quiet; then echo "Commit your changes first"; exit 1; fi
-	git tag "$(VERSION)"
-	git push --tags 
-	luarocks upload --api-key "$(LUAROCKS_API_KEY)" "$(LIB_ROCKSPEC)"
+	cd "$(BUILD_DIR)" && \
+		luarocks upload --api-key "$(LUAROCKS_API_KEY)" "../$(LIB_ROCKSPEC)"
 
 $(INST_LUADIR)/$(LIB_NAME)/%: src/$(LIB_NAME)/% 
 	test -n "$(INST_LUADIR)"
