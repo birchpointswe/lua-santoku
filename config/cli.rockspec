@@ -20,8 +20,7 @@ dependencies = {
 build = {
   type = "make",
   install_target = "luarocks-cli-install",
-  install_variables  =  {
-    INST_LUADIR = "$(LUADIR)",
+  install_variables = {
     INST_BINDIR = "$(BINDIR)",
   },
 }

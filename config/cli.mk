@@ -18,8 +18,7 @@ cli-upload: $(CLI_ROCKSPEC)
 		luarocks upload --api-key "$(LUAROCKS_API_KEY)" "../$(CLI_ROCKSPEC)"
 
 $(CLI_DEST): $(CLI_SRC)
-	test -n "$(INST_LUADIR)"
-	test -n "$(INST_BINDIR)"
+	@if test -z "$(INST_BINDIR)"; then echo "Missing INST_BINDIR variable"; exit 1; fi
 	mkdir -p "$(dir $(CLI_DEST))"
 	cp "$(CLI_SRC)" "$(CLI_DEST)"
 
