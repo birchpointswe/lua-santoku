@@ -213,6 +213,10 @@ M.splitexts = function (fp)
   }
 end
 
+M.replaceext = function (fp, ext)
+  return M.splitexts(fp).name .. ext
+end
+
 -- TODO: Can we leverage a generalized function
 -- for this?
 M.writefile = function (fp, str, flag)

@@ -29,7 +29,7 @@ describe("template", function ()
   end)
 
   it("should handle multiple replacements", function ()
-    local ok, tpl = template("<%compile% a = check(template:compilefile('test/spec/santoku/template/title.html')) %><title><% return a:render() %></title>")
+    local ok, tpl = template("<%compile% a = check(template:compilefile('test/spec/santoku/template/title.html')) %><title><% return check(a:render()) %></title>")
     assert(ok, tpl)
     assert.same(tpl.deps, vec("test/spec/santoku/template/title.html"))
     local ok, str = tpl:render({ title = "Hello, World!" })
@@ -38,7 +38,7 @@ describe("template", function ()
   end)
 
   it("should support sharing fenv to child templates", function ()
-    local ok, tpl = template("<% title = 'Hello, World!' %><title><% return check(template:compilefile('test/spec/santoku/template/title.html')):render() %></title>")
+    local ok, tpl = template("<% title = 'Hello, World!' %><title><% return check(check(template:compilefile('test/spec/santoku/template/title.html')):render()) %></title>")
     assert(ok, tpl)
     local ok, str = tpl:render({ title = "Hello, World!" })
     assert(ok, str)
@@ -46,7 +46,7 @@ describe("template", function ()
   end)
 
   it("should handle whitespace between blocks", function ()
-    local ok, tpl = template("<title><% return check(template:compilefile('test/spec/santoku/template/title.html')):render() %> <% return check(template:compilefile('test/spec/santoku/template/name.html')):render() %></title>")
+    local ok, tpl = template("<title><% return check(check(template:compilefile('test/spec/santoku/template/title.html')):render()) %> <% return check(check(template:compilefile('test/spec/santoku/template/name.html')):render()) %></title>")
     assert(ok, tpl)
     local ok, str = tpl:render({
       title = "Hello, World!",
@@ -57,7 +57,7 @@ describe("template", function ()
   end)
 
   it("should support multiple nesting levels ", function ()
-    local ok, tpl = template("<title><% return check(template:compilefile('test/spec/santoku/template/titles.html')):render() %></title>")
+    local ok, tpl = template("<title><% return check(check(template:compilefile('test/spec/santoku/template/titles.html')):render()) %></title>")
     assert(ok, tpl)
     local ok, str = tpl:render({
       title = "Hello, World!",
@@ -68,7 +68,7 @@ describe("template", function ()
   end)
 
   it("should support multiple templates", function ()
-    local ok, tpl = template("<%compile% a, b = check(template:compilefile('test/spec/santoku/template/title.html')), check(template:compilefile('test/spec/santoku/template/titles.html')) %><title><% return a:render() %> <% return b:render() %></title>")
+    local ok, tpl = template("<%compile% a, b = check(template:compilefile('test/spec/santoku/template/title.html')), check(template:compilefile('test/spec/santoku/template/titles.html')) %><title><% return check(a:render()) %> <% return check(b:render()) %></title>")
     assert(ok, tpl)
     assert.same(tpl.deps, vec("test/spec/santoku/template/title.html", "test/spec/santoku/template/titles.html"))
     local ok, str = tpl:render({

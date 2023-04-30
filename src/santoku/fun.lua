@@ -3,6 +3,7 @@ local vec = require("santoku.vector")
 
 local M = {}
 
+-- TODO: use tup
 -- TODO: Can this be made more efficient?
 -- TODO: Rename/refactor to curry(2, 3, fn, a)
 M.narg = function (...)
@@ -21,6 +22,7 @@ M.narg = function (...)
   end
 end
 
+-- TODO: use tup
 M.bindr = function (fn, ...)
   local args = vec(...)
   return function (...)
@@ -28,6 +30,7 @@ M.bindr = function (fn, ...)
   end
 end
 
+-- TODO: use tup
 M.bindl = function (fn, ...)
   local args = vec(...)
   return function (...)
@@ -61,6 +64,8 @@ end
 
 M.maybe = M.mayber
 
+-- TODO: use tup
+--
 -- TODO: Use 0 to specify "rest": If its last,
 -- append rest to the end, if it's first, append
 -- rest to the "holes" left by the indices
@@ -76,6 +81,7 @@ M.nret = function (...)
   end
 end
 
+-- TODO: use tup
 M.compose = function (...)
   local fns = vec(...)
   return function(...)

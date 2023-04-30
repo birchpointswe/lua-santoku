@@ -14,11 +14,13 @@ description = {
 
 -- TODO: can we do optional dependencies for
 -- things like luafilesystem, socket, sqlite,
--- posix, etc?
+-- posix, etc? What can we replace with santoku
+-- libs?
 dependencies = {
   "lua >= 5.1",
   "luafilesystem >= 1.8.0-1",
   "lsqlite3 >= 0.9.5",
+  "inspect >= 3.1.3-0"
 }
 
 test_dependencies = {

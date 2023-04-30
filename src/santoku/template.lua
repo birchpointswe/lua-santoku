@@ -9,6 +9,7 @@
 
 local str = require("santoku.string")
 local err = require("santoku.err")
+local fun = require("santoku.fun")
 local inherit = require("santoku.inherit")
 local vec = require("santoku.vector")
 local tup = require("santoku.tuple")
@@ -21,6 +22,7 @@ M.open = "<%"
 M.close = "%>"
 M.tagclose = "%"
 
+M.CODE = tup()
 M.STR = tup()
 M.FN = tup()
 
@@ -160,6 +162,7 @@ M.compile = function (parent, ...)
             code = code:sub(string.len(tag) + tagcloselen + 1)
           end
           local ok, fn, cd = compat.load(code, fenv)
+          parts:append((tup(M.CODE, code)))
           if not ok then
             check(false, fn, cd)
           elseif tag == nil or tag == "render" then
@@ -199,31 +202,24 @@ M.renderfile = function (fp, config)
   end)
 end
 
-local function insert (output, ok, ...)
-  -- luacheck: ignore
-  if (ok == nil) then 
-    -- do nothing
-    return true
-  elseif type(ok) == "string" then
-    -- TODO: should we check that the remaining
-    -- args are strings?
-    output:append(ok, ...)
-    return true
-  elseif ok == true then 
-    -- TODO: should we check that the remaining
-    -- args are strings?
-    output:append(...)
-    return true
-  elseif ok == false then
-    return false, ...
+local function insert (output, fmt, ...)
+  output:append(fmt(...))
+end
+
+local function loadfmt (fmt, def)
+  if fmt then
+    return fun.compose(vec.wrap(fmt):map(require):unpack())
   else
-    return false, "expected string, boolean, or nil: got: " .. type(ok)
+    return def
   end
 end
 
-M.render = function (tmpl, env)
+M.render = function (tmpl, env, codefmt, resultfmt)
   assert(M.istemplate(tmpl))
   return err.pwrap(function (check)
+
+    codefmt = loadfmt(codefmt, nil)
+    resultfmt = loadfmt(resultfmt, compat.id)
 
     tmpl.fenv.check = check
 
@@ -233,10 +229,14 @@ M.render = function (tmpl, env)
 
     for i = 1, tmpl.parts.n do
       local typ, data = tmpl.parts[i]()
-      if typ == M.STR then
-        check(insert(output, select(2, tmpl.parts[i]())))
+      if typ == M.CODE then
+        if codefmt then
+          insert(output, codefmt, data)
+        end
+      elseif typ == M.STR then
+        insert(output, resultfmt, data)
       elseif typ == M.FN then
-        check(insert(output, data()))
+        insert(output, resultfmt, data())
       else
         error("this is a bug: chunk has an undefined type")
       end
@@ -250,7 +250,7 @@ M.render = function (tmpl, env)
       end
     end
 
-    return output:concat()
+    return output:map(tostring):concat()
 
   end)
 end
