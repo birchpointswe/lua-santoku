@@ -12,14 +12,17 @@ LIB_ROCKSPEC_T = config/lib.rockspec
 test: $(LIB_ROCKSPEC) 
 	luarocks test $(LIB_ROCKSPEC) $(ARGS)
 
+iterate: $(LIB_ROCKSPEC) 
+	luarocks test $(LIB_ROCKSPEC) iterate $(ARGS)
+
 lib-install: $(LIB_ROCKSPEC)
-	luarocks make $(LIB_ROCKSPEC)
+	luarocks make $(LIB_ROCKSPEC) $(ARGS) 
 
 luarocks-lib-install: $(LIB_DIST)
 
 lib-upload: $(LIB_ROCKSPEC)
 	cd "$(BUILD_DIR)" && \
-		luarocks upload --api-key "$(LUAROCKS_API_KEY)" "../$(LIB_ROCKSPEC)"
+		luarocks upload --api-key "$(LUAROCKS_API_KEY)" "../$(LIB_ROCKSPEC)" $(ARGS)
 
 $(INST_LUADIR)/$(LIB_NAME)/%: src/$(LIB_NAME)/% 
 	test -n "$(INST_LUADIR)"
