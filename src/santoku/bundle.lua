@@ -18,8 +18,15 @@ local function write_deps (check, modules, infile, outfile)
 end
 
 local function parsemodules (check, infile, modules, path, cpath) 
-  local data = check(fs.readfile(infile))
-  gen.ivals(str.match(data, "require%(?[^%S\n]*\"([^\"]*)\"[^%S\n]*%)?"))
+  check(fs.lines(infile))
+    :map(function (line)
+      if line:match("^%s*%-%-") then
+        return gen.empty()
+      else
+        return gen.ivals(str.match(line, "require%(?[^%S\n]*\"([^\"]*)\"[^%S\n]*%)?"))
+      end
+    end)
+    :flatten()
     :each(function (mod)
       local fp0, err0 = package.searchpath(mod, path)
       if fp0 then

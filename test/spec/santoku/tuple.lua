@@ -26,4 +26,13 @@ describe("tuple", function ()
 
   end)
 
+  it("allows map", function ()
+
+    local a, b, c = tup.map(function (a) return a * 2 end, 1, 2, 3)
+    assert.equals(2, a)
+    assert.equals(4, b)
+    assert.equals(6, c)
+
+  end)
+
 end)

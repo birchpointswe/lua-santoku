@@ -1,3 +1,8 @@
+-- TODO: Consider disallowing bool + string
+-- returns, and instead just return strings
+-- directly. This will make formatters easier to
+-- implement.
+--
 -- TODO: Add input validation, istemplate, etc
 -- TODO: Allow line prefixes (like comments) to
 -- be ignored

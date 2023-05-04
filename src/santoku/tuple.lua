@@ -43,6 +43,14 @@ M.tuple = function (...)
   return tuple(select("#", ...), ...)
 end
 
+M.map = function (fn, ...)
+  if select("#", ...) == 0 then
+    return 
+  else
+    return fn((select(1, ...))), M.map(fn, select(2, ...))
+  end
+end
+
 return setmetatable(M, {
   __call = function (_, ...)
     return M.tuple(...)
