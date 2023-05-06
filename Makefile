@@ -24,4 +24,4 @@ tag-version:
 clean:
 	rm -rf "$(BUILD_DIR)"
 
-.PHONY: all clean
+.PHONY: all upload tag-version clean
