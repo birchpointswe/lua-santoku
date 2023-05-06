@@ -17,8 +17,8 @@ description = {
 -- posix, etc?
 dependencies = {
   "lua >= 5.1",
-  "luafilesystem >= 1.8.0-1",
-  "lsqlite3 >= 0.9.5",
+  -- "luafilesystem >= 1.8.0-1",
+  -- "lsqlite3 >= 0.9.5",
 }
 
 test_dependencies = {
