@@ -13,6 +13,8 @@ all:
 include config/cli.mk
 include config/lib.mk
 
+install: lib-install cli-install
+
 upload: tag-version lib-upload cli-upload
 
 tag-version:
@@ -24,4 +26,4 @@ tag-version:
 clean:
 	rm -rf "$(BUILD_DIR)"
 
-.PHONY: all upload tag-version clean
+.PHONY: all install upload tag-version clean
