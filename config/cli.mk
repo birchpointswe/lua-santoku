@@ -6,7 +6,7 @@ CLI_ROCKSPEC_T = config/cli.rockspec
 CLI_SRC = src/santoku-cli.lua
 CLI_DEST = $(INST_BINDIR)/toku
 
-TOKU_TPL = LUA_PATH="src/?.lua;$(LUA_PATH)" $(LUA) $(CLI_SRC) template
+TOKU = LUA_PATH="src/?.lua;$(LUA_PATH)" $(LUA) $(CLI_SRC)
 
 cli-install: $(CLI_ROCKSPEC)
 	luarocks make $(CLI_ROCKSPEC) $(ARGS) 
@@ -26,6 +26,6 @@ $(CLI_ROCKSPEC): $(CLI_ROCKSPEC_T)
 	NAME="$(CLI_NAME)" VERSION="$(VERSION)" \
 	HOMEPAGE="$(HOMEPAGE)" LICENSE="$(LICENSE)" \
 	GIT_URL="$(GIT_URL)" \
-		$(TOKU_TPL) -f "$^" -o "$@"
+		$(TOKU) template -f "$^" -o "$@"
 
 .PHONY: cli-install luarocks-cli-install cli-upload

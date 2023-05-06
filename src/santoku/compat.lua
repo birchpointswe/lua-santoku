@@ -1,4 +1,6 @@
--- TODO: Rename to "common"
+-- TODO: Rename to "common", since this is more
+-- than a compatibility layer
+-- TODO: Add package.searchpath shim
 -- TODO: Move most zero-dependency basic
 -- utilities here
 -- TODO: Add remaining lua version shims here

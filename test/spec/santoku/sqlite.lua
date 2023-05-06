@@ -1,8 +1,11 @@
+local assert = require("luassert")
+local test = require("santoku.test")
+
 local sql = require("santoku.sqlite")
 
-describe("sqlite", function ()
+test("sqlite", function ()
 
-  it("should wrap various functions", function ()
+  test("should wrap various functions", function ()
 
     local ok, db = sql.open_memory()
     assert.equals(true, ok)

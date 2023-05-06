@@ -1,8 +1,9 @@
+local test = require("santoku.test")
 local env = require("santoku.env")
 
-describe("utils", function ()
+test("utils", function ()
 
-  describe("interpreter", function ()
+  test("interpreter", function ()
 
     -- TODO: This is test is basically just
     -- reimplementing the function. We should

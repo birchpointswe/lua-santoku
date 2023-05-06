@@ -1,10 +1,13 @@
+local assert = require("luassert")
+local test = require("santoku.test")
+
 local inherit = require("santoku.inherit")
 
-describe("inherit", function ()
+test("inherit", function ()
 
-  describe("pushindex", function ()
+  test("pushindex", function ()
 
-    it("should add an index to a table", function ()
+    test("should add an index to a table", function ()
 
       local t = {}
       local i = { a = 1 }
@@ -14,7 +17,7 @@ describe("inherit", function ()
 
     end)
 
-    it("should preserve existing indexes", function ()
+    test("should preserve existing indexes", function ()
 
       local t = {}
       local i1 = { a = 1 }
@@ -55,9 +58,9 @@ describe("inherit", function ()
 
   end)
 
-  describe("popindex", function ()
+  test("popindex", function ()
 
-    it("should pop a single index", function ()
+    test("should pop a single index", function ()
 
       local t = {}
       local i = { a = 1 }

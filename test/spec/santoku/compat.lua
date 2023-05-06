@@ -1,28 +1,29 @@
+local test = require("santoku.test")
 local compat = require("santoku.compat")
 
-describe("compat", function ()
+test("compat", function ()
 
-  describe("id", function ()
+  test("id", function ()
 
-    it("should return the argments", function ()
+    test("should return the argments", function ()
       local a, b, c, d = compat.id(1, 2, 3)
-      assert.equals(1, a)
-      assert.equals(2, b)
-      assert.equals(3, c)
-      assert.equals(nil, d)
+      assert(1 == a)
+      assert(2 == b)
+      assert(3 == c)
+      assert(nil == d)
     end)
 
   end)
 
-  describe("const", function ()
+  test("const", function ()
 
-    it("should a function that returns the arguments", function ()
+    test("should a function that returns the arguments", function ()
       local fn = compat.const(1, 2, 3)
       for i = 1, 10 do
         local a, b, c = fn()
-        assert.equals(1, a)
-        assert.equals(2, b)
-        assert.equals(3, c)
+        assert(1 == a)
+        assert(2 == b)
+        assert(3 == c)
       end
     end)
 

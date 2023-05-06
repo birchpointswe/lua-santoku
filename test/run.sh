@@ -8,41 +8,35 @@
 
 # TODO: write this in lua
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")"
 
 LUA=$(luarocks config lua_interpreter)
 
 run()
 {
   rm -f \
-    test/luacov.stats.out \
-    test/luacov.report.out
-  if [ "$1" = "--build" ]
-  then
-    luarocks build
-    shift
-  fi
+    luacov.stats.out \
+    luacov.report.out
   if [ "$#" = "0" ]
   then
     covmatch=""
-    test_files="test/spec"
-    source_files="src"
+    test_files="spec"
+    source_files="../src"
   else
     covmatch="NR < 4 $(echo "$@" | sed 's/\(\S*\)/|| match(\$0, \"\1\")/')"
-    test_files="$(echo "$@" | sed 's/src/test\/spec/')"
-    source_files="$@"
+    test_files="$(echo "$@" | sed 's/src/spec/')"
+    source_files="../$@"
   fi
   echo
-  if LUA_PATH="./src/?.lua;$LUA_PATH;" \
-    busted \
-    --lua="$LUA" \
-    -f test/busted.lua "$test_files"
+  if LUA_PATH="../src/?.lua;$LUA_PATH;" \
+    $LUA -lluacov ../src/santoku-cli.lua test "$test_files"
   then
-    luacov -c test/luacov.lua
-    luacheck --config test/luacheck.lua "$source_files"
-    cat test/luacov.report.out | \
+    luacov -c luacov.lua
+    cat luacov.report.out | \
       awk '/^Summary/ { P = NR } P && NR > P + 1' | \
       awk "$covmatch { print }"
+    echo
+    luacheck --config luacheck.lua "$source_files"
   fi
 }
 
@@ -50,7 +44,7 @@ iterate()
 {
   while true; do
     run "$@"
-    inotifywait -qqr src test/spec test/*.lua test/run.sh \
+    inotifywait -qqr ../src spec *.lua run.sh \
       -e modify \
       -e close_write
   done

@@ -9,7 +9,7 @@ local M = {}
 -- TODO: Like pushindex, except sub-tables in t
 -- get indexes from the corresponding sub-tables
 -- in i
-M.mergeindex = function (t, i)
+M.mergeindex = function (t, i) -- luacheck: ignore
   error("mergeindex: unimplemented")
 end
 

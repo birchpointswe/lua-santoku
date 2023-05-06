@@ -26,7 +26,7 @@ M.str = function (n, ...)
   return table.concat(t)
 end
 
-M.alnum = function (n) 
+M.alnum = function (n)
   return M.str(n, 48, 122)
 end
 

@@ -1,8 +1,11 @@
+local assert = require("luassert")
+local test = require("santoku.test")
+
 local tup = require("santoku.tuple")
 
-describe("tuple", function ()
+test("tuple", function ()
 
-  it("stores varargs", function ()
+  test("stores varargs", function ()
 
     local tup, m = tup(1, 2, 3)
     assert(m == 3)
@@ -14,7 +17,7 @@ describe("tuple", function ()
 
   end)
 
-  it("allows append", function ()
+  test("allows append", function ()
 
     local tup, m = tup(1)
     assert(m == 1)
@@ -26,7 +29,7 @@ describe("tuple", function ()
 
   end)
 
-  it("allows map", function ()
+  test("allows map", function ()
 
     local a, b, c = tup.map(function (a) return a * 2 end, 1, 2, 3)
     assert.equals(2, a)

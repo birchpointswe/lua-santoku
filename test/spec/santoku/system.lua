@@ -1,10 +1,13 @@
+local assert = require("luassert")
+local test = require("santoku.test")
+
 local sys = require("santoku.system")
 
-describe("system", function ()
+test("system", function ()
 
-  describe("sh", function ()
+  test("sh", function ()
 
-    it("should provide an iterate for a forked process", function ()
+    test("should provide an iterate for a forked process", function ()
 
       local ok, iter = sys.sh("printf 'a\\nb\\nc\\n'")
       assert(ok)
@@ -15,7 +18,7 @@ describe("system", function ()
 
     end)
 
-    it("should provide an iterate for a forked process", function ()
+    test("should provide an iterate for a forked process", function ()
 
       local ok, iter = sys.sh("printf 'a\\nb\\nc\\n'")
       assert(ok)

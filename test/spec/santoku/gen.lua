@@ -5,14 +5,17 @@
 -- each:flatten, perhaps because each returns a
 -- generator when it shouldnt?
 
+local assert = require("luassert")
+local test = require("santoku.test")
+
 local gen = require("santoku.gen")
 local vec = require("santoku.vector")
 
-describe("santoku.gen", function ()
+test("santoku.gen", function ()
 
-  describe("gen", function ()
+  test("gen", function ()
 
-    it("should create a generator", function ()
+    test("should create a generator", function ()
 
       local vals = gen(function (yield)
         yield(1)
@@ -22,14 +25,14 @@ describe("santoku.gen", function ()
       local called = 0
       vals:index():each(function (idx, i)
         called = called + 1
-        assert(idx == i)
+        assert.equals(idx, i)
       end)
 
-      assert(called == 2)
+      assert.equals(called, 2)
 
     end)
 
-    it("shouldnt call the callback if empty", function ()
+    test("shouldnt call the callback if empty", function ()
 
       local vals = gen()
 
@@ -39,15 +42,15 @@ describe("santoku.gen", function ()
         called = called + 1
       end)
 
-      assert(called == 0)
+      assert.equals(called, 0)
 
     end)
 
   end)
 
-  describe("iter", function ()
+  test("iter", function ()
 
-    it("should wrap a nil-based generator", function ()
+    test("should wrap a nil-based generator", function ()
 
       local it = ("this is a test"):gmatch("%w+")
       local vals = gen.iter(it):vec()
@@ -56,7 +59,7 @@ describe("santoku.gen", function ()
 
     end)
 
-    it("should work without callbacks", function ()
+    test("should work without callbacks", function ()
 
       local it = ("this is a test"):gmatch("%w+")
       gen.iter(it):each()
@@ -65,21 +68,21 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("isgen", function ()
+  test("isgen", function ()
 
-    it("should detect invalid generators", function ()
+    test("should detect invalid generators", function ()
 
-      assert(not gen.isgen(1))
-      assert(not gen.isgen({}))
-      assert(not gen.isgen(vec()))
+      assert.False(gen.isgen(1))
+      assert.False(gen.isgen({}))
+      assert.False(gen.isgen(vec()))
 
     end)
 
   end)
 
-  describe("iscogen", function ()
+  test("iscogen", function ()
 
-    it("should detect invalid co-generators", function ()
+    test("should detect invalid co-generators", function ()
 
       assert(not gen.iscogen(1))
       assert(not gen.iscogen({}))
@@ -91,9 +94,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("vec", function ()
+  test("vec", function ()
 
-    it("collects generator returns into a vec", function ()
+    test("collects generator returns into a vec", function ()
 
       local vals = gen(function (yield)
         yield(1, 2, 3)
@@ -108,9 +111,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("pack", function ()
+  test("pack", function ()
 
-    it("iterates over arguments", function ()
+    test("iterates over arguments", function ()
 
       local v = gen.pack(1, 2, 3, 4):vec()
 
@@ -118,7 +121,7 @@ describe("santoku.gen", function ()
 
     end)
 
-    it("handles arg nils", function ()
+    test("handles arg nils", function ()
 
       local v = gen.pack(1, nil, 2, nil, nil):vec()
 
@@ -128,9 +131,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("map", function ()
+  test("map", function ()
 
-    it("maps over a generator", function ()
+    test("maps over a generator", function ()
 
       local vals = gen.pack(1, 2):map(function (a)
         return a * 2
@@ -142,9 +145,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("reduce", function ()
+  test("reduce", function ()
 
-    it("reduces a generator", function ()
+    test("reduces a generator", function ()
       local vals = gen.pack(1, 2, 3):reduce(function (a, n)
         return a + n
       end)
@@ -153,9 +156,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("filter", function ()
+  test("filter", function ()
 
-    it("filters a generator", function ()
+    test("filters a generator", function ()
 
       local vals = gen
         .pack(1, 2, 3, 4, 5, 6)
@@ -170,9 +173,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("chunk", function ()
+  test("chunk", function ()
 
-    it("takes n items from a generator", function ()
+    test("takes n items from a generator", function ()
       local vals = gen.pack(1, 2, 3):chunk(2):tup()
       local a, b = vals()
       assert.same(a, { 1, 2, n = 2 })
@@ -181,9 +184,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("pairs", function ()
+  test("pairs", function ()
 
-    it("iterates pairs in a table", function ()
+    test("iterates pairs in a table", function ()
 
       local v = gen.pairs({ a = 1, b = 2 }):vec()
 
@@ -197,9 +200,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("ipairs", function ()
+  test("ipairs", function ()
 
-    it("iterates ipairs in a table", function ()
+    test("iterates ipairs in a table", function ()
 
       local v = gen.ipairs({ 1, 2 }):vec()
 
@@ -209,9 +212,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("vals", function ()
+  test("vals", function ()
 
-    it("iterates table values", function ()
+    test("iterates table values", function ()
 
       local v = gen.vals({ a = 1, b = 2 }):vec()
 
@@ -222,9 +225,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("keys", function ()
+  test("keys", function ()
 
-    it("iterates table keys", function ()
+    test("iterates table keys", function ()
 
       local v = gen.keys({ a = 1, b = 2 }):vec()
 
@@ -235,9 +238,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("ivals", function ()
+  test("ivals", function ()
 
-    it("drops array nils", function ()
+    test("drops array nils", function ()
 
       local array = {}
 
@@ -255,7 +258,7 @@ describe("santoku.gen", function ()
 
     end)
 
-    it("iterates table ivalues", function ()
+    test("iterates table ivalues", function ()
 
       local v = gen.ivals({ 1, 2, a = "b" }):vec()
 
@@ -265,9 +268,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("ikeys", function ()
+  test("ikeys", function ()
 
-    it("iterates table keys", function ()
+    test("iterates table keys", function ()
 
       local v = gen.ikeys({ "a", "b", a = 12 }):vec()
 
@@ -277,9 +280,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("each", function ()
+  test("each", function ()
 
-    it("applies a function to each item", function ()
+    test("applies a function to each item", function ()
       local gen = gen.pack(1, 2, 3, 4)
       local i = 0
       gen:each(function (x)
@@ -291,9 +294,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("flatten", function ()
+  test("flatten", function ()
 
-    it("flattens a generator of generators", function ()
+    test("flattens a generator of generators", function ()
       local v = gen(function (yield)
         yield(gen.pack(1, 2, 3, 4))
         yield(gen.pack(5, 6, 7, 8))
@@ -303,9 +306,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("all", function ()
+  test("all", function ()
 
-    it("reduces with and", function ()
+    test("reduces with and", function ()
 
       local gen1 = gen.pack(true, true, true)
       local gen2 = gen.pack(true, false, true)
@@ -317,9 +320,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("chain", function ()
+  test("chain", function ()
 
-    it("chains generators", function ()
+    test("chains generators", function ()
 
       local gen1 = gen.pack(1, 2)
       local gen2 = gen.pack(3, 4)
@@ -331,9 +334,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("max", function ()
+  test("max", function ()
 
-    it("returns the max value in a generator", function ()
+    test("returns the max value in a generator", function ()
 
       local gen = gen.pack(1, 6, 3, 9, 2, 10, 4)
 
@@ -345,9 +348,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("empty", function ()
+  test("empty", function ()
 
-    it("should produce an empty generator", function ()
+    test("should produce an empty generator", function ()
 
       local gen = gen.empty()
 
@@ -363,9 +366,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("paster", function () 
+  test("paster", function () 
 
-    it("should paste values to the right", function ()
+    test("should paste values to the right", function ()
 
       local vals = gen.pack(1, 2, 3):paster("num"):vec()
 
@@ -375,9 +378,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("pastel", function () 
+  test("pastel", function () 
 
-    it("should paste values to the left", function ()
+    test("should paste values to the left", function ()
 
       local vals = gen.pack(1, 2, 3):pastel("num"):vec()
 
@@ -387,9 +390,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("discard", function ()
+  test("discard", function ()
 
-    it("should run a generator without processing vals", function ()
+    test("should run a generator without processing vals", function ()
 
       local called = false
 
@@ -405,9 +408,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("tup", function ()
+  test("tup", function ()
 
-    it("should convert a generator to multiple tuples", function ()
+    test("should convert a generator to multiple tuples", function ()
 
       local vals = gen(function (yield)
         yield(1, 2)
@@ -424,9 +427,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("unpack", function ()
+  test("unpack", function ()
 
-    it("should unpack a generator", function ()
+    test("should unpack a generator", function ()
 
       local gen = gen.pack(1, 2, 3)
 
@@ -436,9 +439,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("last", function ()
+  test("last", function ()
 
-    it("should return the last element in a generator", function ()
+    test("should return the last element in a generator", function ()
 
       local gen = gen.pack(1, 2, 3)
 
@@ -448,9 +451,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("step", function ()
+  test("step", function ()
 
-    it("should step through a coroutine-generator", function ()
+    test("should step through a coroutine-generator", function ()
 
       local gen = gen.pack(1, 2, 3):co()
 
@@ -464,7 +467,7 @@ describe("santoku.gen", function ()
 
     end)
 
-    it("throw errors that occur in the coroutine", function ()
+    test("throw errors that occur in the coroutine", function ()
 
       local gen = gen(function (yield)
         error("err")
@@ -478,9 +481,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("take", function ()
+  test("take", function ()
 
-    it("should create a new generator that takes from an existing generator", function ()
+    test("should create a new generator that takes from an existing generator", function ()
 
       local gen0 = gen.pack(1, 2, 3, 4)
       local gen1 = gen0:co():take(2)
@@ -492,9 +495,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("zip", function ()
+  test("zip", function ()
 
-    it("zips generators together", function ()
+    test("zips generators together", function ()
 
       local gen1 = gen.pack(1, 2, 3, 4):co()
       local gen2 = gen.pack(1, 2, 3, 4):co()
@@ -520,9 +523,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("slice", function ()
+  test("slice", function ()
 
-    it("slices the generator", function ()
+    test("slices the generator", function ()
 
       local gen = gen.pack("file", ".txt"):co():slice(2)
 
@@ -534,7 +537,7 @@ describe("santoku.gen", function ()
 
     end)
 
-    it("slices the generator", function ()
+    test("slices the generator", function ()
 
       local gen0 = gen.pack(1, 2, 3, 4):co()
       local gen1 = gen0:slice(2, 2):co()
@@ -550,9 +553,9 @@ describe("santoku.gen", function ()
     end)
   end)
 
-  describe("tabulate", function ()
+  test("tabulate", function ()
 
-    it("creates a table from a generator", function ()
+    test("creates a table from a generator", function ()
 
       local vals = gen.pack(1, 2, 3, 4):co()
       local tbl = vals:tabulate("one", "two", "three", "four" )
@@ -564,7 +567,7 @@ describe("santoku.gen", function ()
 
     end)
 
-    it("captures remaining values in a 'rest' property", function ()
+    test("captures remaining values in a 'rest' property", function ()
 
       local vals = gen.pack(1, 2, 3, 4):co()
       local tbl = vals:tabulate({ rest = "others" }, "one")
@@ -576,9 +579,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("none", function ()
+  test("none", function ()
 
-    it("reduces with not and", function ()
+    test("reduces with not and", function ()
 
       local gen1 = gen.pack(false, false, false):co()
       local gen2 = gen.pack(true, false, true):co()
@@ -590,9 +593,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("equals", function ()
+  test("equals", function ()
 
-    it("checks if two generators have equal values", function ()
+    test("checks if two generators have equal values", function ()
 
       local gen1 = gen.pack(1, 2, 3, 4):co()
       local gen2 = gen.pack(5, 6, 7, 8):co()
@@ -603,7 +606,7 @@ describe("santoku.gen", function ()
 
     end)
 
-   it("checks if two generators have equal values", function ()
+   test("checks if two generators have equal values", function ()
 
      local gen1 = gen.pack(1, 2, 3, 4):co()
      local gen2 = gen.pack(1, 2, 3, 4):co()
@@ -614,7 +617,7 @@ describe("santoku.gen", function ()
 
    end)
 
-   it("checks if two generators have equal values", function ()
+   test("checks if two generators have equal values", function ()
 
      local gen1 = gen.pack(1, 2, 3, 4):co()
 
@@ -626,7 +629,7 @@ describe("santoku.gen", function ()
 
    end)
 
-   it("handles odd length generators", function ()
+   test("handles odd length generators", function ()
 
      local gen1 = gen.pack(1, 2, 3):co()
      local gen2 = gen.pack(1, 2, 3, 4):co()
@@ -645,9 +648,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("find", function ()
+  test("find", function ()
 
-    it("finds by a predicate", function ()
+    test("finds by a predicate", function ()
 
       local gen = gen.pack(1, 2, 3, 4):co()
 
@@ -659,9 +662,9 @@ describe("santoku.gen", function ()
 
   end)
 
-  describe("intersperse", function ()
+  test("intersperse", function ()
 
-    it("intersperses values into a generator", function ()
+    test("intersperses values into a generator", function ()
 
       local v = gen.pack(1, 2, 3, 4):intersperse("x"):vec()
 

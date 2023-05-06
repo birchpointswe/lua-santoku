@@ -1,10 +1,13 @@
+local assert = require("luassert")
+local test = require("santoku.test")
+
 local template = require("santoku.template")
 local vec = require("santoku.vector")
 local fs = require("santoku.fs")
 
-describe("template", function ()
+test("template", function ()
 
-  it("should compile a template string", function ()
+  test("should compile a template string", function ()
     local ok, tpl = template("<title><%render% return title %></title>")
     assert(ok, tpl)
     local ok, str = tpl:render({ title = "Hello, World!" })
@@ -12,7 +15,7 @@ describe("template", function ()
     assert.same(str, "<title>Hello, World!</title>")
   end)
 
-  it("should allow custom delimiters", function ()
+  test("should allow custom delimiters", function ()
     local ok, tpl = template("<title>{{ return title }}</title>", { open = "{{", close = "}}" })
     assert(ok, tpl)
     local ok, str = tpl:render({ title = "Hello, World!" })
@@ -20,7 +23,7 @@ describe("template", function ()
     assert.same(str, "<title>Hello, World!</title>")
   end)
 
-  it("should handle multiple replacements", function ()
+  test("should handle multiple replacements", function ()
     local ok, tpl = template("<title><% return title %> <% return title %></title>")
     assert(ok, tpl)
     local ok, str = tpl:render({ title = "Hello, World!" })
@@ -28,25 +31,25 @@ describe("template", function ()
     assert.same(str, "<title>Hello, World! Hello, World!</title>")
   end)
 
-  it("should handle multiple replacements", function ()
-    local ok, tpl = template("<%compile% a = check(template:compilefile('test/spec/santoku/template/title.html')) %><title><% return a:render() %></title>")
+  test("should handle multiple replacements", function ()
+    local ok, tpl = template("<%compile% a = check(template:compilefile('spec/santoku/template/title.html')) %><title><% return a:render() %></title>")
     assert(ok, tpl)
-    assert.same(tpl.deps, vec("test/spec/santoku/template/title.html"))
+    assert.same(tpl.deps, vec("spec/santoku/template/title.html"))
     local ok, str = tpl:render({ title = "Hello, World!" })
     assert(ok, str)
     assert.same(str, "<title>Hello, World!</title>")
   end)
 
-  it("should support sharing fenv to child templates", function ()
-    local ok, tpl = template("<% title = 'Hello, World!' %><title><% return check(template:compilefile('test/spec/santoku/template/title.html')):render() %></title>")
+  test("should support sharing fenv to child templates", function ()
+    local ok, tpl = template("<% title = 'Hello, World!' %><title><% return check(template:compilefile('spec/santoku/template/title.html')):render() %></title>")
     assert(ok, tpl)
     local ok, str = tpl:render({ title = "Hello, World!" })
     assert(ok, str)
     assert.same(str, "<title>Hello, World!</title>")
   end)
 
-  it("should handle whitespace between blocks", function ()
-    local ok, tpl = template("<title><% return check(template:compilefile('test/spec/santoku/template/title.html')):render() %> <% return check(template:compilefile('test/spec/santoku/template/name.html')):render() %></title>")
+  test("should handle whitespace between blocks", function ()
+    local ok, tpl = template("<title><% return check(template:compilefile('spec/santoku/template/title.html')):render() %> <% return check(template:compilefile('spec/santoku/template/name.html')):render() %></title>")
     assert(ok, tpl)
     local ok, str = tpl:render({
       title = "Hello, World!",
@@ -56,8 +59,8 @@ describe("template", function ()
     assert.same(str, "<title>Hello, World! 123</title>")
   end)
 
-  it("should support multiple nesting levels ", function ()
-    local ok, tpl = template("<title><% return check(template:compilefile('test/spec/santoku/template/titles.html')):render() %></title>")
+  test("should support multiple nesting levels ", function ()
+    local ok, tpl = template("<title><% return check(template:compilefile('spec/santoku/template/titles.html')):render() %></title>")
     assert(ok, tpl)
     local ok, str = tpl:render({
       title = "Hello, World!",
@@ -67,10 +70,10 @@ describe("template", function ()
     assert.same(str, "<title>Hello, World! 123</title>")
   end)
 
-  it("should support multiple templates", function ()
-    local ok, tpl = template("<%compile% a, b = check(template:compilefile('test/spec/santoku/template/title.html')), check(template:compilefile('test/spec/santoku/template/titles.html')) %><title><% return a:render() %> <% return b:render() %></title>")
+  test("should support multiple templates", function ()
+    local ok, tpl = template("<%compile% a, b = check(template:compilefile('spec/santoku/template/title.html')), check(template:compilefile('spec/santoku/template/titles.html')) %><title><% return a:render() %> <% return b:render() %></title>")
     assert(ok, tpl)
-    assert.same(tpl.deps, vec("test/spec/santoku/template/title.html", "test/spec/santoku/template/titles.html"))
+    assert.same(tpl.deps, vec("spec/santoku/template/title.html", "spec/santoku/template/titles.html"))
     local ok, str = tpl:render({
       title = "Hello, World!",
       name = "123"
@@ -79,11 +82,11 @@ describe("template", function ()
     assert.same(str, "<title>Hello, World! Hello, World! 123</title>")
   end)
 
-  it("should support multiple templates (again)", function ()
-    local ok, getconfig = fs.loadfile("test/spec/santoku/template/config.lua")
+  test("should support multiple templates (again)", function ()
+    local ok, getconfig = fs.loadfile("spec/santoku/template/config.lua")
     assert(ok, getconfig)
     local config = getconfig()
-    local ok, data = fs.readfile("test/spec/santoku/template/index.html")
+    local ok, data = fs.readfile("spec/santoku/template/index.html")
     assert(ok, data)
     local ok, tpl = template(data, config)
     assert(ok, tpl)
@@ -92,7 +95,7 @@ describe("template", function ()
   end)
 
   -- TODO: Handle indentation
-  it("should handle trailing characters", function ()
+  test("should handle trailing characters", function ()
     local ok, tpl = template([[
       <template
         data-api="/api/ping"
@@ -121,7 +124,7 @@ data-handler-403="redirect:/login">
   end)
 
   -- TODO: Handle indentation
-  it("should allow multiple compile-time functions", function ()
+  test("should allow multiple compile-time functions", function ()
     local ok, tpl = template([[
       <%compile% return title %>
       <%compile% return name %>

@@ -1,12 +1,15 @@
+local assert = require("luassert")
+local test = require("santoku.test")
+
 local err = require("santoku.err")
 
-describe("err", function ()
+test("err", function ()
 
-  describe("pwrap", function ()
+  test("pwrap", function ()
 
-    describe("check.exists", function ()
+    test("check.exists", function ()
 
-      it("handles functions that return nothing", function ()
+      test("handles functions that return nothing", function ()
 
         local fn = function () end
 

@@ -1,10 +1,13 @@
+local assert = require("luassert")
+local test = require("santoku.test")
+
 local vec = require("santoku.vector")
 
-describe("vector", function ()
+test("vector", function ()
 
-  describe("extend", function ()
+  test("extend", function ()
 
-    it("should merge array-like tables", function ()
+    test("should merge array-like tables", function ()
 
       local expected = { 1, 2, 3, 4 }
       local one = vec(1, 2)
@@ -14,7 +17,7 @@ describe("vector", function ()
 
     end)
 
-    it("should handle non-empty initial tables", function ()
+    test("should handle non-empty initial tables", function ()
 
       local expected = { "a", "b", 1, 2, 3, 4 }
       local one = vec(1, 2)
@@ -24,7 +27,7 @@ describe("vector", function ()
 
     end)
 
-    it("should keep middle nils", function ()
+    test("should keep middle nils", function ()
 
       local expected = { 1, nil, 2, nil, nil, 3, 4 }
       local one = vec(1, nil, 2, nil)
@@ -34,23 +37,23 @@ describe("vector", function ()
 
     end)
 
-    it("should handle empty tables", function ()
+    test("should handle empty tables", function ()
       local vals = vec(1, 2, 3, 4):extend(vec())
       assert.same({ 1, 2, 3, 4, n = 4 }, vals)
     end)
 
   end)
 
-  describe("append", function ()
+  test("append", function ()
 
-    it("should append args to array", function ()
+    test("should append args to array", function ()
 
       local expected = { 1, 2, 3 }
       assert.same(expected, vec(1):append(2, 3):unwrap())
 
     end)
 
-    it("should handle nils", function ()
+    test("should handle nils", function ()
 
       local args = vec()
 
@@ -64,29 +67,29 @@ describe("vector", function ()
 
   end)
 
-  describe("copy", function ()
+  test("copy", function ()
 
-    it("should copy into a vector", function ()
+    test("should copy into a vector", function ()
       local dest = vec(1, 2, 3, 4)
       local source = vec(3, 4, 5, 6)
       dest:copy(source, 3)
       assert.same({ 1, 2, 3, 4, 5, 6 }, dest:unwrap())
     end)
 
-    it("should copy into a vector", function ()
+    test("should copy into a vector", function ()
       local dest = vec()
       local source = vec(3, 4, 5, 6)
       dest:copy(source, 1)
       assert.same({ 3, 4, 5, 6 }, dest:unwrap())
     end)
 
-    it("should work with the same vector", function ()
+    test("should work with the same vector", function ()
       local v = vec(1, 2, 3, 4, 5, 6)
       v:copy(v, 1, 2)
       assert.same({ 2, 3, 4, 5, 6, 6 }, v:unwrap())
     end)
 
-    it("should work with the same vector", function ()
+    test("should work with the same vector", function ()
       local v = vec(1, 2, 3, 4, 5, 6)
       v:copy(v, 2, 1)
       assert.same({ 1, 1, 2, 3, 4, 5, 6, n = 7 }, v)
@@ -94,18 +97,18 @@ describe("vector", function ()
 
   end)
 
-  describe("slice", function ()
+  test("slice", function ()
 
-    it("should copy into a vector", function ()
+    test("should copy into a vector", function ()
       local v = vec(1, 2, 3, 4):slice(2)
       assert.same({ 2, 3, 4, n = 3 }, v)
     end)
 
   end)
 
-  describe("tabulate", function ()
+  test("tabulate", function ()
 
-    it("creates a table from a vector", function ()
+    test("creates a table from a vector", function ()
 
       local vals = vec(1, 2, 3, 4)
       local tbl = vals:tabulate("one", "two", "three", "four" )
@@ -117,7 +120,7 @@ describe("vector", function ()
 
     end)
 
-    it("captures remaining values in a 'rest' property", function ()
+    test("captures remaining values in a 'rest' property", function ()
 
       local vals = vec(1, 2, 3, 4)
       local tbl = vals:tabulate({ rest = "others" }, "one")
@@ -129,9 +132,9 @@ describe("vector", function ()
 
   end)
 
-  describe("remove", function ()
+  test("remove", function ()
 
-    it("removes elements from an array", function ()
+    test("removes elements from an array", function ()
 
       local vals = vec(1, 2, 3, 4)
       vals:remove(2, 3)
@@ -144,9 +147,9 @@ describe("vector", function ()
 
   end)
 
-  describe("filter", function ()
+  test("filter", function ()
 
-    it("filters a vector", function ()
+    test("filters a vector", function ()
       local vals = vec(1, 2, 3, 4, 5, 6)
         :filter(function (n)
           return (n % 2) == 0
@@ -158,7 +161,7 @@ describe("vector", function ()
       assert.same({ 2, 4, 6, n = 3 }, vals:slice(1, 3))
     end)
 
-    it("works for consecutive removals", function ()
+    test("works for consecutive removals", function ()
       local vals = vec(1, 2, 3, 3, 3, 3, 3, 4, 5, 5, 6)
         :filter(function (n)
           return (n % 2) == 0
@@ -172,14 +175,14 @@ describe("vector", function ()
 
   end)
 
-  describe("sort", function ()
+  test("sort", function ()
 
-    it("should sort a vector", function ()
+    test("should sort a vector", function ()
       local v = vec(10, 5, 2, 38, 1, 4):sort()
       assert.same({ 1, 2, 4, 5, 10, 38, n = 6 }, v)
     end)
 
-    it("should unique sort a vector", function ()
+    test("should unique sort a vector", function ()
       local v = vec(10, 38, 10, 10, 38, 1, 4):sort({ unique = true })
       assert.same({ 1, 4, 10, 38, n = 4 }, v:slice(1, v.n))
     end)

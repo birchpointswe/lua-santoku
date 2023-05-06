@@ -1,12 +1,15 @@
+local assert = require("luassert")
+local test = require("santoku.test")
+
 local fun = require("santoku.fun")
 local compat = require("santoku.compat")
 local op = require("santoku.op")
 
-describe("fun", function ()
+test("fun", function ()
 
-  describe("narg", function ()
+  test("narg", function ()
 
-    it("should rearrange args", function ()
+    test("should rearrange args", function ()
 
       local fn = function (a, b, c)
         assert.equals("c", a)
@@ -18,17 +21,17 @@ describe("fun", function ()
 
     end)
 
-    it("should curry the first argument", function ()
+    test("should curry the first argument", function ()
       local add10 = fun.narg()(op.add, 10)
       assert.equals(20, add10(10))
     end)
 
-    it("should curry the second argument", function ()
+    test("should curry the second argument", function ()
       local div10 = fun.narg()(op.div, 10)
       assert.equals(10, div10(100))
     end)
 
-    it("should curry multiple arguments", function ()
+    test("should curry multiple arguments", function ()
       local fn0 = function (a, b, c) return a, b, c end
       local fn = fun.narg(3)(fn0, "c", "a")
       local a, b, c = fn("b")
@@ -37,7 +40,7 @@ describe("fun", function ()
       assert.equals("c", c)
     end)
 
-    it("should specify argument order", function ()
+    test("should specify argument order", function ()
       local fn0 = function (a, b, c) return a, b, c end
       local fn = fun.narg()(fn0, "b", "c")
       local a, b, c = fn("a")
@@ -48,9 +51,9 @@ describe("fun", function ()
 
   end)
 
-  describe("nret", function ()
+  test("nret", function ()
 
-    it("should rearrange returns", function ()
+    test("should rearrange returns", function ()
 
       local fn = function ()
         return "a", "b", "c"
@@ -64,7 +67,7 @@ describe("fun", function ()
 
     end)
 
-    it("should handle nils", function ()
+    test("should handle nils", function ()
 
       local fn = function ()
         return nil, "a", nil, nil, "b"
@@ -80,7 +83,7 @@ describe("fun", function ()
 
     end)
 
-    it("should work with one return argument", function ()
+    test("should work with one return argument", function ()
 
       local fn = function ()
         return "a", "b"
@@ -95,9 +98,9 @@ describe("fun", function ()
 
   end)
 
-  describe("compose", function ()
+  test("compose", function ()
 
-    it("should compose functions", function ()
+    test("should compose functions", function ()
       local fna = function (a, b) return a * 2, b + 2 end
       local fnb = function (a, b) return a + 2, b + 3 end
       local fnc = function (a, b) return a * 2, b + 4 end
@@ -106,7 +109,7 @@ describe("fun", function ()
       assert.equals(11, b)
     end)
 
-    it("should call from right to left", function ()
+    test("should call from right to left", function ()
       local fna = function (a, b) return a * 2 end
       local fnb = function (a, b) return a + 2 end
       local a = fun.compose(fna, fnb)(3)
@@ -119,8 +122,8 @@ describe("fun", function ()
   -- conditionally applies a function to the
   -- 2-Nth argument based on the t/f of the 1st
   -- arg, like a maybe monad
-  -- describe("maybe", function ()
-  --   it("should apply a function if the value is truthy", function ()
+  -- test("maybe", function ()
+  --   test("should apply a function if the value is truthy", function ()
   --     local add1 = function (a) return a + 1 end
   --     assert.equals(4, fun.maybe(3, add1))
   --     assert.equals(1, fun.maybe(0, add1))
@@ -130,16 +133,16 @@ describe("fun", function ()
   --   end)
   -- end)
 
-  describe("choose", function ()
+  test("choose", function ()
 
-    it("should provide a functional if statement", function ()
+    test("should provide a functional if statement", function ()
 
       assert.equals(1, fun.choose(true, 1, 2))
       assert.equals(2, fun.choose(false, 1, 2))
 
     end)
 
-    it("should handle nils", function ()
+    test("should handle nils", function ()
 
       assert.equals(nil, fun.choose(true, nil, 2))
       assert.is_nil(fun.choose(false, 1, nil))

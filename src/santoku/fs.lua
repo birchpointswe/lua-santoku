@@ -1,5 +1,5 @@
 -- TODO: Add asserts
--- TODO: fs.parse 
+-- TODO: fs.parse
 
 local lfs = require("lfs")
 
@@ -34,6 +34,26 @@ M.attr = function (fp, attr)
     return false, err, code
   else
     return true, mode
+  end
+end
+
+-- TODO: Use this instead of lfs.attributes
+M.isdir = function (fp)
+  local mode, err, code = lfs.attributes(fp, "mode")
+  if not mode then
+    return false, err, code
+  else
+    return true, mode == "directory"
+  end
+end
+
+-- TODO: Use this instead of lfs.attributes
+M.isfile = function (fp)
+  local mode, err, code = lfs.attributes(fp, "mode")
+  if not mode then
+    return false, err, code
+  else
+    return true, mode == "file"
   end
 end
 

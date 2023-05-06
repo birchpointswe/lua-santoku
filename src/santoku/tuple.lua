@@ -1,3 +1,5 @@
+local compat = require("santoku.compat")
+
 local M = {}
 
 local function tuple (n, a, ...)
@@ -44,8 +46,9 @@ M.tuple = function (...)
 end
 
 M.map = function (fn, ...)
+  assert(compat.iscallable(fn))
   if select("#", ...) == 0 then
-    return 
+    return
   else
     return fn((select(1, ...))), M.map(fn, select(2, ...))
   end

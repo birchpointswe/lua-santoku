@@ -7,6 +7,7 @@
 -- that expands inspect to support multiple
 -- inputs and outputs
 
+local err = require("santoku.err")
 local vec = require("santoku.vector")
 
 -- TODO: Consider optionally allowing users to
@@ -134,8 +135,8 @@ end
 --   opts.char = indent char, default ' '
 --   opts.level = indent level, default auto
 --   opts.dir = indent direction, default "in"
-M.indent = function (s, opts)
-  M.unimplemented("indent")
+M.indent = function (s, opts) -- luacheck: ignore
+  err.unimplemented("indent")
 end
 
 -- TODO
@@ -147,8 +148,7 @@ end
 M.trim = function (s, opts)
   local left = "%s*"
   local right = "%s*"
-  if opts == nil then
-    -- luacheck: ignore
+  if opts == nil then -- luacheck: ignore
     -- do nothing
   elseif type(opts) == "string" then
     left = opts
@@ -171,7 +171,7 @@ end
 M.isempty = function (s)
   if s:match("^%s*$") then
     return true
-  else 
+  else
     return false
   end
 end

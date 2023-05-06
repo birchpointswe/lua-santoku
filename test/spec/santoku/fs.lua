@@ -1,15 +1,18 @@
+local test = require("santoku.test")
+local assert = require("luassert")
+
 local fs = require("santoku.fs")
 local vec = require("santoku.vector")
 local fun = require("santoku.fun")
 local op = require("santoku.op")
 
-describe("santoku.fs", function ()
+test("santoku.fs", function ()
 
-  describe("lines", function ()
+  test("lines", function ()
 
-    it("should return the correct number of lines", function ()
+    test("should return the correct number of lines", function ()
 
-      local fp = "./test/spec/santoku/fs.tst1.txt"
+      local fp = "./spec/santoku/fs.tst1.txt"
       local ok, gen = fs.lines(fp)
       assert(ok)
 
@@ -24,9 +27,9 @@ describe("santoku.fs", function ()
 
   end)
 
-  describe("joinwith", function ()
+  test("joinwith", function ()
 
-    it("should handle nils", function ()
+    test("should handle nils", function ()
 
       local delim = "/"
       local result = fs.joinwith(delim, nil, "a", nil, "b")
@@ -38,9 +41,9 @@ describe("santoku.fs", function ()
 
   end)
 
-  describe("dirname", function ()
+  test("dirname", function ()
 
-    it("should return the directory name", function ()
+    test("should return the directory name", function ()
 
       local p0 = "/opt/bin/sort"
       assert.equals("/opt/bin", fs.dirname(p0))
@@ -55,9 +58,9 @@ describe("santoku.fs", function ()
 
   end)
 
-  describe("basename", function ()
+  test("basename", function ()
 
-    it("should return the file name without directories", function ()
+    test("should return the file name without directories", function ()
 
       local p0 = "/opt/bin/sort"
       assert.equals("sort", fs.basename(p0))
@@ -69,16 +72,16 @@ describe("santoku.fs", function ()
 
   end)
 
-  describe("files", function ()
+  test("files", function ()
 
-    it("should list directory files", function ()
+    test("should list directory files", function ()
       local files = vec(
-        "test/spec/santoku/fs/a/a.txt",
-        "test/spec/santoku/fs/b/a.txt",
-        "test/spec/santoku/fs/a/b.txt",
-        "test/spec/santoku/fs/b/b.txt")
+        "spec/santoku/fs/a/a.txt",
+        "spec/santoku/fs/b/a.txt",
+        "spec/santoku/fs/a/b.txt",
+        "spec/santoku/fs/b/b.txt")
       local i = 0
-      fs.files("test/spec/santoku/fs", { recurse = true })
+      fs.files("spec/santoku/fs", { recurse = true })
         :each(function (ok, fp, mode)
           assert(ok)
           assert(files:find(fun.narg()(op.eq, fp)))
@@ -90,9 +93,9 @@ describe("santoku.fs", function ()
 
   end)
 
-  describe("splitexts", function ()
+  test("splitexts", function ()
 
-    it("should split a path into namme and extensions", function ()
+    test("should split a path into namme and extensions", function ()
 
       local p0 = "/opt/bin/sort.sh"
       assert.same({ name = "/opt/bin/sort", exts = { ".sh", n = 1} }, fs.splitexts(p0))
@@ -104,12 +107,12 @@ describe("santoku.fs", function ()
 
   end)
 
-  describe("absolute", function ()
+  test("absolute", function ()
 
     -- TODO: How can we make this test work
     -- regardless of where it's run? Do we run
     -- it in a chroot?
-    it("should return the abolute path of a file", function ()
+    test("should return the abolute path of a file", function ()
 
       -- local path = "/test.txt"
       -- print(fs.absolute(path))

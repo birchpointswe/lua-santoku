@@ -33,6 +33,6 @@ $(LIB_ROCKSPEC): $(LIB_ROCKSPEC_T)
 	NAME="$(LIB_NAME)" VERSION="$(VERSION)" \
 	HOMEPAGE="$(HOMEPAGE)" LICENSE="$(LICENSE)" \
 	GIT_URL="$(GIT_URL)" \
-		$(TOKU_TPL) -f "$^" -o "$@"
+		$(TOKU) template -f "$^" -o "$@"
 
 .PHONY: test lib-install luarocks-lib-install lib-upload

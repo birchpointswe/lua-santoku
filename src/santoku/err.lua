@@ -104,12 +104,12 @@ M.pwrapper = function (co, ...)
       end
     end,
     any = function (...)
-      local ok, t 
+      local ok, t
       for i = 1, select("#", ...) do
         t = select(i, ...)
         print(t())
         ok = t()
-        if ok then 
+        if ok then
           return select(2, t())
         end
       end
@@ -165,7 +165,7 @@ M.pwrap = function (run, onErr)
 end
 
 M.check = function (ok, a, ...)
-  if not ok then 
+  if not ok then
     error(a)
   else
     return a, ...

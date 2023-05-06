@@ -3,9 +3,8 @@
 local argparse = require("argparse")
 local inherit = require("santoku.inherit")
 local gen = require("santoku.gen")
+local test = require("santoku.test")
 local err = require("santoku.err")
-local vec = require("santoku.vector")
-local str = require("santoku.string")
 local fs = require("santoku.fs")
 local tpl = require("santoku.template")
 local bundle = require("santoku.bundle")
@@ -70,10 +69,17 @@ ctemplate
   :args(1)
   :count("0-1")
 
+local ctest = parser
+  :command("test", "run tests")
+
+ctest
+  :argument("files")
+  :args("*")
+
 local args = parser:parse()
 
 -- TODO: Move this logic into santoku.template
-function write_deps (check, deps, input, output)
+local function write_deps (check, deps, input, output)
   local depsfile = output .. ".d"
   local out = gen.chain(
       gen.pack(output, ": "),
@@ -85,7 +91,7 @@ function write_deps (check, deps, input, output)
 end
 
 -- TODO: Same as above
-function process_file (check, conf, input, output, deps)
+local function process_file (check, conf, input, output, deps)
   local data = check(fs.readfile(input))
   local tmpl = check(tpl(data, conf))
   local out = check(tmpl(conf.env))
@@ -97,12 +103,12 @@ function process_file (check, conf, input, output, deps)
 end
 
 -- TODO: Same as above
-function process_files (check, conf, trim, input, mode, output, deps)
+local function process_files (check, conf, trim, input, mode, output, deps)
   if mode == "directory" then
     fs.files(input, { recurse = true })
       :map(check)
       :each(function (fp, mode)
-        process_files(check, conf, trim, fp, mode, output, recurse, deps)
+        process_files(check, conf, trim, fp, mode, output, deps)
       end)
   elseif mode == "file" then
     local trimlen = trim and string.len(trim)
@@ -118,9 +124,9 @@ function process_files (check, conf, trim, input, mode, output, deps)
 end
 
 -- TODO: Same as above
-function get_config (check, config)
+local function get_config (check, config)
   local lenv = inherit.pushindex({}, _G)
-  local cfg = config and check(fs.loadfile(config, lenv))() or {} 
+  local cfg = config and check(fs.loadfile(config, lenv))() or {}
   cfg.env = inherit.pushindex(cfg.env or {}, _G)
   return cfg
 end
@@ -131,17 +137,19 @@ assert(err.pwrap(function (check)
     local conf = get_config(check, args.config)
     if args.directory then
       check(fs.mkdirp(args.output))
-      gen.ivals(args.input):each(function (i) 
+      gen.ivals(args.input):each(function (i)
         local mode = check(fs.attr(i, "mode"))
         process_files(check, conf, args.trim, i, mode, args.output, args.deps)
       end)
-    elseif args.file then 
+    elseif args.file then
       process_file(check, conf, args.file, args.output, args.deps)
     else
       parser:error("either -f --file or -d --directory must be provided")
     end
   elseif args.bundle then
     check(bundle(args.file, args.output, args.env, args.deps))
+  elseif args.test then
+    check(test.runfiles(args.files))
   else
     -- Not possible
     error("This is a bug")

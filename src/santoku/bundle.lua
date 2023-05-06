@@ -17,7 +17,7 @@ local function write_deps (check, modules, infile, outfile)
   check(fs.writefile(depsfile, out))
 end
 
-local function parsemodules (check, infile, modules, path, cpath) 
+local function parsemodules (check, infile, modules, path, cpath)
   check(fs.lines(infile))
     :map(function (line)
       if line:match("^%s*%-%-") then
@@ -28,19 +28,15 @@ local function parsemodules (check, infile, modules, path, cpath)
     end)
     :flatten()
     :each(function (mod)
-      local fp0, err0 = package.searchpath(mod, path)
+      -- TODO: Create a 5.1 shim for this
+      local fp0, err0 = package.searchpath(mod, path) -- luacheck: ignore
       if fp0 then
         modules.lua[mod] = fp0
         parsemodules(check, fp0, modules, path, cpath)
         return
       end
-      local fp1, err1 = package.searchpath(mod, cpath)
-      -- if fp1 and not str.endswith(fp1, ".a") then
-      --   -- TODO: This should be a library
-      --   -- function
-      --   io.stderr:write(string.format("Ignoring %s \n", fp1))
-      --   return
-      -- else
+      -- TODO: Create a 5.1 shim for this
+      local fp1, err1 = package.searchpath(mod, cpath) -- luacheck: ignore
       if fp1 then
         modules.c[mod] = fp1
         return
@@ -49,15 +45,15 @@ local function parsemodules (check, infile, modules, path, cpath)
     end)
 end
 
-M.parsemodules = function (infile, env) 
+M.parsemodules = function (infile, env)
   env = vec.wrap(env)
-  local path = (env:find(function (p) 
-    return p[1] == "LUA_PATH" 
+  local path = (env:find(function (p)
+    return p[1] == "LUA_PATH"
   end) or { "", os.getenv("LUA_PATH") })[2]
-  local cpath = (env:find(function (p) 
-    return p[1] == "LUA_CPATH" 
+  local cpath = (env:find(function (p)
+    return p[1] == "LUA_CPATH"
   end) or { "", os.getenv("LUA_CPATH") })[2]
-  return err.pwrap(function (check) 
+  return err.pwrap(function (check)
     local modules = { c = {}, lua = {} }
     parsemodules(check, infile, modules, path, cpath)
     return modules
@@ -78,7 +74,7 @@ end
 
 M.bundle = function (infile, outdir, env, deps)
   env = env or {}
-  return err.pwrap(function (check) 
+  return err.pwrap(function (check)
     local outprefix = fs.splitexts(fs.basename(infile)).name
     local modules = check(M.parsemodules(infile, env))
     local outluafp = fs.join(outdir, outprefix .. ".lua")
@@ -91,7 +87,9 @@ M.bundle = function (infile, outdir, env, deps)
     local cmdxxd = os.getenv("XXD") or "xxd"
     check(sys.execute(cmdxxd, "-i", "-n", "data", outluacfp, outluahfp))
     local outcfp = fs.join(outdir, outprefix .. ".c")
-    write_deps(check, modules, infile, outluafp)
+    if deps then
+      write_deps(check, modules, infile, outluafp)
+    end
     check(fs.writefile(outcfp, table.concat({[[
       #include "lua.h"
       #include "lualib.h"
@@ -101,17 +99,17 @@ M.bundle = function (infile, outdir, env, deps)
         *sizep = data_len;
         return (const char *)data;
       }
-    ]], gen.pairs(modules.c):map(function (mod, fp)
+    ]], gen.pairs(modules.c):map(function (mod)
       local sym = "luaopen_" .. string.gsub(mod, "%.", "_")
       return "int " .. sym .. "(lua_State *L);"
     end):concat("\n"), "\n", [[
       int main (int argc, char **argv) {
         lua_State *L = luaL_newstate();
-        if (L == NULL) 
+        if (L == NULL)
           return 1;
         luaL_openlibs(L);
         int rc = 0;
-    ]], gen.pairs(modules.c):map(function (mod, fp)
+    ]], gen.pairs(modules.c):map(function (mod)
       local sym = "luaopen_" .. string.gsub(mod, "%.", "_")
       return str.interp("luaL_requiref(L, \"%mod\", %sym, 0);", {
         mod = mod,
@@ -141,7 +139,7 @@ M.bundle = function (infile, outdir, env, deps)
     local cmdcflags = os.getenv("CFLAGS") or ""
     local outmainfp = fs.join(outdir, outprefix)
     local args = vec()
-    env:each(function (var) 
+    env:each(function (var)
       args:append(table.concat({ var[1], "=\"", var[2], "\"" }))
     end)
     args:append(cmdcc, outcfp)
@@ -149,7 +147,7 @@ M.bundle = function (infile, outdir, env, deps)
     args:append("-o", outmainfp)
     args:append(cmdcflags)
     gen.pairs(modules.c)
-      :each(function (mod, fp)
+      :each(function (_, fp)
         args:append(fp)
       end)
     check(sys.execute(args:unpack()))

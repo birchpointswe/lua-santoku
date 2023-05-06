@@ -1,10 +1,13 @@
+local assert = require("luassert")
+local test = require("santoku.test")
+
 local str = require("santoku.string")
 
-describe("string", function ()
+test("string", function ()
 
-  describe("match", function ()
+  test("match", function ()
 
-    it("should return string matches", function ()
+    test("should return string matches", function ()
 
       local matches = str.match("this is a test", "%S+")
 
@@ -19,9 +22,9 @@ describe("string", function ()
   end)
 
   -- TODO: Test the printf format case (e.g. %d:val)
-  describe("interp", function ()
+  test("interp", function ()
 
-    it("should interpolate values", function ()
+    test("should interpolate values", function ()
 
       local tmpl = "Hello %who, %adj to meet you!"
       local vals = { who = "World", adj = "nice" }

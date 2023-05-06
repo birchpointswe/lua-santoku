@@ -1,14 +1,17 @@
+local assert = require("luassert")
+local test = require("santoku.test")
+
 local bundle = require("santoku.bundle")
 local fs = require("santoku.fs")
 local err = require("santoku.err")
 
-describe("santoku.bundle", function ()
+test("santoku.bundle", function ()
 
-  describe("bundle", function ()
+  test("bundle", function ()
 
-    it("should produce a standalone executable from a lua file", function ()
-      local infile = "test/spec/santoku/bundle/test.lua"
-      local outdir = "test/spec/santoku/bundle/test"
+    test("should produce a standalone executable from a lua file", function ()
+      local infile = "spec/santoku/bundle/test.lua"
+      local outdir = "spec/santoku/bundle/test"
       assert(err.pwrap(function (check) 
         check(fs.mkdirp(outdir))
         fs.files(outdir):map(check):map(os.remove):each(check)

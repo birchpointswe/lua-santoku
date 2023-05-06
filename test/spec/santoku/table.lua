@@ -1,14 +1,17 @@
 -- TODO: Benchmark against similar libraries
 
+local assert = require("luassert")
+local test = require("santoku.test")
+
 local tbl = require("santoku.table")
 local fun = require("santoku.fun")
 local op = require("santoku.op")
 
-describe("table", function ()
+test("table", function ()
 
-  describe("assign", function ()
+  test("assign", function ()
 
-    it("should merge hash-like tables", function ()
+    test("should merge hash-like tables", function ()
 
       local expected = { a = 1, b = { 2, 3 } }
       local one = { a = 1 }
@@ -20,24 +23,24 @@ describe("table", function ()
 
   end)
 
-  describe("get", function ()
+  test("get", function ()
 
-    it("should get deep vals in objects", function ()
+    test("should get deep vals in objects", function ()
       local obj = tbl({ a = { b = { 1, 2, { 3, 4 } } } })
       assert.equals(4, obj:get("a", "b", 3, 2))
       assert.is_nil(obj:get("a", "x", 3, 2))
     end)
 
-    it("should get function as identity with no keys", function ()
+    test("should get function as identity with no keys", function ()
       local obj = tbl({ a = { b = { 1, 2, { 3, 4 } } } })
       assert.same(obj, obj:get())
     end)
 
   end)
 
-  describe("set", function ()
+  test("set", function ()
 
-    it("should set deep vals in objects", function ()
+    test("should set deep vals in objects", function ()
       local obj = tbl({ a = { b = { 1, 2, { 3, 4 } } } })
       obj:set("x", "a", "b", 3, 2)
       assert.equals("x", obj.a.b[3][2])
@@ -46,9 +49,9 @@ describe("table", function ()
 
   end)
 
-  describe("mergeWith", function ()
+  test("mergeWith", function ()
 
-    it("should merge tables with key-based merged functions", function ()
+    test("should merge tables with key-based merged functions", function ()
 
       local t0 = { a = 1, b = { c = "one" } }
       local t1 = { a = 2, b = { c = "two" } }
@@ -64,9 +67,9 @@ describe("table", function ()
 
   end)
 
-  describe("merge", function ()
+  test("merge", function ()
 
-    it("should merge tables recursively", function ()
+    test("should merge tables recursively", function ()
 
       local t1 = { a = 1, b = { c = 2 } }
       local t2 = { a = 2, b = { d = 4 } }
