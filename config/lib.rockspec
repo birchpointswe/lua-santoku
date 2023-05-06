@@ -15,6 +15,10 @@ description = {
 -- TODO: can we do optional dependencies for
 -- things like luafilesystem, socket, sqlite,
 -- posix, etc?
+--
+-- TODO: Create a santoku lib to gracefully wrap
+-- functions which require an optional
+-- dependency
 dependencies = {
   "lua >= 5.1",
   -- "luafilesystem >= 1.8.0-1",
