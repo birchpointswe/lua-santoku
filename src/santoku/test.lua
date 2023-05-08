@@ -6,6 +6,7 @@ local compat = require("santoku.compat")
 local err = require("santoku.err")
 local gen = require("santoku.gen")
 local fs = require("santoku.fs")
+local sys = require("santoku.system")
 local str = require("santoku.string")
 
 local M = {}
@@ -26,7 +27,7 @@ M.test = function (tag, fn)
   end
 end
 
-M.runfiles = function (files)
+M.runfiles = function (files, interp)
   return err.pwrap(function (check)
     gen.ivals(files)
       :map(function (fp)
@@ -37,12 +38,16 @@ M.runfiles = function (files)
         end
       end)
       :flatten()
-      :filter(function (fp)
-        return str.endswith(fp, ".lua")
-      end)
       :each(function (fp)
-        print("Running", fp)
-        check(fs.loadfile(fp, setmetatable({}, { __index = _G })))()
+        if interp then
+          print("Running", fp)
+          check(sys.execute(interp, fp))
+        elseif str.endswith(fp, ".lua") then
+          print("Running", fp)
+          check(fs.loadfile(fp, setmetatable({}, { __index = _G })))()
+        else
+          print("Ignoring", fp)
+        end
       end)
   end)
 end

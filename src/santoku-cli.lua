@@ -73,6 +73,11 @@ local ctest = parser
   :command("test", "run tests")
 
 ctest
+  :flag("-i --interp", "run files with <interp> instead of via lua dofile")
+  :args(1)
+  :count("0-1")
+
+ctest
   :argument("files")
   :args("*")
 
@@ -149,7 +154,7 @@ assert(err.pwrap(function (check)
   elseif args.bundle then
     check(bundle(args.file, args.output, args.env, args.deps))
   elseif args.test then
-    check(test.runfiles(args.files))
+    check(test.runfiles(args.files, args.interp))
   else
     -- Not possible
     error("This is a bug")

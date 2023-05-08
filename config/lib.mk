@@ -19,7 +19,7 @@ luarocks-lib-install: $(LIB_DIST)
 
 lib-upload: $(LIB_ROCKSPEC)
 	cd "$(BUILD_DIR)" && \
-		luarocks upload --api-key "$(LUAROCKS_API_KEY)" "../$(LIB_ROCKSPEC)" $(ARGS)
+		luarocks upload --skip-pack --api-key "$(LUAROCKS_API_KEY)" "../$(LIB_ROCKSPEC)" $(ARGS)
 
 $(INST_LUADIR)/$(LIB_NAME)/%: src/$(LIB_NAME)/%
 	test -n "$(INST_LUADIR)"

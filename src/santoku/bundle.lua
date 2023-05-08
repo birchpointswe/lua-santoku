@@ -23,25 +23,31 @@ local function parsemodules (check, infile, modules, path, cpath)
       if line:match("^%s*%-%-") then
         return gen.empty()
       else
-        return gen.ivals(str.match(line, "require%(?[^%S\n]*\"([^\"]*)\"[^%S\n]*%)?"))
+        -- TODO: This pattern matches
+        -- require("abc'). Notice the quotes.
+        return gen.ivals(str.match(line, "require%(?[^%S\n]*[\"']([^\"']*)['\"][^%S\n]*%)?"))
       end
     end)
     :flatten()
     :each(function (mod)
-      -- TODO: Create a 5.1 shim for this
-      local fp0, err0 = package.searchpath(mod, path) -- luacheck: ignore
-      if fp0 then
-        modules.lua[mod] = fp0
-        parsemodules(check, fp0, modules, path, cpath)
-        return
+      if modules.lua[mod] or modules.c[mod] then -- luacheck: ignore
+        -- do nothing, we already found it
+      else
+        -- TODO: Create a 5.1 shim for this
+        local fp0, err0 = package.searchpath(mod, path) -- luacheck: ignore
+        if fp0 then
+          modules.lua[mod] = fp0
+          parsemodules(check, fp0, modules, path, cpath)
+          return
+        end
+        -- TODO: Create a 5.1 shim for this
+        local fp1, err1 = package.searchpath(mod, cpath) -- luacheck: ignore
+        if fp1 then
+          modules.c[mod] = fp1
+          return
+        end
+        check(false, err0, err1)
       end
-      -- TODO: Create a 5.1 shim for this
-      local fp1, err1 = package.searchpath(mod, cpath) -- luacheck: ignore
-      if fp1 then
-        modules.c[mod] = fp1
-        return
-      end
-      check(false, err0, err1)
     end)
 end
 
@@ -137,6 +143,7 @@ M.bundle = function (infile, outdir, env, deps)
     ]]})))
     local cmdcc = os.getenv("CC") or "cc"
     local cmdcflags = os.getenv("CFLAGS") or ""
+    local cmdldflags = os.getenv("LDFLAGS") or ""
     local outmainfp = fs.join(outdir, outprefix)
     local args = vec()
     env:each(function (var)
@@ -146,6 +153,7 @@ M.bundle = function (infile, outdir, env, deps)
     args:append("-lm", "-llua")
     args:append("-o", outmainfp)
     args:append(cmdcflags)
+    args:append(cmdldflags)
     gen.pairs(modules.c)
       :each(function (_, fp)
         args:append(fp)
