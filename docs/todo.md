@@ -1,5 +1,8 @@
 # Now
 
+- Get generators, vector, table, etc to work
+  with pairs, ipairs
+
 - Pwrap
     - Refactor and move to "check" module that
       exports a function with the following
@@ -22,12 +25,12 @@
   stringifies the remaining arguments with ":"
   before passing to assert
 
-- 100% test coverage 
+- 100% test coverage
 
 - Functional utils for maybe applying functions
   based on boolean first arg, indexed arg
   get/set/del/map, filter, etc (basically
-  immutable versions of vec/gen functions) 
+  immutable versions of vec/gen functions)
 
 # Next
 

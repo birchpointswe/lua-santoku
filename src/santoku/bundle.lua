@@ -17,7 +17,27 @@ local function write_deps (check, modules, infile, outfile)
   check(fs.writefile(depsfile, out))
 end
 
-local function parsemodules (check, infile, modules, path, cpath)
+local function addmod (check, modules, mod, path, cpath)
+  if not (modules.lua[mod] or modules.c[mod]) then
+    local fp, typ = check(M.searchpaths(mod, path, cpath))
+    modules[typ][mod] = fp
+    return fp, typ
+  end
+end
+
+local parsemodule, parsemodules
+
+parsemodule = function (check, mod, modules, ignores, path, cpath)
+  if ignores[mod] then
+    return
+  end
+  local fp, typ = addmod(check, modules, mod, path, cpath)
+  if typ == "lua" then
+    parsemodules(check, fp, modules, ignores, path, cpath)
+  end
+end
+
+parsemodules = function (check, infile, modules, ignores, path, cpath)
   check(fs.lines(infile))
     :map(function (line)
       if line:match("^%s*%-%-") then
@@ -30,61 +50,66 @@ local function parsemodules (check, infile, modules, path, cpath)
     end)
     :flatten()
     :each(function (mod)
-      if modules.lua[mod] or modules.c[mod] then -- luacheck: ignore
-        -- do nothing, we already found it
-      else
-        -- TODO: Create a 5.1 shim for this
-        local fp0, err0 = package.searchpath(mod, path) -- luacheck: ignore
-        if fp0 then
-          modules.lua[mod] = fp0
-          parsemodules(check, fp0, modules, path, cpath)
-          return
-        end
-        -- TODO: Create a 5.1 shim for this
-        local fp1, err1 = package.searchpath(mod, cpath) -- luacheck: ignore
-        if fp1 then
-          modules.c[mod] = fp1
-          return
-        end
-        check(false, err0, err1)
-      end
+      parsemodule(check, mod, modules, ignores, path, cpath)
     end)
 end
 
-M.parsemodules = function (infile, env)
-  env = vec.wrap(env)
-  local path = (env:find(function (p)
-    return p[1] == "LUA_PATH"
-  end) or { "", os.getenv("LUA_PATH") })[2]
-  local cpath = (env:find(function (p)
-    return p[1] == "LUA_CPATH"
-  end) or { "", os.getenv("LUA_CPATH") })[2]
+-- TODO: Create a 5.1 shim for
+-- package.searchpath
+M.searchpaths = function (mod, path, cpath)
+  local fp0, err0 = package.searchpath(mod, path) -- luacheck: ignore
+  if fp0 then
+    return true, fp0, "lua"
+  end
+  local fp1, err1 = package.searchpath(mod, cpath) -- luacheck: ignore
+  if fp1 then
+    return true, fp1, "c"
+  end
+  return false, err0, err1
+end
+
+M.parsemodules = function (infile, mods, ignores, path, cpath)
   return err.pwrap(function (check)
     local modules = { c = {}, lua = {} }
-    parsemodules(check, infile, modules, path, cpath)
+    gen.ivals(mods):each(function(mod)
+      parsemodule(check, mod, modules, ignores, path, cpath)
+    end)
+    parsemodules(check, infile, modules, ignores, path, cpath)
     return modules
   end)
 end
 
-M.mergelua = function (modules, infile)
+M.mergelua = function (modules, infile, mods)
   return err.pwrap(function (check)
     local ret = vec()
-    for mod, fp in pairs(modules) do
+    gen.pairs(modules.lua):each(function (mod, fp)
       local data = check(fs.readfile(fp))
       ret:append("package.preload[\"", mod, "\"] = function ()\n\n", data, "\nend\n")
-    end
+    end)
+    gen.ivals(mods):each(function (mod)
+      ret:append("require(\"", mod, "\")\n")
+    end)
     ret:append("\n", check(fs.readfile(infile)))
     return ret:concat()
   end)
 end
 
-M.bundle = function (infile, outdir, env, deps)
-  env = env or {}
+M.bundle = function (infile, outdir, env, cmpenv, deps, mods, ignores)
+  mods = mods or {}
+  env = vec.wrap(env)
+  cmpenv = vec.wrap(cmpenv)
+  ignores = gen.ivals(ignores or {}):set()
   return err.pwrap(function (check)
+    local path = (env:find(function (p)
+      return p[1] == "LUA_PATH"
+    end) or { "", os.getenv("LUA_PATH") })[2]
+    local cpath = (env:find(function (p)
+      return p[1] == "LUA_CPATH"
+    end) or { "", os.getenv("LUA_CPATH") })[2]
     local outprefix = fs.splitexts(fs.basename(infile)).name
-    local modules = check(M.parsemodules(infile, env))
+    local modules = check(M.parsemodules(infile, mods, ignores, path, cpath))
     local outluafp = fs.join(outdir, outprefix .. ".lua")
-    local outluadata = check(M.mergelua(modules.lua, infile))
+    local outluadata = check(M.mergelua(modules, infile, mods))
     check(fs.writefile(outluafp, outluadata))
     local outluacfp = fs.join(outdir, outprefix .. ".luac")
     local cmdluac = os.getenv("LUAC") or "luac"
@@ -100,7 +125,9 @@ M.bundle = function (infile, outdir, env, deps)
       #include "lua.h"
       #include "lualib.h"
       #include "lauxlib.h"
-    ]], check(fs.readfile(outluahfp)), [[
+    ]], cmpenv.n > 0 and [[
+      #include "stdlib.h"
+    ]] or "", check(fs.readfile(outluahfp)), [[
       const char *reader (lua_State *L, void *data, size_t *sizep) {
         *sizep = data_len;
         return (const char *)data;
@@ -110,6 +137,10 @@ M.bundle = function (infile, outdir, env, deps)
       return "int " .. sym .. "(lua_State *L);"
     end):concat("\n"), "\n", [[
       int main (int argc, char **argv) {
+    ]], gen.ivals(cmpenv):map(function (e)
+      return string.format("setenv(%s, %s, 1);", str.quote(e[1]), str.quote(e[2]))
+    end):concat(), "\n", [[
+    ]], [[
         lua_State *L = luaL_newstate();
         if (L == NULL)
           return 1;
@@ -145,7 +176,7 @@ M.bundle = function (infile, outdir, env, deps)
     local cmdcflags = os.getenv("CFLAGS") or ""
     local cmdldflags = os.getenv("LDFLAGS") or ""
     local outmainfp = fs.join(outdir, outprefix)
-    local args = vec()
+    local args = vec("2>&1")
     env:each(function (var)
       args:append(table.concat({ var[1], "=\"", var[2], "\"" }))
     end)

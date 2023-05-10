@@ -40,5 +40,5 @@ build = {
 
 test = {
   type = "command",
-  command = "sh test/run.sh"
+  command = "make luarocks-test"
 }

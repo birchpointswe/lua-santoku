@@ -22,6 +22,21 @@ cbundle
   :count("*")
 
 cbundle
+  :option("-E --cmpenv", "set an environment variable that applies only at runtime")
+  :args(2)
+  :count("*")
+
+cbundle
+  :option("-l --load", "load a module during startup")
+  :args(1)
+  :count("*")
+
+cbundle
+  :option("-i --ignore", "ignore bundling a module")
+  :args(1)
+  :count("*")
+
+cbundle
   :option("-f --file", "input file")
   :args(1)
   :count(1)
@@ -73,7 +88,16 @@ local ctest = parser
   :command("test", "run tests")
 
 ctest
-  :flag("-i --interp", "run files with <interp> instead of via lua dofile")
+  :option("-m --match", "only load the matching files")
+  :args(1)
+  :count("0-1")
+
+ctest
+  :flag("-s --stop", "stop after the first error")
+  :count("0-1")
+
+ctest
+  :option("-i --interp", "run files with <interp> instead of via lua dofile")
   :args(1)
   :count("0-1")
 
@@ -152,9 +176,9 @@ assert(err.pwrap(function (check)
       parser:error("either -f --file or -d --directory must be provided")
     end
   elseif args.bundle then
-    check(bundle(args.file, args.output, args.env, args.deps))
+    check(bundle(args.file, args.output, args.env, args.cmpenv, args.deps, args.load, args.ignore))
   elseif args.test then
-    check(test.runfiles(args.files, args.interp))
+    check(test.runfiles(args.files, args.interp, args.match, args.stop))
   else
     -- Not possible
     error("This is a bug")

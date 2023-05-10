@@ -1,5 +1,7 @@
 -- TODO: CLEAN UP THESE TODOs
 
+-- TODO: Use luassert for asserts across the lib
+
 -- TODO: Add append, extend, etc. functions for
 -- basic generators by wrapping
 
@@ -396,6 +398,14 @@ M.find = function (gen, fn, ...)
       return gen.val()
     end
   end
+end
+
+M.set = function (gen)
+  assert(M.isgen(gen))
+  return gen:reduce(function (s, v)
+    s[v] = true
+    return s
+  end, {})
 end
 
 M.tabulate = function (gen, opts, ...)

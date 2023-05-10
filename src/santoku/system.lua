@@ -1,4 +1,5 @@
 local gen = require("santoku.gen")
+local tup = require("santoku.tuple")
 local env = require("santoku.env")
 
 local M = {}
@@ -14,13 +15,21 @@ end
 
 -- TODO: Shell escapes
 M.sh = function (...)
-  local cmd = table.concat({ ... }, " ")
+  local cmd = tup.concat(tup.interleave(" ", ...))
     :gsub("%$","\\$")
   local ok, iter, cd = pcall(io.popen, cmd, "r")
   if ok then
     -- TODO: Doesn't close the file handle
+    -- automatically
     -- TODO: Allow user to configure chunks, etc
-    return true, gen.iter(iter:lines())
+    return true, gen.iter(iter:lines()), function ()
+      local ok, t, cd = iter:close()
+      if ok and t == "exit" then
+        return true, cd
+      else
+        return false, t, cd
+      end
+    end
   else
     return false, iter, cd
   end
@@ -36,12 +45,12 @@ M.lua = function (m, ...)
 end
 
 M.execute = function (...)
-  local ok, out, cd = M.sh(...)
+  local ok, out, close = M.sh(...)
   if not ok then
-    return false, out, cd
+    return false, out, close
   else
     out:each(print)
-    return true
+    return close()
   end
 end
 

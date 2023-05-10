@@ -1,6 +1,6 @@
 return {
-  statsfile = "luacov.stats.out",
-  reportfile = "luacov.report.out",
+  statsfile = "<% return os.getenv('STATS_FILE') %>",
+  reportfile = "<% return os.getenv('REPORT_FILE') %>",
   includeuntestedfiles = true,
-  include = { "../src/santoku" }
+  include = { "src" }
 }

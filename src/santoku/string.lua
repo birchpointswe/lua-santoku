@@ -93,6 +93,30 @@ M.split = function (str, pat, opts)
   return ret
 end
 
+M.quote = function (s, q, e)
+  q = q or "\""
+  e = e or "\\"
+  assert(type(s) == "string")
+  assert(type(q) == "string")
+  assert(type(e) == "string")
+  return table.concat({ q, (s:gsub(q, e .. q)), q })
+end
+
+M.unquote = function (s, q, e)
+  q = q or "\""
+  e = e or "\\"
+  assert(type(s) == "string")
+  assert(type(q) == "string")
+  assert(type(e) == "string")
+  if M.startswith(s, q) and M.endswith(s, q) then
+    local slen = s:len()
+    local qlen = q:len()
+    return (s:sub(1 + qlen, slen - qlen):gsub(e .. q, q))
+  else
+    return s
+  end
+end
+
 -- Escape strings for use in sub, gsub, etc
 M.escape = function (s)
   return (s:gsub("[%(%)%.%%+%-%*%?%[%]%^%$]", "%%%1"))

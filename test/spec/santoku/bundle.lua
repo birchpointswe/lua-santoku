@@ -5,14 +5,14 @@ local bundle = require("santoku.bundle")
 local fs = require("santoku.fs")
 local err = require("santoku.err")
 
-test("santoku.bundle", function ()
+test("bundle", function ()
 
   test("bundle", function ()
 
     test("should produce a standalone executable from a lua file", function ()
-      local infile = "spec/santoku/bundle/test.lua"
-      local outdir = "spec/santoku/bundle/test"
-      assert(err.pwrap(function (check) 
+      local infile = "test/spec/santoku/bundle/test.lua"
+      local outdir = "test/spec/santoku/bundle/test"
+      assert(err.pwrap(function (check)
         check(fs.mkdirp(outdir))
         fs.files(outdir):map(check):map(os.remove):each(check)
         check(bundle(infile, outdir))

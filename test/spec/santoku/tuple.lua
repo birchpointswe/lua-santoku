@@ -38,4 +38,11 @@ test("tuple", function ()
 
   end)
 
+  test("interleave", function ()
+
+    local a, b, c, d, e = tup.interleave(5, 1, 2, 3)
+    assert.same({ 1, 5, 2, 5, 3 }, { a, b, c, d, e })
+
+  end)
+
 end)

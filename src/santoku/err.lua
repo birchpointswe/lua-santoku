@@ -66,6 +66,7 @@ M.unimplemented = function (msg)
   M.error("Unimplemented", msg)
 end
 
+-- TODO: Calculate level by nested pwraps
 M.error = function (...)
   error(table.concat({ ... }, ": "), 2)
 end
@@ -107,7 +108,6 @@ M.pwrapper = function (co, ...)
       local ok, t
       for i = 1, select("#", ...) do
         t = select(i, ...)
-        print(t())
         ok = t()
         if ok then
           return select(2, t())

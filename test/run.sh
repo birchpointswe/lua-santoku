@@ -31,6 +31,7 @@ run()
   if LUA_PATH="../src/?.lua;$LUA_PATH;" \
     $LUA -lluacov ../src/santoku-cli.lua test "$test_files"
   then
+    echo
     luacov -c luacov.lua
     cat luacov.report.out | \
       awk '/^Summary/ { P = NR } P && NR > P + 1' | \

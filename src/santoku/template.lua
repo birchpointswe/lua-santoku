@@ -172,8 +172,7 @@ M.compile = function (parent, ...)
           elseif tag == "compile" then
             local res = tup(fn())
             local ok = res()
-            -- luacheck: ignore
-            if ok == nil then
+            if ok == nil then -- luacheck: ignore
               -- do nothing
             elseif type(ok) == "string" then
               parts:append((tup(M.STR, res())))
@@ -205,8 +204,7 @@ M.renderfile = function (fp, config)
 end
 
 local function insert (output, ok, ...)
-  -- luacheck: ignore
-  if (ok == nil) then 
+  if (ok == nil) then -- luacheck: ignore
     -- do nothing
     return true
   elseif type(ok) == "string" then
@@ -214,7 +212,7 @@ local function insert (output, ok, ...)
     -- args are strings?
     output:append(ok, ...)
     return true
-  elseif ok == true then 
+  elseif ok == true then
     -- TODO: should we check that the remaining
     -- args are strings?
     output:append(...)

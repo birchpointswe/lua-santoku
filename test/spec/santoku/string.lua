@@ -36,4 +36,14 @@ test("string", function ()
 
   end)
 
+  test("quote", function ()
+    local s = "hello"
+    assert.equals("\"hello\"", str.quote(s))
+  end)
+
+  test("uquote", function ()
+    local s = "\"hello\""
+    assert.equals("hello", str.unquote(s))
+  end)
+
 end)
