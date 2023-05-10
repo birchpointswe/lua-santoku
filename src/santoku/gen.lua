@@ -211,7 +211,7 @@ M.reduce = function (gen, acc, ...)
   assert(M.isgen(gen))
   assert(compat.iscallable(acc))
   local ready = false
-  local val, m = tup(...)
+  local val, m = tup(...), tup.len(...)
   gen:each(function (...)
     if not ready and m == 0 then
       ready = true
@@ -327,11 +327,11 @@ M.tup = function (gen)
   assert(M.isgen(gen))
   return gen:reduce(function (t, ...)
     if select("#", ...) <= 1 then
-      return (tup(t(...)))
+      return tup(t(...))
     else
-      return (tup(t((tup(...)))))
+      return tup(t(tup(...)))
     end
-  end, (tup()))
+  end, tup())
 end
 
 M.unpack = function (gen)
@@ -412,9 +412,9 @@ M.tabulate = function (gen, opts, ...)
   assert(M.iscogen(gen))
   local keys, nkeys
   if type(opts) == "table" then
-    keys, nkeys = tup(...)
+    keys, nkeys = tup(...), tup.len(...)
   else
-    keys, nkeys = tup(opts, ...)
+    keys, nkeys = tup(opts, ...), 1 + tup.len(...)
     opts = {}
   end
   local rest = opts.rest
@@ -433,10 +433,10 @@ end
 M.zip = function (opts, ...)
   local gens, ngens
   if M.isgen(opts) then
-    gens, ngens = tup(opts, ...)
+    gens, ngens = tup(opts, ...), 1 + tup.len(...)
     opts = {}
   else
-    gens, ngens = tup(...)
+    gens, ngens = tup(...), tup.len(...)
   end
   local mode = opts.mode or "first"
   return M.gen(function (yield, ...)
@@ -452,7 +452,7 @@ M.zip = function (opts, ...)
         elseif i == 1 and mode == "first" then
           return
         else
-          ret = tup(ret((tup())))
+          ret = tup(ret(tup()))
         end
       end
       if nb == 0 then

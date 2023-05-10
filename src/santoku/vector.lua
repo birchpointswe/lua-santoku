@@ -287,7 +287,7 @@ M.reduce = function (t, acc, ...)
   assert(M.isvec(t))
   assert(compat.iscallable(acc))
   local start = 1
-  local val, n = tup(...)
+  local val, n = tup(...), tup.len(...)
   if t.n == 0 then
     return val()
   elseif n == 0 then

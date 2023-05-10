@@ -7,10 +7,10 @@ test("tuple", function ()
 
   test("stores varargs", function ()
 
-    local tup, m = tup(1, 2, 3)
-    assert(m == 3)
+    local t = tup(1, 2, 3)
+    assert(tup.len(t()) == 3)
 
-    local a, b, c = tup()
+    local a, b, c = t()
     assert.equals(1, a)
     assert.equals(2, b)
     assert.equals(3, c)
@@ -19,10 +19,10 @@ test("tuple", function ()
 
   test("allows append", function ()
 
-    local tup, m = tup(1)
-    assert(m == 1)
+    local t = tup(1)
+    assert(tup.len(t()) == 1)
 
-    local a, b, c = tup(2, 3)
+    local a, b, c = t(2, 3)
     assert.equals(1, a)
     assert.equals(2, b)
     assert.equals(3, c)

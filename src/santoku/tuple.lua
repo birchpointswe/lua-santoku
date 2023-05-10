@@ -6,12 +6,12 @@ local function tuple (n, a, ...)
   if n == 0 then
     return function (...)
       return ...
-    end, 0
+    end
   else
     local rest = tuple(n - 1, ...)
     return function (...)
       return a, rest(...)
-    end, n
+    end
   end
 end
 

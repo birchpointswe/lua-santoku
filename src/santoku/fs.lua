@@ -8,6 +8,8 @@ local inherit = require("santoku.inherit")
 local str = require("santoku.string")
 local err = require("santoku.err")
 local gen = require("santoku.gen")
+local tup = require("santoku.tuple")
+local fun = require("santoku.fun")
 local vec = require("santoku.vector")
 
 local M = {}
@@ -200,16 +202,10 @@ end
 M.joinwith = function (d, ...)
   local de = str.escape(d)
   local pat = string.format("(%s)*$", de)
-  return vec(...)
-    :filter()
-    :reduce(function (a, n)
-      return table.concat({
-        -- Need these parens to ensure only the first return
-        -- value of gsub used in concat
-        (a:gsub(pat, "")),
-        (n:gsub(pat, ""))
-      }, d)
-    end)
+  local clean = fun.bindl(tup.map, fun.bindr(string.gsub, pat, ""))
+  local filter = fun.bindl(tup.filter, compat.id)
+  local interleave = fun.bindl(tup.interleave, d)
+  return tup.concat(interleave(clean(filter(...))))
 end
 
 M.splitparts = function (fp, opts)
