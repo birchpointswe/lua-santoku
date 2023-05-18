@@ -10,7 +10,7 @@ local M = {}
 local function write_deps (check, modules, infile, outfile)
   local depsfile = outfile .. ".d"
   local out = gen.chain(
-      gen.pack(infile, ": "),
+      gen.pack(outfile, ": "),
       gen.vals(modules):map(gen.vals):flatten():intersperse(" "),
       gen.pack("\n", depsfile, ": ", infile))
     :vec():concat()
@@ -40,12 +40,17 @@ end
 parsemodules = function (check, infile, modules, ignores, path, cpath)
   check(fs.lines(infile))
     :map(function (line)
-      if line:match("^%s*%-%-") then
+      -- TODO: The second match causes the bundler
+      -- to skip any lines with the word
+      -- 'require' in quotes, which may not be
+      -- right
+      if line:match("^%s*%-%-") or line:match("\"[^\"]*require[^\"]*\"") then
         return gen.empty()
       else
         -- TODO: This pattern matches
         -- require("abc'). Notice the quotes.
-        return gen.ivals(str.match(line, "require%(?[^%S\n]*[\"']([^\"']*)['\"][^%S\n]*%)?"))
+        local pat = "require%(?[^%S\n]*[\"']([^\"']*)['\"][^%S\n]*%)?"
+        return gen.ivals(str.match(line, pat))
       end
     end)
     :flatten()
@@ -118,8 +123,9 @@ M.bundle = function (infile, outdir, env, cmpenv, deps, mods, ignores)
     local cmdxxd = os.getenv("XXD") or "xxd"
     check(sys.execute(cmdxxd, "-i", "-n", "data", outluacfp, outluahfp))
     local outcfp = fs.join(outdir, outprefix .. ".c")
+    local outmainfp = fs.join(outdir, outprefix)
     if deps then
-      write_deps(check, modules, infile, outluafp)
+      write_deps(check, modules, infile, outmainfp)
     end
     check(fs.writefile(outcfp, table.concat({[[
       #include "lua.h"
@@ -175,7 +181,6 @@ M.bundle = function (infile, outdir, env, cmpenv, deps, mods, ignores)
     local cmdcc = os.getenv("CC") or "cc"
     local cmdcflags = os.getenv("CFLAGS") or ""
     local cmdldflags = os.getenv("LDFLAGS") or ""
-    local outmainfp = fs.join(outdir, outprefix)
     local args = vec("2>&1")
     env:each(function (var)
       args:append(table.concat({ var[1], "=\"", var[2], "\"" }))

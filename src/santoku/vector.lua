@@ -114,8 +114,6 @@ M.sort = function (t, opts)
   return t
 end
 
-M.push = M.append
-
 M.get = function (t, i)
   assert(M.isvec(t))
   assert(i >= 0)
@@ -255,6 +253,8 @@ M.append = function (t, ...)
   assert(M.isvec(t))
   return M.appendo(t, t.n + 1, ...)
 end
+
+M.push = M.append
 
 M.overlay = function (t, ...)
   assert(M.isvec(t))

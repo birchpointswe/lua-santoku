@@ -1,7 +1,9 @@
 # Now
 
-- Get generators, vector, table, etc to work
-  with pairs, ipairs
+- Benchmark tuples, vectors, generators
+
+- Get generators, vector, table, tuple, etc to
+  work with for .. in loops. Is gen:co() enough?
 
 - Pwrap
     - Refactor and move to "check" module that

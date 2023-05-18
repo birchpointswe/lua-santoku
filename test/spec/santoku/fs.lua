@@ -27,6 +27,14 @@ test("fs", function ()
 
   end)
 
+  test("join", function ()
+
+    test("merges duplicate delimiters", function ()
+      assert.equals("a/b", fs.join("a/", "b"))
+    end)
+
+  end)
+
   test("joinwith", function ()
 
     test("should handle nils", function ()
