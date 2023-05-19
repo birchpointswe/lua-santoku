@@ -37,6 +37,10 @@ cbundle
   :count("*")
 
 cbundle
+  :flag("-C --noclose", "don't call lua_close(...)")
+  :count("0-1")
+
+cbundle
   :option("-f --file", "input file")
   :args(1)
   :count(1)
@@ -176,7 +180,7 @@ assert(err.pwrap(function (check)
       parser:error("either -f --file or -d --directory must be provided")
     end
   elseif args.bundle then
-    check(bundle(args.file, args.output, args.env, args.cmpenv, args.deps, args.load, args.ignore))
+    check(bundle(args.file, args.output, args.env, args.cmpenv, args.deps, args.load, args.ignore, args.noclose))
   elseif args.test then
     check(test.runfiles(args.files, args.interp, args.match, args.stop))
   else
