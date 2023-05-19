@@ -99,7 +99,7 @@ M.mergelua = function (modules, infile, mods)
   end)
 end
 
-M.bundle = function (infile, outdir, env, cmpenv, deps, mods, ignores, close)
+M.bundle = function (infile, outdir, env, cmpenv, deps, mods, ignores, noclose)
   mods = mods or {}
   env = vec.wrap(env)
   cmpenv = vec.wrap(cmpenv)
@@ -174,7 +174,7 @@ M.bundle = function (infile, outdir, env, cmpenv, deps, mods, ignores, close)
       err:
         fprintf(stderr, "%s\n", lua_tostring(L, -1));
       end:
-      ]], close and [[
+      ]], not noclose and [[
         lua_close(L);
       ]] or "", [[
         return rc;
