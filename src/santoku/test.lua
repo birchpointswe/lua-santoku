@@ -23,7 +23,6 @@ M.test = function (tag, fn)
     print(debug.traceback())
   end))
   if not ret() then
-    print()
     tup.each(print, tup.filter(compat.id, tup.sel(2, ret())))
     print()
     print(tup.concat(tup.interleave(": ", tags())))
