@@ -1,5 +1,8 @@
 # Now
 
+- Test
+    - Allow async tests
+
 - Benchmark tuples, vectors, generators
 
 - Get generators, vector, table, tuple, etc to
