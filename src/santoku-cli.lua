@@ -50,6 +50,11 @@ cbundle
   :count("0-1")
 
 cbundle
+  :flag("-m --depstarget", "override dependency target file")
+  :args(1)
+  :count("0-1")
+
+cbundle
   :option("-o --output", "output directory")
   :args(1)
   :count(1)
@@ -180,7 +185,10 @@ assert(err.pwrap(function (check)
       parser:error("either -f --file or -d --directory must be provided")
     end
   elseif args.bundle then
-    check(bundle(args.file, args.output, args.env, args.cmpenv, args.deps, args.load, args.ignore, args.noclose))
+    check(bundle(
+      args.file, args.output, args.env,
+      args.cmpenv, args.deps, args.depstarget,
+      args.load, args.ignore, args.noclose))
   elseif args.test then
     check(test.runfiles(args.files, args.interp, args.match, args.stop))
   else

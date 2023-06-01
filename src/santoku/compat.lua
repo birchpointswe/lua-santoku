@@ -69,6 +69,20 @@ M.iscallable = function (f)
   end
 end
 
+M.isarray = function (t)
+  if type(t) ~= "table" then
+    return false
+  end
+  local i = 0
+  for _ in pairs(t) do
+    i = i + 1
+    if t[i] == nil then
+      return false
+    end
+  end
+  return true
+end
+
 M.load = function (code, env)
   if setfenv and loadstring then -- luacheck: ignore
     local f, err, cd = loadstring(code) -- luacheck: ignore

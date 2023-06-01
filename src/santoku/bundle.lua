@@ -99,7 +99,7 @@ M.mergelua = function (modules, infile, mods)
   end)
 end
 
-M.bundle = function (infile, outdir, env, cmpenv, deps, mods, ignores, noclose)
+M.bundle = function (infile, outdir, env, cmpenv, deps, depstarget, mods, ignores, noclose)
   mods = mods or {}
   env = vec.wrap(env)
   cmpenv = vec.wrap(cmpenv)
@@ -125,7 +125,7 @@ M.bundle = function (infile, outdir, env, cmpenv, deps, mods, ignores, noclose)
     local outcfp = fs.join(outdir, outprefix .. ".c")
     local outmainfp = fs.join(outdir, outprefix)
     if deps then
-      write_deps(check, modules, infile, outmainfp)
+      write_deps(check, modules, infile, depstarget or outmainfp)
     end
     check(fs.writefile(outcfp, table.concat({[[
       #include "lua.h"

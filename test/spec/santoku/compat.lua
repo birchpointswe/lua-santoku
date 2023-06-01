@@ -29,4 +29,13 @@ test("compat", function ()
 
   end)
 
+  test("isarray", function ()
+
+    test("should check if a table contains only numeric indices", function ()
+      assert(compat.isarray({ 1, 2, 3, 4 }))
+      assert(not compat.isarray({ 1, 2, 3, 4, ["5"] = 5 }))
+    end)
+
+  end)
+
 end)
