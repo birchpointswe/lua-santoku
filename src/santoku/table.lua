@@ -115,7 +115,7 @@ M.merge = function (t, ...)
   for i = 1, select("#", ...) do
     local t0 = select(i, ...)
     for k, v in pairs(t0) do
-      if t[k] ~= nil and type(t[k]) ~= "table" then -- luacheck: ignore 
+      if t[k] ~= nil and type(t[k]) ~= "table" then -- luacheck: ignore
         -- do nothing
       elseif type(v) == "table" then
         t[k] = t[k] or {}
@@ -165,6 +165,11 @@ M.mergeWith = function (t, spec, ...)
     end)
   end
   return t
+end
+
+M.len = function (t)
+  assert(type(t) == "table")
+  return t.n or #t
 end
 
 return setmetatable({}, {

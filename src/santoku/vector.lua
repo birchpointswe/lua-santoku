@@ -414,6 +414,11 @@ M.equals = function (t, ...)
   return tbl.equals(t, ...)
 end
 
+M.len = function (t)
+  assert(M.isvec(t))
+  return tbl.len(t)
+end
+
 return setmetatable({}, {
   __index = M,
   __call = function (_, ...)
