@@ -36,6 +36,11 @@ test("compat", function ()
       assert(not compat.isarray({ 1, 2, 3, 4, ["5"] = 5 }))
     end)
 
+    test("should ignore the n property if its value is numeric", function ()
+      assert(compat.isarray({ 1, 2, 3, 4, n = 4 }))
+      assert(not compat.isarray({ 1, 2, 3, 4, n = "hi" }))
+    end)
+
   end)
 
 end)

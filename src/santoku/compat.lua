@@ -74,10 +74,14 @@ M.isarray = function (t)
     return false
   end
   local i = 0
-  for _ in pairs(t) do
-    i = i + 1
-    if t[i] == nil then
-      return false
+  for k, v in pairs(t) do
+    if k == "n" and type(v) == "number" then -- luacheck: ignore
+      -- continue
+    else
+      i = i + 1
+      if t[i] == nil then
+        return false
+      end
     end
   end
   return true
