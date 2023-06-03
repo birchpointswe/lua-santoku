@@ -94,13 +94,12 @@ test("template", function ()
     assert(ok, str)
   end)
 
-  -- TODO: Handle indentation
   test("should handle trailing characters", function ()
     local ok, tpl = template([[
       <template
         data-api="/api/ping"
         data-method="get"
-        <% return "\n", gen.pairs(redirects)
+        <% return gen.pairs(redirects)
             :map(function (status, redirect)
               return string.format("data-handler-%d=\"redirect:%s\"", status, redirect)
             end)
@@ -118,12 +117,11 @@ test("template", function ()
       <template
         data-api="/api/ping"
         data-method="get"
-data-handler-403="redirect:/login">
+        data-handler-403="redirect:/login">
       </template>
     ]], str) -- TODO: Should this ']]' be hanging?
   end)
 
-  -- TODO: Handle indentation
   test("should allow multiple compile-time functions", function ()
     local ok, tpl = template([[
       <%compile% return title %>
@@ -139,7 +137,9 @@ data-handler-403="redirect:/login">
     local ok, str = tpl:render()
     assert(ok, str)
     assert.same([[
-      HelloWorld!
+      Hello
+      World
+      !
     ]], str)
   end)
 

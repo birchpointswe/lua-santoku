@@ -33,24 +33,26 @@ M.istemplate = function (t)
   return inherit.hasindex(t, M)
 end
 
-local function trimwhitespace (parts)
-  local lefti, left, typ, right
-  for righti = 1, parts.n do
-    typ, right = parts[righti]()
-    if typ == M.STR then
-      if left then
-        local leftspace = left:match("\n%s*$")
-        local rightspace = right:match("^%s*")
-        if leftspace and rightspace then
-          left = left:sub(1, string.len(left) - string.len(leftspace))
-          parts[lefti] = tup(M.STR, left)
-        end
-      end
-      lefti = righti
-      left = right
-    end
-  end
-end
+-- TODO: Do we need this?
+-- local function trimwhitespace (parts)
+  -- local lefti, left, typ, right
+  -- for righti = 1, parts.n do
+    -- typ, right = parts[righti]()
+    -- if typ == M.STR then
+    --   if left then
+    --     local leftspace = left:match("\n%s*$")
+    --     local rightspace = right:match("^%s*")
+    --     print(">", leftspace, rightspace)
+    --     if leftspace and rightspace then
+    --       left = left:sub(1, string.len(left) - string.len(leftspace))
+    --       parts[lefti] = tup(M.STR, left)
+    --     end
+    --   end
+    --   lefti = righti
+    --   left = right
+    -- end
+  -- end
+-- end
 
 M.compilefile = function (parent, ...)
   local args = tup(...)
@@ -189,7 +191,8 @@ M.compile = function (parent, ...)
       end
     end
 
-    trimwhitespace(parts)
+    -- TODO: Do we need this?
+    -- trimwhitespace(parts)
 
     return ret
 
