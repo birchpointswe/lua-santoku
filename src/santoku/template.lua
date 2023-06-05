@@ -121,7 +121,7 @@ M.compile = function (parent, ...)
         local show = tup.len(...) == 0 or tup.sel(1, ...)
         if not show then
           ret:hide()
-        else
+        elseif not showstack:peek() then
           showstack:push(true)
         end
       end,
