@@ -55,9 +55,7 @@ end
 
 M.unwrapped = function (t)
   assert(M.isvec(t))
-  local t0 = tbl.assign({}, t)
-  t0.n = nil
-  return t0
+  return { t:unpack() }
 end
 
 M.pack = function (...)
@@ -96,6 +94,15 @@ M.insert = function (t, i, v)
   return t
 end
 
+M.set = function (t, i, v)
+  assert(M.isvec(t))
+  assert(type(i) == "number" and i > 0)
+  t[i] = v
+  if i > t.n then
+    t.n = i
+  end
+end
+
 -- TODO: Unique currently implemented via a sort
 -- and then a filter. Can we make it faster?
 M.sort = function (t, opts)
@@ -127,6 +134,11 @@ end
 M.head = function (t)
   assert(M.isvec(t))
   return t:get(1)
+end
+
+M.last = function (t)
+  assert(M.isvec(t))
+  return t:get(t.n)
 end
 
 M.pop = function (t)
@@ -255,6 +267,8 @@ M.append = function (t, ...)
 end
 
 M.push = M.append
+
+M.peek = M.last
 
 M.overlay = function (t, ...)
   assert(M.isvec(t))

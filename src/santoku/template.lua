@@ -26,33 +26,12 @@ M.open = "<%"
 M.close = "%>"
 M.tagclose = "%"
 
-M.STR = tup()
-M.FN = tup()
+M.STR = {}
+M.FN = {}
 
 M.istemplate = function (t)
   return inherit.hasindex(t, M)
 end
-
--- TODO: Do we need this?
--- local function trimwhitespace (parts)
-  -- local lefti, left, typ, right
-  -- for righti = 1, parts.n do
-    -- typ, right = parts[righti]()
-    -- if typ == M.STR then
-    --   if left then
-    --     local leftspace = left:match("\n%s*$")
-    --     local rightspace = right:match("^%s*")
-    --     print(">", leftspace, rightspace)
-    --     if leftspace and rightspace then
-    --       left = left:sub(1, string.len(left) - string.len(leftspace))
-    --       parts[lefti] = tup(M.STR, left)
-    --     end
-    --   end
-    --   lefti = righti
-    --   left = right
-    -- end
-  -- end
--- end
 
 M.compilefile = function (parent, ...)
   local args = tup(...)
@@ -64,9 +43,9 @@ M.compilefile = function (parent, ...)
     local fp = args()
     local data = check(fs.readfile(fp))
     if parent then
-      return check(parent:compile(data, select(2, args())))
+      return check(parent:compile(data, tup.sel(2, args())))
     else
-      return check(M.compile(data, select(2, args())))
+      return check(M.compile(data, tup.sel(2, args())))
     end
   end)
 end
@@ -109,11 +88,13 @@ M.compile = function (parent, ...)
     pos = 0
 
     local deps = vec()
+    local showstack = vec(true)
 
     local ret = setmetatable({
       fenv = fenv,
       source = tmpl,
       deps = deps,
+      showstack = showstack,
       config = config,
       parent = parent,
       parts = parts,
@@ -126,6 +107,24 @@ M.compile = function (parent, ...)
     inherit.pushindex(ret, M)
 
     inherit.pushindex(ret, {
+      hide = function (_, ...)
+        local hide = tup.len(...) == 0 or tup.sel(1, ...)
+        if not hide then
+          ret:show()
+        elseif showstack:peek() then
+          showstack:pop()
+        else
+          showstack:push(false)
+        end
+      end,
+      show = function (_, ...)
+        local show = tup.len(...) == 0 or tup.sel(1, ...)
+        if not show then
+          ret:hide()
+        else
+          showstack:push(true)
+        end
+      end,
       compilefile = function (a, b, ...)
         if not M.istemplate(a) then
           deps:append(a)
@@ -179,9 +178,9 @@ M.compile = function (parent, ...)
             elseif type(ok) == "string" then
               parts:append((tup(M.STR, res())))
             elseif not ok then
-              check(false, select(2, res))
+              check(false, tup.sel(2, res))
             else
-              parts:append((tup(M.STR, select(2, res))))
+              parts:append((tup(M.STR, tup.sel(2, res))))
             end
           else
             check(false, "Invalid tag: " .. tag)
@@ -190,9 +189,6 @@ M.compile = function (parent, ...)
         end
       end
     end
-
-    -- TODO: Do we need this?
-    -- trimwhitespace(parts)
 
     return ret
 
@@ -204,6 +200,10 @@ M.renderfile = function (fp, config)
     local tpl = check(M.compilefile(fp, config))
     return check(tpl:render())
   end)
+end
+
+local function should_insert (ok)
+  return ok == true or type(ok) == "string"
 end
 
 local function insert (output, ok, ...)
@@ -233,16 +233,36 @@ M.render = function (tmpl, env)
 
     tmpl.fenv.check = check
 
+    local parts = tmpl.parts
     local output = vec()
 
     inherit.pushindex(tmpl.fenv, env or {})
 
-    for i = 1, tmpl.parts.n do
-      local typ, data = tmpl.parts[i]()
+    for i, part in ipairs(parts) do
+      local typ, data = part()
       if typ == M.STR then
-        check(insert(output, select(2, tmpl.parts[i]())))
+        if tmpl.showstack:peek() then
+          check(insert(output, tup.sel(2, part())))
+        end
       elseif typ == M.FN then
-        check(insert(output, data()))
+        local res = tup(data())
+        if not should_insert(res()) then
+          local lpat = "\n[^%S\n]*$"
+          local rpat = "^[^%S\n]*\n[^%S\n]*"
+          local left = parts:get(i - 1) or tup()
+          local right = parts:get(i + 1) or tup()
+          local ltyp, ldata = left()
+          local rtyp, rdata = right()
+          local lmatch = ltyp == M.STR and ldata and ldata:match(lpat)
+          local rmatch = rtyp == M.STR and rdata and rdata:match(rpat)
+          if lmatch and rmatch then
+            parts:set(i - 1, (tup(M.STR, (ldata:gsub(lpat, "")))))
+            parts:set(i + 1, (tup(M.STR, (rdata:gsub(rpat, "")))))
+          end
+        end
+        if tmpl.showstack:peek() then
+          check(insert(output, res()))
+        end
       else
         error("this is a bug: chunk has an undefined type")
       end

@@ -2,6 +2,8 @@ local assert = require("luassert")
 local test = require("santoku.test")
 
 local template = require("santoku.template")
+local fun = require("santoku.fun")
+local op = require("santoku.op")
 local vec = require("santoku.vector")
 local fs = require("santoku.fs")
 
@@ -140,6 +142,23 @@ test("template", function ()
       Hello
       World
       !
+    ]], str)
+  end)
+
+  test("should support show/hide", function ()
+    local ok, tpl = template([[
+      One
+      <% template:hide() %>
+      Two
+      <% template:show() %>
+      Three
+    ]])
+    assert(ok, tpl)
+    local ok, str = tpl:render()
+    assert(ok, str)
+    assert.same([[
+      One
+      Three
     ]], str)
   end)
 
