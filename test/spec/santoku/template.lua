@@ -162,4 +162,18 @@ test("template", function ()
     ]], str)
   end)
 
+  -- TODO
+  -- test("should trim empty lines", function ()
+  --   local ok, tpl = template([[
+  --     <% template:hide() %>
+  --     Test
+  --     <% template:show() %>
+  --   ]])
+  --   assert(ok, tpl)
+  --   local ok, str = tpl:render()
+  --   assert(ok, str)
+  --   assert.same([[
+  --   ]], str)
+  -- end)
+
 end)

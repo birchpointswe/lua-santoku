@@ -59,6 +59,7 @@ end
 -- indices
 M.split = function (str, pat, opts)
   opts = opts or {}
+  pat = pat or "%s+"
   local delim = opts.delim or false
   local n = 1
   local ls = 1
@@ -183,10 +184,10 @@ M.trim = function (s, opts)
     error("unexpected options argument: " .. type(opts))
   end
   if left ~= false then
-    s = s:replace("^" .. left, "")
+    s = s:gsub("^" .. left, "")
   end
   if right ~= false then
-    s = s:replace(right  .. "$", "")
+    s = s:gsub(right  .. "$", "")
   end
   return s
 end
@@ -240,3 +241,13 @@ M.commonprefix = function (...)
 end
 
 return M
+
+-- TODO: see note on M.wrap for why this doesn't
+-- work yet
+--
+-- return setmetatable({}, {
+--   __index = M,
+--   __call = function (_, t)
+--     return M.wrap(t)
+--   end
+-- })

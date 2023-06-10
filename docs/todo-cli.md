@@ -1,8 +1,13 @@
-# Now 
+# Now
+
+- toku trace interactive display for
+  santoku.web.trace connections
+
+# Later
 
 - Split to separate project entirely
 
-- toku cli help info and args table fixes
+- help info and args table fixes
     - toku template -h shows "-l --load <load>"
       when it should be like "-l --load <module>"
     - consider parsed args should include
@@ -17,17 +22,15 @@
 - toku bundle
     - allow dynamic or static linking of lualib
     - refactor
-    - gzip luac? 
+    - gzip luac?
     - tree shaking
     - parse lua syntax instead of pattern
       matching for require statements
     - test cases for emscripten, native static,
       and native dynamic
 
-- Publish updated version
-
 # Eventually
 
-- Generator interface 
+- Generator interface
     - toku files / --span exec md5sum
     - toku pipe --each exec wget --jobs 10
