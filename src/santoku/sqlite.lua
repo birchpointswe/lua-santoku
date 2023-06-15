@@ -108,6 +108,15 @@ M.open_memory = function (...)
   end
 end
 
+M.open_ptr = function (...)
+  local ok, db, cd = check(nil, sqlite.open_ptr(...))
+  if not ok then
+    return false, db, cd
+  else
+    return true, M.wrap(db)
+  end
+end
+
 M.wrap = function (db)
   -- TODO: Should these top-level functions
   -- accept extra arguments to be passed to the
