@@ -24,7 +24,7 @@ M.sel = function (i, ...)
 end
 
 M.get = function (i, ...) -- luacheck: ignore
-  -- TODO
+  return (M.sel(i, ...))
 end
 
 M.set = function (i, v, ...) -- luacheck: ignore

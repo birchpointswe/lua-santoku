@@ -45,4 +45,11 @@ test("tuple", function ()
 
   end)
 
+  test("get", function ()
+
+    local t = tup(1, 2, 3, 4)
+    assert.equals(2, tup.get(2, t()))
+
+  end)
+
 end)
