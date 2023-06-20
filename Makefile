@@ -1,12 +1,12 @@
-NAME = santoku
-VERSION = 0.0.40-1
-GIT_URL = git@github.com:broma0/lua-santoku.git
-HOMEPAGE = https://github.com/broma0/lua-santoku
-LICENSE = MIT
+NAME ?= santoku
+VERSION ?= 0.0.40-1
+GIT_URL ?= git@github.com:broma0/lua-santoku.git
+HOMEPAGE ?= https://github.com/broma0/lua-santoku
+LICENSE ?= MIT
 
-BUILD_DIR = build
+BUILD_DIR ?= build
 
-LUA = $(shell luarocks config lua_interpreter)
+LUA ?= $(shell luarocks config lua_interpreter)
 
 all:
 
