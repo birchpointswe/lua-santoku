@@ -16,11 +16,19 @@ local function tuple (n, a, ...)
 end
 
 M.len = function (...)
-  return select("#", ...)
+  return M.sel("#", ...)
 end
 
 M.sel = function (i, ...)
   return select(i, ...)
+end
+
+M.take = function (i, ...)
+  if i == 0 then
+    return
+  else
+    return (...), M.take(i - 1, M.sel(2, ...))
+  end
 end
 
 M.get = function (i, ...) -- luacheck: ignore
@@ -36,23 +44,23 @@ M.append = function (a, ...) -- luacheck: ignore
 end
 
 M.equals = function (a, ...)
-  local m = select("#", a())
-  local ts = select("#", ...)
+  local m = M.len(a())
+  local ts = M.len(...)
   for j = 1, ts do
-    local b = select(j, ...)
+    local b = M.sel(j, ...)
     if b == nil then
       return false
     end
-    local n = select("#", b())
+    local n = M.len(b())
     if m ~= n then
       return false
     end
   end
   for i = 1, m do
-    local v = select(i, a())
+    local v = M.sel(i, a())
     for j = 1, ts do
-      local b = select(j, ...)
-      local w = select(i, b())
+      local b = M.sel(j, ...)
+      local w = M.sel(i, b())
       if v ~= w then
         return false
       end
@@ -62,7 +70,7 @@ M.equals = function (a, ...)
 end
 
 M.tuple = function (...)
-  return tuple(select("#", ...), ...)
+  return tuple(M.len(...), ...)
 end
 
 local function interleave (x, n, ...)
@@ -95,26 +103,15 @@ M.concat = function (...)
   return table.concat({ ... })
 end
 
-M.slice = function (i, ...)
-  local m = M.len(...)
-  if i > m or i < -m then
-    return
-  elseif i < 0 then
-    return M.slice(i + 1, select(2, ...))
-  elseif i > 0 then
-    return M.slice(i - 1, select(2, ...))
-  end
-end
-
 M.filter = function (fn, ...)
   assert(compat.iscallable(fn))
-  local n = select("#", ...)
+  local n = M.len(...)
   if n == 0 then
     return
   elseif fn((...)) then
-    return ..., M.filter(fn, select(2, ...))
+    return ..., M.filter(fn, M.sel(2, ...))
   else
-    return M.filter(fn, select(2, ...))
+    return M.filter(fn, M.sel(2, ...))
   end
 end
 
@@ -128,10 +125,10 @@ end
 
 M.map = function (fn, ...)
   assert(compat.iscallable(fn))
-  if select("#", ...) == 0 then
+  if M.len(...) == 0 then
     return
   else
-    return fn((select(1, ...))), M.map(fn, select(2, ...))
+    return fn((M.sel(1, ...))), M.map(fn, M.sel(2, ...))
   end
 end
 

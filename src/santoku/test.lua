@@ -31,7 +31,7 @@ M.test = function (tag, fn)
     print()
     os.exit(1)
   end
-  tags = tup(tup.slice(-1, tags()))
+  tags = tup(tup.sel(-1, tags()))
 end
 
 M.runfiles = function (files, interp, match, stop)
@@ -48,7 +48,7 @@ M.runfiles = function (files, interp, match, stop)
       end)
       :flatten()
       :each(function (fp)
-        if match and not fp:match(match) then
+        if not fp or match and not fp:match(match) then
           return
         end
         if interp then

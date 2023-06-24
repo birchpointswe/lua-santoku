@@ -59,6 +59,11 @@ cbundle
   :args(1)
   :count(1)
 
+cbundle
+  :option("-O --outputname", "output name prefix")
+  :args(1)
+  :count("0-1")
+
 local ctemplate = parser
   :command("template", "process templates")
 
@@ -186,8 +191,8 @@ assert(err.pwrap(function (check)
     end
   elseif args.bundle then
     check(bundle(
-      args.file, args.output, args.env,
-      args.cmpenv, args.deps, args.depstarget,
+      args.file, args.output, args.outputname,
+      args.env, args.cmpenv, args.deps, args.depstarget,
       args.load, args.ignore, args.noclose))
   elseif args.test then
     check(test.runfiles(args.files, args.interp, args.match, args.stop))

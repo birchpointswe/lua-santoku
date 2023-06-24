@@ -99,7 +99,7 @@ M.mergelua = function (modules, infile, mods)
   end)
 end
 
-M.bundle = function (infile, outdir, env, cmpenv, deps, depstarget, mods, ignores, noclose)
+M.bundle = function (infile, outdir, outprefix, env, cmpenv, deps, depstarget, mods, ignores, noclose)
   mods = mods or {}
   env = vec.wrap(env)
   cmpenv = vec.wrap(cmpenv)
@@ -111,7 +111,7 @@ M.bundle = function (infile, outdir, env, cmpenv, deps, depstarget, mods, ignore
     local cpath = (env:find(function (p)
       return p[1] == "LUA_CPATH"
     end) or { "", os.getenv("LUA_CPATH") })[2]
-    local outprefix = fs.splitexts(fs.basename(infile)).name
+    outprefix = outprefix or fs.splitexts(fs.basename(infile)).name
     local modules = check(M.parsemodules(infile, mods, ignores, path, cpath))
     local outluafp = fs.join(outdir, outprefix .. ".lua")
     local outluadata = check(M.mergelua(modules, infile, mods))

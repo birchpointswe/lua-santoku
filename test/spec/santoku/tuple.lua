@@ -52,4 +52,25 @@ test("tuple", function ()
 
   end)
 
+  test("sel positive", function ()
+
+    local t = tup(1, 2, 3, 4, 5)
+    assert.same({ 3, 4, 5 }, { tup.sel(3, t()) })
+
+  end)
+
+  test("sel negative", function ()
+
+    local t = tup(1, 2, 3, 4, 5)
+    assert.same({ 3, 4, 5 }, { tup.sel(-3, t()) })
+
+  end)
+
+  test("take", function ()
+
+    local t = tup(1, 2, 3, 4, 5)
+    assert.same({ 1, 2, 3 }, { tup.take(3, t()) })
+
+  end)
+
 end)
