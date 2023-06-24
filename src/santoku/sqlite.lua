@@ -1,4 +1,5 @@
 local gen = require("santoku.gen")
+local err = require("santoku.err")
 local sqlite = require("lsqlite3")
 
 local M = setmetatable({}, { __index = sqlite })
@@ -182,7 +183,9 @@ M.wrap = function (db)
           if not ok then
             return ok, iter, cd
           else
-            return true, iter:vec()
+            return err.pwrap(function (check)
+              return iter:map(check):vec()
+            end)
           end
         end)
       end
