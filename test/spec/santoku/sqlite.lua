@@ -83,6 +83,19 @@ test("sqlite", function ()
     assert.same(states[3], { true, { name = "Albany", state = "New York" }, n = 2 })
     assert.equals(states.n, 5)
 
+    local ok, allstates = db:all([[
+      select * from cities
+    ]])
+    assert.equals(true, ok, allstates)
+
+    local ok, states = allstates()
+    assert.equals(true, ok, states)
+
+    assert.same(states[1], { true, { name = "New York", state = "New York" }, n = 2 })
+    assert.same(states[2], { true, { name = "Buffalo", state = "New York" }, n = 2 })
+    assert.same(states[3], { true, { name = "Albany", state = "New York" }, n = 2 })
+    assert.equals(states.n, 5)
+
   end)
 
 end)

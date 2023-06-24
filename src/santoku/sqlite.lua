@@ -172,6 +172,22 @@ M.wrap = function (db)
       end
     end,
 
+    all = function (db, sql)
+      local ok, stmt, cd = check(db, db.db:prepare(sql))
+      if not ok then
+        return false, stmt, cd
+      else
+        return true, M.wrapstmt(stmt, function (...)
+          local ok, iter, cd = query(db, stmt, ...)
+          if not ok then
+            return ok, iter, cd
+          else
+            return true, iter:vec()
+          end
+        end)
+      end
+    end,
+
     runner = function (db, sql)
       local ok, stmt, cd = check(db, db.db:prepare(sql))
       if not ok then
