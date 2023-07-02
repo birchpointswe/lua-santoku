@@ -26,7 +26,11 @@ local tup = require("santoku.tuple")
 local op = require("santoku.op")
 local tbl = require("santoku.table")
 
-local M = {}
+local M = setmetatable({}, {
+  __call = function (M, ...)
+    return M.pack(...)
+  end
+})
 
 -- TODO use inherit
 M.isvec = function (t)
@@ -433,9 +437,4 @@ M.len = function (t)
   return tbl.len(t)
 end
 
-return setmetatable({}, {
-  __index = M,
-  __call = function (_, ...)
-    return M.pack(...)
-  end
-})
+return M

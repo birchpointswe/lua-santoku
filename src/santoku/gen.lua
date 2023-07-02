@@ -44,6 +44,16 @@ local tup = require("santoku.tuple")
 
 local M = {}
 
+local MT = {
+  __call = function (M, ...)
+    return M.gen(...)
+  end
+}
+
+local MTG = {
+  __index = M
+}
+
 -- TODO use inherit
 M.isgen = function (t)
   if type(t) ~= "table" then
@@ -79,9 +89,7 @@ M.gen = function (run, ...)
       assert(compat.iscallable(yield))
       return run(yield, args(...))
     end
-  }, {
-    __index = M,
-  })
+  }, MTG)
 end
 
 M.iter = function (fn, ...)
@@ -491,8 +499,4 @@ end
 
 M.none = fun.compose(op["not"], M.find)
 
-return setmetatable(M, {
-  __call = function (_, ...)
-    return M.gen(...)
-  end
-})
+return setmetatable(M, MT)

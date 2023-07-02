@@ -91,9 +91,9 @@ test("sqlite", function ()
     local ok, states = allstates()
     assert.equals(true, ok, states)
 
-    assert.same(states[1], { true, { name = "New York", state = "New York" }, n = 2 })
-    assert.same(states[2], { true, { name = "Buffalo", state = "New York" }, n = 2 })
-    assert.same(states[3], { true, { name = "Albany", state = "New York" }, n = 2 })
+    assert.same(states[1], { name = "New York", state = "New York" })
+    assert.same(states[2], { name = "Buffalo", state = "New York" })
+    assert.same(states[3], { name = "Albany", state = "New York" })
     assert.equals(states.n, 5)
 
   end)

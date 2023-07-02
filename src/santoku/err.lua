@@ -62,6 +62,12 @@ local co = require("santoku.co")
 
 local M = {}
 
+local MT = {
+  __call = function (wrapper, ...)
+    return wrapper.ok(...)
+  end
+}
+
 M.unimplemented = function (msg)
   M.error("Unimplemented", msg)
 end
@@ -123,11 +129,7 @@ M.pwrapper = function (co, ...)
       end
     end
   }
-  return setmetatable(wrapper, {
-    __call = function (_, ...)
-      return wrapper.ok(...)
-    end
-  })
+  return setmetatable(wrapper, MT)
 end
 
 -- TODO: Allow user to specify whether unchecked

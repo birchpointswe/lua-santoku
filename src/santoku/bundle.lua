@@ -7,6 +7,13 @@ local fs = require("santoku.fs")
 
 local M = {}
 
+local MT = {
+  __index = M,
+  __call = function(M, ...)
+    return M.bundle(...)
+  end
+}
+
 local function write_deps (check, modules, infile, outfile)
   local depsfile = outfile .. ".d"
   local out = gen.chain(
@@ -200,9 +207,4 @@ M.bundle = function (infile, outdir, outprefix, env, cmpenv, deps, depstarget, m
   end)
 end
 
-return setmetatable({}, {
-  __index = M,
-  __call = function(_, ...)
-    return M.bundle(...)
-  end
-})
+return setmetatable(M, MT)

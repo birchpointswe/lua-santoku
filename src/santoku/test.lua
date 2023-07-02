@@ -10,7 +10,13 @@ local fs = require("santoku.fs")
 local sys = require("santoku.system")
 local str = require("santoku.string")
 
-local M = {}
+local M = setmetatable({}, {
+  __call = function (M, ...)
+    return M.test(...)
+  end
+})
+
+local MTG = { __index = _G }
 
 local tags = tup()
 
@@ -56,7 +62,7 @@ M.runfiles = function (files, interp, match, stop)
           check.err(sent).ok(sys.execute(interp, fp))
         elseif str.endswith(fp, ".lua") then
           print("Test: " .. fp, ":  ")
-          check.err(sent).ok(fs.loadfile(fp, setmetatable({}, { __index = _G })))()
+          check.err(sent).ok(fs.loadfile(fp, setmetatable({}, MTG)))()
         else -- luacheck: ignore
           -- TODO: Should we show these?
           -- print("Skip", fp)
@@ -73,9 +79,4 @@ M.runfiles = function (files, interp, match, stop)
   end)
 end
 
-return setmetatable(M, {
-  __call = function (_, ...)
-    return M.test(...)
-  end
-})
-
+return M

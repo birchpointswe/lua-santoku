@@ -2,7 +2,9 @@ local gen = require("santoku.gen")
 local err = require("santoku.err")
 local sqlite = require("lsqlite3")
 
-local M = setmetatable({}, { __index = sqlite })
+local M = setmetatable({}, {
+  __index = sqlite
+})
 
 local function check (db, res, code, msg)
   if not res then
@@ -249,7 +251,8 @@ end
 
 M.wrapstmt = function (stmt, fn)
   return setmetatable({
-    stmt = stmt
+    stmt = stmt,
+    fn = fn,
   }, {
     __index = stmt,
     __call = function (_, ...)

@@ -1,6 +1,10 @@
 local compat = require("santoku.compat")
 
-local M = {}
+local M = setmetatable({}, {
+  __call = function (M, ...)
+    return M.tuple(...)
+  end
+})
 
 local function tuple (n, a, ...)
   if n == 0 then
@@ -132,8 +136,4 @@ M.map = function (fn, ...)
   end
 end
 
-return setmetatable(M, {
-  __call = function (_, ...)
-    return M.tuple(...)
-  end
-})
+return M
