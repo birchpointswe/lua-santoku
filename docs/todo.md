@@ -1,5 +1,7 @@
 # Now
 
+- Tree-shaking and minification in toku bundle
+
 - Test
     - Allow async tests
 
