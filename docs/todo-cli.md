@@ -1,11 +1,6 @@
 # Now
 
-- toku trace interactive display for
-  santoku.web.trace connections
-
 # Later
-
-- Split to separate project entirely
 
 - help info and args table fixes
     - toku template -h shows "-l --load <load>"
@@ -30,6 +25,9 @@
       and native dynamic
 
 # Eventually
+
+- toku trace interactive display for
+  santoku.web.trace connections
 
 - Generator interface
     - toku files / --span exec md5sum

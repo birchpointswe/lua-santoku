@@ -1,14 +1,17 @@
 # Now
 
-- Tree-shaking and minification in toku bundle
+- 100% test coverage
+- Complete inline TODOs
 
-- Test
-    - Allow async tests
+- Test tags don't always show up correctly when
+  errors occur (e.g what should print "a: b: c"
+  ends up printing just "c")
 
-- Benchmark tuples, vectors, generators
+- Move todo.md to GitHub issues
 
-- Get generators, vector, table, tuple, etc to
-  work with for .. in loops. Is gen:co() enough?
+# Eventually
+
+- Table validation library
 
 - Pwrap
     - Refactor and move to "check" module that
@@ -28,24 +31,21 @@
     - Any error thrown inside the body function
       causes "check" to return "false, ..."
 
+- Benchmark tuples, vectors, generators
+
 - Create an assert module/function that
   stringifies the remaining arguments with ":"
   before passing to assert
 
-- 100% test coverage
+- Allow async tests
 
-- Functional utils for maybe applying functions
-  based on boolean first arg, indexed arg
+- Functional utils for indexed arg
   get/set/del/map, filter, etc (basically
   immutable versions of vec/gen functions)
 
-# Next
+- Template nested skip/show blocks
 
-- Extend package module to support checking if
+- Add a "package" module to support checking if
   shell programs are installed and gracefully
   bailing if not. Futher extend to a generic
   project scripting tool
-
-# Eventually
-
-- Template nested skip/show blocks
