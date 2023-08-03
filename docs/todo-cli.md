@@ -1,5 +1,7 @@
 # Now
 
+- Bundle tree shaking
+
 # Later
 
 - help info and args table fixes
