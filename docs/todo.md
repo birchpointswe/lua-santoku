@@ -1,13 +1,18 @@
 # Now
 
-- 100% test coverage
-- Complete inline TODOs
+- Documentation
+- Publish
+- Move todo.md to GitHub issues
 
-- Test tags don't always show up correctly when
+# Next
+
+- Test: tags don't always show up correctly when
   errors occur (e.g what should print "a: b: c"
   ends up printing just "c")
+- Test: show failing line numbers
 
-- Move todo.md to GitHub issues
+- 100% test coverage
+- Complete inline TODOs
 
 # Eventually
 
