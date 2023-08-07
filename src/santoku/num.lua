@@ -1,9 +1,9 @@
 local M = {}
 
-M.round = function (n, places)
-  places = places or 0
-  local x = 10^places
-  return math.floor(n * x + 0.5) / x
+M.trunc = function (n, d)
+  local i, f = math.modf(n)
+  d = 10^d
+  return i + math.modf(f * d) / d
 end
 
 return M

@@ -6,6 +6,18 @@ M.distance = function (one, two)
   return math.sqrt(a^2 + b^2)
 end
 
+M.earth_distance = function (one, two)
+  local earth_radius_km = 6371
+  local d_lat = math.rad(two.lat - one.lat)
+  local d_lon = math.rad(two.lon - one.lon)
+  local lat1 = math.rad(one.lat)
+  local lat2 = math.rad(two.lat)
+  local a = math.sin(d_lat / 2) * math.sin(d_lat / 2) +
+            math.sin(d_lon / 2) * math.sin(d_lon / 2) * math.cos(lat1) * math.cos(lat2)
+  local c = 2 * math.atan(math.sqrt(a), math.sqrt(1 - a))
+  return earth_radius_km * c
+end
+
 M.rotate = function (point, origin, angle)
   angle = math.rad(360 - angle)
   return {
