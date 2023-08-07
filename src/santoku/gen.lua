@@ -189,6 +189,15 @@ M.ivals = function (t)
   return M.ipairs(t):map(fun.nret(2))
 end
 
+M.nvals = function (t)
+  assert(type(t) == "table")
+  return M.gen(function (yield)
+    for i = 1, t.n do
+      yield(t[i])
+    end
+  end)
+end
+
 M.ikeys = function (t)
   assert(type(t) == "table")
   return M.ipairs(t):map(fun.nret(1))

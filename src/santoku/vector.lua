@@ -145,6 +145,11 @@ M.last = function (t)
   return t:get(t.n)
 end
 
+M.shift = function (t)
+  assert(M.isvec(t))
+  return t:remove(1, 1)
+end
+
 M.pop = function (t)
   assert(M.isvec(t))
   if t.n > 0 then

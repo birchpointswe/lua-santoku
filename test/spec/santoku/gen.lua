@@ -366,7 +366,7 @@ test("santoku.gen", function ()
 
   end)
 
-  test("paster", function () 
+  test("paster", function ()
 
     test("should paste values to the right", function ()
 
@@ -378,7 +378,7 @@ test("santoku.gen", function ()
 
   end)
 
-  test("pastel", function () 
+  test("pastel", function ()
 
     test("should paste values to the left", function ()
 
@@ -673,4 +673,13 @@ test("santoku.gen", function ()
     end)
 
   end)
+
+  test("nvals", function ()
+
+    local v = vec(1, 2, 3, 4)
+    v:remove(1, 1)
+    assert.same({ 2, 3, 4 }, gen.nvals(v):vec():unwrapped())
+
+  end)
+
 end)
