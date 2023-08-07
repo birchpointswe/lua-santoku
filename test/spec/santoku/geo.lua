@@ -15,7 +15,7 @@ test("geo", function ()
   test("earth_distance", function ()
     local london = { lat = 51.5, lon = 0 }
     local arlington = { lat = 38.8, lon = -77.1 }
-    assert.equals(5918.18, num.trunc(geo.earth_distance(london, arlington), 2))
+    assert.equals(5918185, num.trunc(geo.earth_distance(london, arlington), 0))
   end)
 
   test("angle", function ()
