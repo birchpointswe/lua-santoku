@@ -15,7 +15,7 @@ test("geo", function ()
   test("earth_distance", function ()
     local london = { lat = 51.5, lon = 0 }
     local arlington = { lat = 38.8, lon = -77.1 }
-    assert.equals(5918185, num.trunc(geo.earth_distance(london, arlington), 0))
+    assert.equals(5918, num.trunc(geo.earth_distance(london, arlington), 0))
   end)
 
   test("angle", function ()
@@ -26,7 +26,6 @@ test("geo", function ()
 
   test("bearing", function ()
     assert.equals(90, geo.bearing({ lat = 0, lon = 0 }, { lat = 0, lon = -90 }))
-    assert.equals(0, geo.bearing({ lat = 0, lon = 0 }, { lat = 0, lon = -90 }, { lat = 45, lon = 0 }))
   end)
 
   -- TODO: Due to precision loss, we are

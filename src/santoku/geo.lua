@@ -6,9 +6,9 @@ M.distance = function (one, two)
   return math.sqrt(a^2 + b^2)
 end
 
--- In meters
+-- In kilometers
 M.earth_distance = function (one, two)
-  local earth_radius = 6371 * 1000
+  local earth_radius = 6371
   local d_lat = math.rad(two.lat - one.lat)
   local d_lon = math.rad(two.lon - one.lon)
   local lat1 = math.rad(one.lat)
