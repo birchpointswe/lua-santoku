@@ -25,7 +25,8 @@ test("geo", function ()
   end)
 
   test("bearing", function ()
-    -- TODO
+    assert.equals(90, geo.bearing({ lat = 0, lon = 0 }, { lat = 0, lon = -90 }))
+    assert.equals(0, geo.bearing({ lat = 0, lon = 0 }, { lat = 0, lon = -90 }, { lat = 45, lon = 0 }))
   end)
 
   -- TODO: Due to precision loss, we are
