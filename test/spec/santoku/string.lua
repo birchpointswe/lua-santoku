@@ -34,6 +34,16 @@ test("string", function ()
 
     end)
 
+    test("should replace missing keys with blanks", function ()
+
+      local tmpl = "This should be %adj: '%something'"
+      local vals = { adj = "blank" }
+      local expected = "This should be blank: ''"
+      local res = str.interp(tmpl, vals)
+      assert.equals(expected, res)
+
+    end)
+
   end)
 
   test("quote", function ()

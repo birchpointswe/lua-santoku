@@ -147,7 +147,7 @@ M.interp = function (s, t)
   }):map(function (s)
     local v = s:match("%%(%w*)")
     if v ~= nil then
-      return t[v] or s
+      return t[v] or ""
     else
       return s
     end
