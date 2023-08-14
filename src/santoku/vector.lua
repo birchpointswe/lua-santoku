@@ -127,6 +127,9 @@ end
 
 M.get = function (t, i)
   assert(M.isvec(t))
+  if i == nil then
+    return
+  end
   assert(i >= 0)
   if i == 0 or i > t.n then
     return
