@@ -389,6 +389,22 @@ M.last = function (gen)
   return last()
 end
 
+M.set = function (gen)
+  assert(M.isgen(gen))
+  return gen:reduce(function (s, v)
+    s[v] = true
+    return s
+  end, {})
+end
+
+M.append = function (gen, ...)
+  assert(M.isgen(gen))
+  local args = tup(...)
+  return gen:chain(M.gen(function (yield)
+    yield(args())
+  end))
+end
+
 M.co = function (gen)
   assert(M.isgen(gen))
   gen.co = co()
@@ -415,14 +431,6 @@ M.find = function (gen, fn, ...)
       return gen.val()
     end
   end
-end
-
-M.set = function (gen)
-  assert(M.isgen(gen))
-  return gen:reduce(function (s, v)
-    s[v] = true
-    return s
-  end, {})
 end
 
 M.tabulate = function (gen, opts, ...)

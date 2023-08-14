@@ -334,6 +334,23 @@ test("santoku.gen", function ()
 
   end)
 
+  test("append", function ()
+
+    test("adds to end of gen, supports multiple args as single generated value", function ()
+
+      local gen = gen.empty():append(1, 2):append(3, 4):co()
+
+      local a, b
+      gen:step()
+      assert.same({ 1, 2 }, { gen.val() })
+      gen:step()
+      assert.same({ 3, 4 }, { gen.val() })
+      assert(not gen:step())
+
+    end)
+
+  end)
+
   test("max", function ()
 
     test("returns the max value in a generator", function ()
