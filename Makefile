@@ -1,5 +1,5 @@
 NAME ?= santoku
-VERSION ?= 0.0.53-1
+VERSION ?= 0.0.54-1
 GIT_URL ?= git@github.com:broma0/lua-santoku.git
 HOMEPAGE ?= https://github.com/broma0/lua-santoku
 LICENSE ?= MIT

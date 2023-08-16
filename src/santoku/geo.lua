@@ -32,10 +32,7 @@ M.angle = function (one, two)
     return 0
   end
   local theta = math.atan(two.x - one.x, two.y - one.y)
-  if theta < 0 then
-    theta = theta + math.pi * 2
-  end
-  return math.deg(theta)
+  return (math.deg(theta) + 360) % 360
 end
 
 M.bearing = function (one, two)
