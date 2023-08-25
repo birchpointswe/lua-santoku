@@ -16,6 +16,7 @@ local str = require("santoku.string")
 local err = require("santoku.err")
 local inherit = require("santoku.inherit")
 local vec = require("santoku.vector")
+local gen = require("santoku.gen")
 local tup = require("santoku.tuple")
 local fs = require("santoku.fs")
 local compat = require("santoku.compat")
@@ -55,13 +56,10 @@ M.compiledir = function (parent, dir, opts)
         return not opts.exts or gen.vals(opts.exts):includes(ext)
       end)
       :each(function (ext, fp)
-        local tmpl = nil
         local name = fs.splitexts(fp).name
-        if parent then
-          tmpl = check(parent:compilefile(fp, opts.config))
-        else
-          tmpl = check(M.compilefile(fp, opts.config))
-        end
+        local tmpl = parent
+          and check(parent:compilefile(fp, opts.config))
+          or check(M.compilefile(fp, opts.config))
         ret[ext] = ret[ext] or {}
         ret[ext][name] = tmpl
       end)
