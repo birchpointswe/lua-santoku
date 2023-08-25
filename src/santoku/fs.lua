@@ -214,6 +214,14 @@ M.splitparts = function (fp, opts)
   return str.split(fp, M.pathdelim, opts)
 end
 
+M.extension = function (fp)
+  fp = M.basename(fp)
+  local idot = string.find(fp, "%.")
+  if idot then
+    return fp:sub(idot + 1, fp:len())
+  end
+end
+
 -- TODO: Can probably improve performance by not
 -- splitting so much. Perhaps we need an isplit
 -- function that just returns indices?
