@@ -52,7 +52,7 @@ M.compiledir = function (parent, dir, opts)
         return ext, fp
       end)
       :filter(function (ext)
-        return not opts.exts or vec.includes(opts.exts, ext)
+        return not opts.exts or gen.vals(opts.exts):includes(ext)
       end)
       :each(function (ext, fp)
         local tmpl = nil

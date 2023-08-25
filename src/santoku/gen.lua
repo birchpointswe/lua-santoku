@@ -433,6 +433,13 @@ M.find = function (gen, fn, ...)
   end
 end
 
+M.includes = function (gen, v)
+  assert(M.isgen(gen))
+  return nil ~= gen:co():find(function (x)
+    return x == v
+  end)
+end
+
 M.tabulate = function (gen, opts, ...)
   assert(M.iscogen(gen))
   local keys, nkeys
