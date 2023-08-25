@@ -33,7 +33,12 @@ M.istemplate = function (t)
   return inherit.hasindex(t, M)
 end
 
-M.compiledir = function (dir, opts)
+M.compiledir = function (parent, dir, opts)
+  if not M.istemplate(parent) then
+    opts = dir
+    dir = parent
+    parent = nil
+  end
   opts = opts or {}
   return err.pwrap(function (check)
     local ret = {}
@@ -44,14 +49,21 @@ M.compiledir = function (dir, opts)
           fp = str.stripprefix(fp, dir)
         end
         local ext = fs.extension(fp)
-        return ext, dir
+        return ext, fp
       end)
       :filter(function (ext)
         return not opts.exts or vec.includes(opts.exts, ext)
       end)
       :each(function (ext, fp)
-        ret[ext] = ret[ext] or vec()
-        ret[ext]:append(check(M.compilefile(fp, opts.config)))
+        local tmpl = nil
+        local name = fs.splitexts(fp).name
+        if parent then
+          tmpl = check(parent:compilefile(fp, opts.config))
+        else
+          tmpl = check(M.compilefile(fp, opts.config))
+        end
+        ret[ext] = ret[ext] or {}
+        ret[ext][name] = tmpl
       end)
     return ret
   end)
@@ -149,6 +161,9 @@ M.compile = function (parent, ...)
           showstack:push(true)
         end
       end,
+      compiledir = function (a, b, ...)
+        return M.compiledir(a, b, ...)
+      end
       compilefile = function (a, b, ...)
         if not M.istemplate(a) then
           deps:append(a)
