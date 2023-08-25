@@ -427,6 +427,13 @@ M.tabulate = function (t, ...)
   return ret
 end
 
+M.includes = function (t, v)
+  assert(M.isvec(t))
+  return nil ~= v:find(function (v0)
+    return v == v0
+  end)
+end
+
 M.equals = function (t, ...)
   assert(M.isvec(t))
   local m = select("#", ...)

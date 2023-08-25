@@ -33,6 +33,30 @@ M.istemplate = function (t)
   return inherit.hasindex(t, M)
 end
 
+M.compiledir = function (dir, opts)
+  opts = opts or {}
+  return err.pwrap(function (check)
+    local ret = {}
+    fs.files(dir)
+      :map(check)
+      :map(function (fp)
+        if fp.trim then
+          fp = str.stripprefix(fp, dir)
+        end
+        local ext = fs.extension(fp)
+        return ext, dir
+      end)
+      :filter(function (ext)
+        return not opts.exts or vec.includes(opts.exts, ext)
+      end)
+      :each(function (ext, fp)
+        ret[ext] = ret[ext] or vec()
+        ret[ext]:append(check(M.compilefile(fp, opts.config)))
+      end)
+    return ret
+  end)
+end
+
 M.compilefile = function (parent, ...)
   local args = tup(...)
   if not M.istemplate(parent) then

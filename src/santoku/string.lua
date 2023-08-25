@@ -216,6 +216,12 @@ M.startswith = function (str, pat)
   end
 end
 
+M.stripprefix = function (str, pfx)
+  local pfxlen = pfx:len()
+  local strlen = str:len()
+  return str:sub(pfxlen + 1, strlen)
+end
+
 -- TODO: Can this be more performant? Can we
 -- avoid the { ... }
 M.commonprefix = function (...)
