@@ -214,6 +214,17 @@ M.splitparts = function (fp, opts)
   return str.split(fp, M.pathdelim, opts)
 end
 
+M.stripextension = function (fp)
+  local parts = M.splitparts(fp)
+  local last = parts[parts.n]
+  local idot = string.find(last, "%.")
+  if idot then
+    last = last:sub(1, idot - 1)
+  end
+  parts[parts.n] = last
+  return table.concat(parts, M.pathdelim)
+end
+
 M.extension = function (fp)
   fp = M.basename(fp)
   local idot = string.find(fp, "%.")

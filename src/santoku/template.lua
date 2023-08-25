@@ -41,14 +41,14 @@ M.compiledir = function (parent, dir, opts)
     parent = nil
   end
   opts = opts or {}
+  if opts.trim == nil then
+    opts.trim = true
+  end
   return err.pwrap(function (check)
     local ret = {}
     fs.files(dir)
       :map(check)
       :map(function (fp)
-        if fp.trim then
-          fp = str.stripprefix(fp, dir)
-        end
         local ext = fs.extension(fp)
         return ext, fp
       end)
@@ -56,10 +56,14 @@ M.compiledir = function (parent, dir, opts)
         return not opts.exts or gen.vals(opts.exts):includes(ext)
       end)
       :each(function (ext, fp)
-        local name = fs.splitexts(fp).name
         local tmpl = parent
           and check(parent:compilefile(fp, opts.config))
           or check(M.compilefile(fp, opts.config))
+        if opts.trim then
+          fp = str.stripprefix(fp, dir)
+          fp = fp:match("^" .. str.escape(fs.pathdelim) .. "*(.*)$")
+        end
+        local name = fs.splitexts(fp).name
         ret[ext] = ret[ext] or {}
         ret[ext][name] = tmpl
       end)
