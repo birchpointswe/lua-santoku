@@ -161,9 +161,7 @@ M.compile = function (parent, ...)
           showstack:push(true)
         end
       end,
-      compiledir = function (a, b, ...)
-        return M.compiledir(a, b, ...)
-      end
+      compiledir = M.compiledir,
       compilefile = function (a, b, ...)
         if not M.istemplate(a) then
           deps:append(a)
