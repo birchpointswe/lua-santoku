@@ -51,7 +51,8 @@ parsemodules = function (check, infile, modules, ignores, path, cpath)
       -- to skip any lines with the word
       -- 'require' in quotes, which may not be
       -- right
-      if line:match("^%s*%-%-") or line:match("\"[^\"]*require[^\"]*\"") then
+      -- if line:match("^%s*%-%-") or line:match("\"[^\"]*require[^\"]*\"") then
+      if line:match("^%s*%-%-") then
         return gen.empty()
       else
         -- TODO: This pattern matches
