@@ -19,20 +19,13 @@ local function compile (spec, result)
   end
 
   local tag = spec[1]
-  local attr = spec[2]
-  local ichild = 3
 
   local selfclosed = M.selfclosed[tag]
 
-  if type(attr) ~= "table" or attr[1] then
-    attr = nil
-    ichild = 2
-  end
-
   result:append("<", tag)
 
-  if attr then
-    for k, v in pairs(attr) do
+  for k, v in pairs(spec) do
+    if type(k) == "string" then
       result:append(" ", k, "=", "\"", v, "\"")
     end
   end
@@ -41,9 +34,10 @@ local function compile (spec, result)
     result:append("/>")
   else
     result:append(">")
-    while spec[ichild] do
-      compile(spec[ichild], result)
-      ichild = ichild + 1
+    local i = 2
+    while spec[i] do
+      compile(spec[i], result)
+      i = i + 1
     end
     result:append("</", tag, ">")
   end
