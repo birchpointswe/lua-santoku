@@ -26,6 +26,9 @@ local function compile (spec, result)
 
   for k, v in pairs(spec) do
     if type(k) == "string" then
+      if type(v) == "table" then
+        v = table.concat(v, " ")
+      end
       result:append(" ", k, "=", "\"", v, "\"")
     end
   end
