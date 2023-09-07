@@ -77,10 +77,20 @@ test("table", function ()
       local t4 = { e = { 4, 5, 6, 7, 8, 9 } }
 
       assert.same(tbl.merge({}, t1, t2, t3, t4), {
-        a = 1, 
+        a = 2,
         b = { c = 2, d = 4 },
-        e = { 1, 2, 3, 7, 8, 9 }
+        e = { 4, 5, 6, 7, 8, 9 }
       })
+
+    end)
+
+    test("should use prefer values from later files", function ()
+
+      local expected = { a = 2 }
+      local one = { a = 1 }
+      local two = { a = 2 }
+
+      assert.same(expected, tbl({ a = 0 }):merge(one, two))
 
     end)
 

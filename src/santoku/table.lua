@@ -121,13 +121,10 @@ M.merge = function (t, ...)
   for i = 1, select("#", ...) do
     local t0 = select(i, ...)
     for k, v in pairs(t0) do
-      if t[k] ~= nil and type(t[k]) ~= "table" then -- luacheck: ignore
-        -- do nothing
-      elseif type(v) == "table" then
-        t[k] = t[k] or {}
-        M.merge(t[k], v)
-      else
+      if type(v) ~= "table" or type(t[k]) ~= "table" then
         t[k] = v
+      else
+        M.merge(t[k], v)
       end
     end
   end
