@@ -1,8 +1,8 @@
 # Now
 
+- Basic README
+- os.getenv wrapper that fails if missing
 - Documentation
-- Publish
-- Move todo.md to GitHub issues
 
 # Next
 
