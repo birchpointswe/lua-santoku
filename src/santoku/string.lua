@@ -28,12 +28,15 @@ local M = {}
 
 -- TODO: need an imatch that just returns
 -- indices
-M.match = function (str, pat)
+M.match = function (str, pat, n)
   assert(type(pat) == "string")
   assert(type(str) == "string")
   local t = vec()
   for tok in str:gmatch(pat) do
     t:append(tok)
+		if n and t.n == n then
+			break
+		end
   end
   return t
 end

@@ -440,6 +440,11 @@ M.includes = function (gen, v)
   end)
 end
 
+M.group = function (gen, n)
+	assert(M.isgen(gen))
+	return gen:chunk(n):map(compat.unpack)
+end
+
 M.tabulate = function (gen, opts, ...)
   assert(M.iscogen(gen))
   local keys, nkeys

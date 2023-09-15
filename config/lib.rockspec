@@ -28,6 +28,8 @@ dependencies = {
 test_dependencies = {
   "luacov >= 0.15.0",
   "luacheck >= 1.1.0-1",
+	"lua-zlib >= 1.2-2",
+	"inspect >= 3.1.3-0"
 }
 
 build = {
