@@ -2,7 +2,6 @@
 
 - Basic README
 - Write a true generic PDF parser
-- inspect wrapper that omits metatables
 - os.getenv wrapper that fails if missing
 - sqlite helper for automatically computing
   column names for inserts and updates

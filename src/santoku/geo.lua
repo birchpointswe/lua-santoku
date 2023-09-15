@@ -25,6 +25,7 @@ local M = {}
 -- the 4 points of the BBox.
 --
 -- Open items:
+--   - Doesn't account for projections
 --   - Doesn't handle bounds and LPTS that are
 --     less than the max of the BBox
 --   - Some of this relies on certain objects
