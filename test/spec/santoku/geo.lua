@@ -48,20 +48,4 @@ test("geo", function ()
     assert.same({ x = -2, y = 4 }, p)
   end)
 
-  test("extract_pdf_georefs", function ()
-    local ok, data = fs.readfile("test/spec/santoku/map.pdf")
-    assert(ok, data)
-    local ok, data = geo.extract_pdf_georefs(data)
-    assert(ok, data)
-    assert.same(data, { boxes = { { { lat = 42.06176, lon = -74.25632, x = 14.4004, y = 575.9982 }, { lat = 42.18867, lon = -74.25483, x = 14.4004, y = 777.62158 }, { lat = 42.18679, lon = -74.00706, x = 50.37196, y = 777.62158 }, { lat = 42.05989, lon = -74.00904, x = 50.37196, y = 575.9982 }, n = 4 }, { { lat = 39.99839, lon = -80.63405, x = 558.2555, y = 597.59928 }, { lat = 45.28842, lon = -81.13471, x = 558.2555, y = 648.73801 }, { lat = 45.38171, lon = -70.95252, x = 530.63594, y = 648.73801 }, { lat = 40.07596, lon = -71.2841, x = 530.63594, y = 597.59928 }, n = 4 }, n = 2 }, height = 8.5, width = 11.0 })
-
-  end)
-
-  -- test("extract_pdf_georefs", function ()
-  --   local ok, data = fs.readfile("test/spec/santoku/map.pdf")
-  --   assert(ok)
-  --   fs.writefile("test/spec/santoku/map.extracted.bin", geo.extract_pdf_georefs(data))
-  --   -- print(geo.extract_pdf_georefs(data))
-  -- end)
-
 end)

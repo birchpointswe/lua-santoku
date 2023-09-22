@@ -1,14 +1,16 @@
 # Now
 
 - Basic README
-- Write a true generic PDF parser
-- os.getenv wrapper that fails if missing
-- sqlite helper for automatically computing
-  column names for inserts and updates
-- Helper to reduce pairs of key/vals into a
-  table
-- gen.sum, vec.sum, etc
 - Documentation
+
+- Figure out the boundaries of gen, tuple, fun,
+  async and vec.
+
+- Figure out best way to handle optional
+  dependencies. Should they be separate
+  libraries entirely?
+
+- Benchmark gen, tuple, vec
 
 # Next
 
@@ -21,6 +23,17 @@
 - Complete inline TODOs
 
 # Eventually
+
+- Benchmark tup vs vec
+- Ensure we're using tail calls (return fn(...))
+- os.getenv wrapper that fails if missing
+- sqlite helper for automatically computing
+  column names for inserts and updates
+- Helper to reduce pairs of key/vals into a
+  table
+- gen.sum, vec.sum, etc
+
+- Write a true generic PDF parser
 
 - Table validation library
 

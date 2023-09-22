@@ -20,9 +20,14 @@ description = {
 -- functions which require an optional
 -- dependency
 dependencies = {
+
   "lua >= 5.1",
+
+  -- Optional dependencies:
+
   -- "luafilesystem >= 1.8.0-1",
   -- "lsqlite3 >= 0.9.5",
+  -- "lua-zlib >= 1.2-2",
 }
 
 test_dependencies = {
