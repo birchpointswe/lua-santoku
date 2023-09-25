@@ -7,6 +7,22 @@ local op = require("santoku.op")
 
 test("fun", function ()
 
+  test("sel", function ()
+
+    test("should drop args given to a function", function ()
+
+      local f = function (a, b, c)
+        assert.equals(2, a)
+        assert.equals(3, b)
+        assert.is_nil(c)
+      end
+
+      fun.sel(2, f)(1, 2, 3)
+
+    end)
+
+  end)
+
   test("narg", function ()
 
     test("should rearrange args", function ()

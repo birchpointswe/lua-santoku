@@ -88,6 +88,12 @@ M.compose = function (...)
   end
 end
 
+M.sel = function (n, f)
+  return function (...)
+    return f(select(n, ...))
+  end
+end
+
 M.choose = function (a, b, c)
   if a then
     return b

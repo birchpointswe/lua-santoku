@@ -3,8 +3,19 @@
 - Basic README
 - Documentation
 
+- Add missing asserts
+- Consider making async a submodule of gen, so
+  gen.ivals():async():each(...) is possible
+
 - Figure out the boundaries of gen, tuple, fun,
   async and vec.
+  - fun: higher-order functions and functional
+    helpers
+  - async: implements async control flow with
+    cogens and pcall
+  - tuple: direct manipulation of varargs
+  - gen: generators
+  - vec: direct manipulation of vectors
 
 - Figure out best way to handle optional
   dependencies. Should they be separate

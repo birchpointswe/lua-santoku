@@ -1,3 +1,5 @@
+local gen = require("santoku.gen")
+local compat = require("santoku.compat")
 local tup = require("santoku.tuple")
 
 local M = {}
@@ -24,6 +26,26 @@ M.pipe = function (...)
   return function (...)
     return pipe(final, true, tup(...), fns)
   end
+end
+
+local function each (g, it, done)
+  if g:done() or not g:step() then
+    return done(true)
+  else
+    return it(function (ok, ...)
+      if not ok then
+        return done(ok, ...)
+      else
+        return each(g, it, done)
+      end
+    end, g.val())
+  end
+end
+
+M.each = function (g, it, done)
+  assert(gen.iscogen(g))
+  assert(compat.iscallable(it))
+  return each(g, it, done)
 end
 
 return M

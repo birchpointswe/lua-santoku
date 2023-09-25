@@ -1,6 +1,7 @@
 local test = require("santoku.test")
 local assert = require("luassert")
 local async = require("santoku.async")
+local gen = require("santoku.gen")
 
 test("async", function ()
 
@@ -92,6 +93,27 @@ test("async", function ()
       assert.equals(true, ok)
       assert.equals(200, data)
     end)(in_url)
+
+  end)
+
+  test("each", function ()
+
+    local g = gen.pack(1, 2, 3):co()
+
+    local t = 0
+    local final = false
+
+    async.each(g, function (done, n)
+      t = t + 1
+      done(true)
+    end, function (ok, err)
+      final = true
+      assert.equals(3, t)
+      assert.equals(true, ok)
+      assert.is_nil(err)
+    end)
+
+    assert.equals(true, final)
 
   end)
 
