@@ -25,16 +25,20 @@ dependencies = {
 
   -- Optional dependencies:
 
+  -- "lua-zlib >= 1.2-2",
   -- "luafilesystem >= 1.8.0-1",
   -- "lsqlite3 >= 0.9.5",
-  -- "lua-zlib >= 1.2-2",
+  -- "inspect >= 3.1.3-0"
+
 }
 
 test_dependencies = {
   "luacov >= 0.15.0",
   "luacheck >= 1.1.0-1",
-	"lua-zlib >= 1.2-2",
-	"inspect >= 3.1.3-0"
+  "lua-zlib >= 1.2-2",
+  "luafilesystem >= 1.8.0-1",
+  "lsqlite3 >= 0.9.5",
+  "inspect >= 3.1.3-0"
 }
 
 build = {
