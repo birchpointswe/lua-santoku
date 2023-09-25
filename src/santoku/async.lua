@@ -7,9 +7,9 @@ local function pipe (final, ok, args, fns)
   if not ok or not fn then
     return final(ok, args())
   else
-    return fn(args(function (ok, ...)
+    return fn(function (ok, ...)
       return pipe(final, ok, tup(...), tup(select(2, fns())))
-    end))
+    end, args())
   end
 end
 

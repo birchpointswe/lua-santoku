@@ -9,14 +9,14 @@ test("async", function ()
     local in_url = "https://santoku.rocks"
     local in_resp = { url = url, status = 200 }
 
-    local function fetch (url, callback)
+    local function fetch (done, url)
       assert.equals(in_url, url)
-      return callback(true, in_resp)
+      return done(true, in_resp)
     end
 
-    local function status (resp, callback)
+    local function status (done, resp)
       assert.equals(in_resp, resp)
-      return callback(true, resp.status)
+      return done(true, resp.status)
     end
 
     async.pipe(fetch, status, function (ok, data)
@@ -32,13 +32,13 @@ test("async", function ()
     local in_resp = { url = url, status = 200 }
     local in_err = "some error"
 
-    local function fetch (url, callback)
+    local function fetch (done, url)
       assert.equals(in_url, url)
-      return callback(false, in_err)
+      return done(false, in_err)
     end
 
-    local function status (resp, callback)
-      return callback(true, resp.status)
+    local function status (done, resp)
+      return done(true, resp.status)
     end
 
     async.pipe(fetch, status, function (ok, data)
@@ -54,14 +54,14 @@ test("async", function ()
     local in_resp = { url = url, status = 200 }
     local in_err = "some error"
 
-    local function fetch (url, callback)
+    local function fetch (done, url)
       assert.equals(in_url, url)
-      return callback(true, in_resp)
+      return done(true, in_resp)
     end
 
-    local function status (resp, callback)
+    local function status (done, resp)
       assert.equals(in_resp, resp)
-      return callback(false, in_err)
+      return done(false, in_err)
     end
 
     async.pipe(fetch, status, function (ok, data)
@@ -77,15 +77,15 @@ test("async", function ()
     local in_resp = { url = url, status = 200 }
     local in_extra = "testing"
 
-    local function fetch (url, callback)
+    local function fetch (done, url)
       assert.equals(in_url, url)
-      return callback(true, in_resp, in_extra)
+      return done(true, in_resp, in_extra)
     end
 
-    local function status (resp, extra, callback)
+    local function status (done, resp, extra)
       assert.equals(in_resp, resp)
       assert.equals(in_extra, extra)
-      return callback(true, resp.status)
+      return done(true, resp.status)
     end
 
     async.pipe(fetch, status, function (ok, data)
