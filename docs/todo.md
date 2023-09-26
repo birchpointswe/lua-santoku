@@ -3,6 +3,8 @@
 - Basic README
 - Documentation
 
+- stack.pop should accept "n"
+
 - Add missing asserts
 
 - Consider making async a submodule of gen, so
@@ -22,26 +24,26 @@
     - What is needed in async, and what is
       already covered by cogen?
 
-- Figure out best way to handle optional
-  dependencies. Should they be separate
-  libraries entirely?
+- Separate libraries for optional dependencies
 
-- Benchmark gen, tuple, vec
-
-# Next
-
+- Allow async tests
 - Test: tags don't always show up correctly when
   errors occur (e.g what should print "a: b: c"
   ends up printing just "c")
+
 - Test: show failing line numbers
+
+# Next
 
 - 100% test coverage
 - Complete inline TODOs
 
 # Eventually
 
-- Benchmark tup vs vec
+- Benchmark gen, tuple, vec
+
 - Ensure we're using tail calls (return fn(...))
+
 - os.getenv wrapper that fails if missing
 - sqlite helper for automatically computing
   column names for inserts and updates
@@ -71,13 +73,9 @@
     - Any error thrown inside the body function
       causes "check" to return "false, ..."
 
-- Benchmark tuples, vectors, generators
-
 - Create an assert module/function that
   stringifies the remaining arguments with ":"
   before passing to assert
-
-- Allow async tests
 
 - Functional utils for indexed arg
   get/set/del/map, filter, etc (basically
