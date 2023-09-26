@@ -27,6 +27,10 @@ cbundle
   :count("*")
 
 cbundle
+  :flag("-L --noluac", "do not first compile lua code with luac")
+  :count("0-1")
+
+cbundle
   :option("-l --load", "load a module during startup")
   :args(1)
   :count("*")
@@ -193,7 +197,7 @@ assert(err.pwrap(function (check)
     check(bundle(
       args.file, args.output, args.outputname,
       args.env, args.cmpenv, args.deps, args.depstarget,
-      args.load, args.ignore, args.noclose))
+      args.load, args.ignore, args.noclose, args.noluac))
   elseif args.test then
     check(test.runfiles(args.files, args.interp, args.match, args.stop))
   else

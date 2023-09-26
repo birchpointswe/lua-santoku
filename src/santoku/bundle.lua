@@ -107,7 +107,7 @@ M.mergelua = function (modules, infile, mods)
   end)
 end
 
-M.bundle = function (infile, outdir, outprefix, env, cmpenv, deps, depstarget, mods, ignores, noclose)
+M.bundle = function (infile, outdir, outprefix, env, cmpenv, deps, depstarget, mods, ignores, noclose, noluac)
   mods = mods or {}
   env = vec.wrap(env)
   cmpenv = vec.wrap(cmpenv)
@@ -124,9 +124,14 @@ M.bundle = function (infile, outdir, outprefix, env, cmpenv, deps, depstarget, m
     local outluafp = fs.join(outdir, outprefix .. ".lua")
     local outluadata = check(M.mergelua(modules, infile, mods))
     check(fs.writefile(outluafp, outluadata))
-    local outluacfp = fs.join(outdir, outprefix .. ".luac")
-    local cmdluac = os.getenv("LUAC") or "luac"
-    check(sys.execute(cmdluac, "-s", "-o", outluacfp, outluafp))
+    local outluacfp
+    if not noluac then
+      outluacfp = fs.join(outdir, outprefix .. ".luac")
+      local cmdluac = os.getenv("LUAC") or "luac"
+      check(sys.execute(cmdluac, "-s", "-o", outluacfp, outluafp))
+    else
+      outluacfp = outluafp
+    end
     local outluahfp = fs.join(outdir, outprefix .. ".h")
     local cmdxxd = os.getenv("XXD") or "xxd"
     check(sys.execute(cmdxxd, "-i", "-n", "data", outluacfp, outluahfp))
