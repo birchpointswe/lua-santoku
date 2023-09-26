@@ -4,6 +4,7 @@
 - Documentation
 
 - Add missing asserts
+
 - Consider making async a submodule of gen, so
   gen.ivals():async():each(...) is possible
 
@@ -16,6 +17,10 @@
   - tuple: direct manipulation of varargs
   - gen: generators
   - vec: direct manipulation of vectors
+
+- expand async: map, filter, etc.
+    - What is needed in async, and what is
+      already covered by cogen?
 
 - Figure out best way to handle optional
   dependencies. Should they be separate
