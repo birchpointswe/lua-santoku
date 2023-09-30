@@ -189,4 +189,14 @@ test("vector", function ()
 
   end)
 
+  test("reverse", function ()
+
+    assert.same({ 4, 3, 2, 1, n = 4 }, vec(1, 2, 3, 4):reverse())
+    assert.same({ 3, 2, 1, n = 3 }, vec(1, 2, 3):reverse())
+    assert.same({ 2, 1, n = 2 }, vec(1, 2):reverse())
+    assert.same({ 1, n = 1 }, vec(1):reverse())
+    assert.same({ n = 0 }, vec():reverse())
+
+  end)
+
 end)

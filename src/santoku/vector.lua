@@ -452,4 +452,15 @@ M.len = function (t)
   return tbl.len(t)
 end
 
+M.reverse = function (t)
+  assert(M.isvec(t))
+  local i, j = 1, t.n
+  while i <= j do
+    t[i], t[j] = t[j], t[i]
+    i = i + 1
+    j = j - 1
+  end
+  return t
+end
+
 return M

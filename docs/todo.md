@@ -3,6 +3,7 @@
 - Basic README
 - Documentation
 
+- tuple equality: tup(1, 2) == tup(1, 2)
 - stack.pop should accept "n"
 
 - Add missing asserts
