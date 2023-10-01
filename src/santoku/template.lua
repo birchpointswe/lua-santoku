@@ -257,7 +257,7 @@ local function get_prefix (data)
     return
   end
 
-  return data:match("\n(.+)$") or data:match("^([^\n]+)$")
+  return data:match("\n([^\n]+)$") or data:match("^([^\n]+)$")
 
 end
 
