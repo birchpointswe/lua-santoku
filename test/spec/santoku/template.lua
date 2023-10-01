@@ -166,6 +166,7 @@ test("template", function ()
     local ok, tpl = template([[
       start
       #  <% return "a\nb\nc" %>
+      #  <% return "%%d\n%e\n%f" %>
     ]])
     assert(ok, tpl)
     local ok, str = tpl:render()
@@ -175,6 +176,9 @@ test("template", function ()
       #  a
       #  b
       #  c
+      #  %%d
+      #  %e
+      #  %f
     ]], str)
   end)
 

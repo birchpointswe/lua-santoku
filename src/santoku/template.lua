@@ -270,7 +270,7 @@ local function append_prefix (left, ...)
   end
 
   return tup.map(function (s)
-    return (s:gsub("\n", "\n" .. str.escape(prefix)))
+    return (s:gsub("\n", "\n" .. prefix))
   end, ...)
 
 end
