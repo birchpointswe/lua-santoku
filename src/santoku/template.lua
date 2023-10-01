@@ -245,19 +245,49 @@ local function should_insert (ok)
   return ok == true or type(ok) == "string"
 end
 
-local function insert (output, ok, ...)
+local function get_prefix (data)
+
+  if not data then
+    return
+  end
+
+  local typ, data = data()
+
+  if typ ~= M.STR then
+    return
+  end
+
+  return data:match("\n(.+)$") or data:match("^([^\n]+)$")
+
+end
+
+local function append_prefix (left, ...)
+
+  local prefix = get_prefix(left)
+
+  if not prefix then
+    return ...
+  end
+
+  return tup.map(function (s)
+    return (s:gsub("\n", "\n" .. str.escape(prefix)))
+  end, ...)
+
+end
+
+local function insert (output, left, ok, ...)
   if (ok == nil) then -- luacheck: ignore
     -- do nothing
     return true
   elseif type(ok) == "string" then
     -- TODO: should we check that the remaining
     -- args are strings?
-    output:append(ok, ...)
+    output:append(append_prefix(left, ok, ...))
     return true
   elseif ok == true then
     -- TODO: should we check that the remaining
     -- args are strings?
-    output:append(...)
+    output:append(append_prefix(left, ...))
     return true
   elseif ok == false then
     return false, ...
@@ -281,7 +311,7 @@ M.render = function (tmpl, env)
       local typ, data = part()
       if typ == M.STR then
         if tmpl.showstack:peek() then
-          check(insert(output, tup.sel(2, part())))
+          check(insert(output, nil, tup.sel(2, part())))
         end
       elseif typ == M.FN then
         local res = tup(data())
@@ -300,7 +330,7 @@ M.render = function (tmpl, env)
           end
         end
         if tmpl.showstack:peek() then
-          check(insert(output, res()))
+          check(insert(output, parts:get(i - 1) or tup(), res()))
         end
       else
         error("this is a bug: chunk has an undefined type")

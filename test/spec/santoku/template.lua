@@ -162,6 +162,22 @@ test("template", function ()
     ]], str)
   end)
 
+  test("should prepend leading characters to new lines", function ()
+    local ok, tpl = template([[
+      start
+      #  <% return "a\nb\nc" %>
+    ]])
+    assert(ok, tpl)
+    local ok, str = tpl:render()
+    assert(ok, str)
+    assert.same([[
+      start
+      #  a
+      #  b
+      #  c
+    ]], str)
+  end)
+
   -- TODO
   -- test("should trim empty lines", function ()
   --   local ok, tpl = template([[
