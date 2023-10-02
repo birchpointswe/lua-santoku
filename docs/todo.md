@@ -3,6 +3,8 @@
 - Basic README
 - Documentation
 
+- template: allow `<%- ... %>` or similar to
+  indicate that prefix should not be interpreted
 - tuple equality: tup(1, 2) == tup(1, 2)
 - stack.pop should accept "n"
 

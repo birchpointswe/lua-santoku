@@ -13,6 +13,7 @@
 -- TODO: Refactor/cleanup.
 
 local str = require("santoku.string")
+local op = require("santoku.op")
 local err = require("santoku.err")
 local inherit = require("santoku.inherit")
 local vec = require("santoku.vector")
@@ -145,23 +146,20 @@ M.compile = function (parent, ...)
     inherit.pushindex(ret, M)
 
     inherit.pushindex(ret, {
-      hide = function (_, ...)
-        local hide = tup.len(...) == 0 or tup.sel(1, ...)
-        if not hide then
-          ret:show()
-        elseif showstack:peek() then
-          showstack:pop()
-        else
-          showstack:push(false)
-        end
+      push = function (t, tf)
+        assert(M.istemplate(t), "first argument to push must be a template")
+        assert(type(tf) == "boolean", "second argument to push must be a boolean")
+        t.showstack:push(tf)
+        return t
       end,
-      show = function (_, ...)
-        local show = tup.len(...) == 0 or tup.sel(1, ...)
-        if not show then
-          ret:hide()
-        elseif not showstack:peek() then
-          showstack:push(true)
-        end
+      pop = function (t)
+        assert(M.istemplate(t), "first argument to push must be a template")
+        showstack:pop()
+        return t
+      end,
+      showing = function (t)
+        assert(M.istemplate(t), "first argument to showing must be a template")
+        return gen.nvals(t.showstack, -1):co():find(op["not"]) ~= false
       end,
       compiledir = M.compiledir,
       compilefile = function (a, b, ...)
@@ -310,7 +308,7 @@ M.render = function (tmpl, env)
     for i, part in ipairs(parts) do
       local typ, data = part()
       if typ == M.STR then
-        if tmpl.showstack:peek() then
+        if tmpl:showing() then
           check(insert(output, nil, tup.sel(2, part())))
         end
       elseif typ == M.FN then
@@ -329,7 +327,7 @@ M.render = function (tmpl, env)
             parts:set(i + 1, (tup(M.STR, (rdata:gsub(rpat, "")))))
           end
         end
-        if tmpl.showstack:peek() then
+        if tmpl:showing() then
           check(insert(output, parts:get(i - 1) or tup(), res()))
         end
       else

@@ -8,6 +8,7 @@
 local assert = require("luassert")
 local test = require("santoku.test")
 
+local op = require("santoku.op")
 local gen = require("santoku.gen")
 local vec = require("santoku.vector")
 
@@ -696,6 +697,16 @@ test("santoku.gen", function ()
     local v = vec(1, 2, 3, 4)
     v:remove(1, 1)
     assert.same({ 2, 3, 4 }, gen.nvals(v):vec():unwrapped())
+
+  end)
+
+  test("nvals find first in reverse", function ()
+
+    local v = vec(true, true, false, true, true, true)
+    assert.equals(false, gen.nvals(v, -1):co():find(op["not"]))
+
+    local v = vec(true, true, true, true, true, true)
+    assert.is_nil(gen.nvals(v, -1):co():find(op["not"]))
 
   end)
 

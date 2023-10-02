@@ -148,10 +148,28 @@ test("template", function ()
   test("should support show/hide", function ()
     local ok, tpl = template([[
       One
-      <% template:hide() %>
+      <% template:push(false) -- true, false %>
       Two
-      <% template:show() %>
+      <% template:pop():push(true) -- true, true %>
       Three
+      <% template:push(false) -- true, true, false %>
+      Four
+      <% template:pop() -- true, true %>
+      Five
+      <% template:pop() -- true %>
+      Six
+      <% template:push(false) -- true, false %>
+      Seven
+      <% template:push(true) -- true, false, true %>
+      Eight
+      <% template:push(true) -- true, false, true, true %>
+      Nine
+      <% template:pop() -- true, false, true %>
+      Ten
+      <% template:pop() -- true, false %>
+      Eleven
+      <% template:pop() -- true %>
+      Twelve
     ]])
     assert(ok, tpl)
     local ok, str = tpl:render()
@@ -159,6 +177,9 @@ test("template", function ()
     assert.same([[
       One
       Three
+      Five
+      Six
+      Twelve
     ]], str)
   end)
 
@@ -181,19 +202,5 @@ test("template", function ()
       #  %f
     ]], str)
   end)
-
-  -- TODO
-  -- test("should trim empty lines", function ()
-  --   local ok, tpl = template([[
-  --     <% template:hide() %>
-  --     Test
-  --     <% template:show() %>
-  --   ]])
-  --   assert(ok, tpl)
-  --   local ok, str = tpl:render()
-  --   assert(ok, str)
-  --   assert.same([[
-  --   ]], str)
-  -- end)
 
 end)

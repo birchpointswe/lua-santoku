@@ -146,24 +146,6 @@ M.each = function (gen, fn, ...)
   end
 end
 
-M.ipairs = function (t)
-  assert(type(t) == "table")
-  return M.gen(function (yield)
-    for k, v in ipairs(t) do
-      yield(k, v)
-    end
-  end)
-end
-
-M.pairs = function (t)
-  assert(type(t) == "table")
-  return M.gen(function (yield)
-    for k, v in pairs(t) do
-      yield(k, v)
-    end
-  end)
-end
-
 -- TODO: This should just be called gen(...) to
 -- follow the pattern of vec and tbl
 M.pack = function (...)
@@ -184,23 +166,59 @@ M.keys = function (t)
   return M.pairs(t):map(fun.nret(1))
 end
 
-M.ivals = function (t)
+M.ivals = function (t, n)
   assert(type(t) == "table")
-  return M.ipairs(t):map(fun.nret(2))
+  return M.ipairs(t, n):map(fun.nret(2))
 end
 
-M.nvals = function (t)
+M.nvals = function (t, n)
   assert(type(t) == "table")
-  return M.gen(function (yield)
-    for i = 1, t.n do
-      yield(t[i])
-    end
-  end)
+  return M.npairs(t, n):map(fun.nret(2))
 end
 
 M.ikeys = function (t)
   assert(type(t) == "table")
   return M.ipairs(t):map(fun.nret(1))
+end
+
+M.nkeys = function (t)
+  assert(type(t) == "table")
+  return M.npairs(t):map(fun.nret(1))
+end
+
+M.npairs = function (t, n)
+  assert(type(t) == "table")
+  n = n or 1
+  assert(type(n) == "number")
+  return M.gen(function (yield)
+    local i0, m
+    if n > 0 then
+      i0, m = 1, t.n
+    else
+      i0, m = t.n, 1
+    end
+    for i = i0, m, n do
+      yield(i, t[i])
+    end
+  end)
+end
+
+M.ipairs = function (t)
+  assert(type(t) == "table")
+  return M.gen(function (yield)
+    for k, v in ipairs(t) do
+      yield(k, v)
+    end
+  end)
+end
+
+M.pairs = function (t)
+  assert(type(t) == "table")
+  return M.gen(function (yield)
+    for k, v in pairs(t) do
+      yield(k, v)
+    end
+  end)
 end
 
 M.index = function (gen)
