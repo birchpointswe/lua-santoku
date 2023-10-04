@@ -21,10 +21,12 @@ test("async", function ()
       return done(true, resp.status)
     end
 
-    async.pipe(fetch, status, function (ok, data)
+    async.pipe(function (done)
+      return fetch(done, in_url)
+    end, status, function (ok, data)
       assert.equals(true, ok)
       assert.equals(200, data)
-    end)(in_url)
+    end)
 
   end)
 
@@ -43,10 +45,12 @@ test("async", function ()
       return done(true, resp.status)
     end
 
-    async.pipe(fetch, status, function (ok, data)
+    async.pipe(function (done)
+      return fetch(done, in_url)
+    end, status, function (ok, data)
       assert.equals(false, ok)
       assert.equals(in_err, data)
-    end)(in_url)
+    end)
 
   end)
 
@@ -66,10 +70,12 @@ test("async", function ()
       return done(false, in_err)
     end
 
-    async.pipe(fetch, status, function (ok, data)
+    async.pipe(function (done)
+      return fetch(done, in_url)
+    end, status, function (ok, data)
       assert.equals(false, ok)
       assert.equals(in_err, data)
-    end)(in_url)
+    end)
 
   end)
 
@@ -90,10 +96,12 @@ test("async", function ()
       return done(true, resp.status)
     end
 
-    async.pipe(fetch, status, function (ok, data)
+    async.pipe(function (done)
+      return fetch(done, in_url)
+    end, status, function (ok, data)
       assert.equals(true, ok)
       assert.equals(200, data)
-    end)(in_url)
+    end)
 
   end)
 

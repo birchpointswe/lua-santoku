@@ -25,9 +25,7 @@ M.pipe = function (...)
   local n = tup.len(...)
   local final = tup.sel(n, ...)
   local fns = tup(tup.take(n - 1, ...))
-  return function (...)
-    return pipe(final, true, tup(...), fns)
-  end
+  return pipe(final, true, tup(), fns)
 end
 
 local function each (g, it, done)
