@@ -2,6 +2,7 @@ local test = require("santoku.test")
 local assert = require("luassert")
 local async = require("santoku.async")
 local gen = require("santoku.gen")
+local vec = require("santoku.vector")
 
 test("async", function ()
 
@@ -114,6 +115,31 @@ test("async", function ()
     end)
 
     assert.equals(true, final)
+
+  end)
+
+  test("iter", function ()
+
+    local idx = 0
+    local results = vec()
+
+    async.iter(function (yield, done)
+      idx = idx + 1
+      if idx > 5 then
+        return done(true)
+      else
+        return yield(idx)
+      end
+    end, function (done, data)
+      assert.equals(data, idx)
+      results:append(data)
+      return done(true)
+    end, function (ok, err)
+      assert.equals(ok, true)
+      assert.is_nil(err)
+    end)
+
+    assert.same({ 1, 2, 3, 4, 5, n = 5 }, results)
 
   end)
 

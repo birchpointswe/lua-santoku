@@ -1,3 +1,5 @@
+-- TODO: Should these use pcalls?
+
 local gen = require("santoku.gen")
 local compat = require("santoku.compat")
 local tup = require("santoku.tuple")
@@ -46,6 +48,24 @@ M.each = function (g, it, done)
   assert(gen.iscogen(g))
   assert(compat.iscallable(it))
   return each(g, it, done)
+end
+
+local function iter (y, it, done)
+  return y(function (...)
+    return it(function (ok, ...)
+      if not ok then
+        return done(ok, ...)
+      else
+        -- NOTE: Throwing away values returned
+        -- from iteration function
+        return iter(y, it, done)
+      end
+    end, ...)
+  end, done)
+end
+
+M.iter = function (y, it, done)
+  return iter(y, it, done)
 end
 
 return M
