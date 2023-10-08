@@ -67,6 +67,24 @@ test("santoku.gen", function ()
 
     end)
 
+    test("should return an iterator if called on an existing co-generator", function ()
+
+      local g = gen(function (yield)
+        yield(1, 2)
+        yield(3, 4)
+        yield(5, 6)
+      end):co():iter()
+
+      local out = vec()
+
+      for v in g do
+        out:append(v)
+      end
+
+      assert.same({ 1, 3, 5, n = 3 }, out)
+
+    end)
+
   end)
 
   test("isgen", function ()

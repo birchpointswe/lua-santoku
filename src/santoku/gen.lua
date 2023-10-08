@@ -51,7 +51,15 @@ local MT = {
 }
 
 local MTG = {
-  __index = M
+  __index = M,
+  __call = function (gen, ...)
+    if gen:iscogen() then
+      gen:step(...)
+      return gen.val()
+    else
+      return gen:each(...)
+    end
+  end
 }
 
 -- TODO use inherit
@@ -92,23 +100,34 @@ M.gen = function (run, ...)
   }, MTG)
 end
 
-M.iter = function (fn, ...)
-  assert(compat.iscallable(fn))
-  return M.gen(function (yield, ...)
-    if yield == compat.noop then
-      while fn(...) ~= nil do end
-    else
-      local val
-      while true do
-        val = tup(fn(...))
-        if val() ~= nil then
-          yield(val())
-        else
-          break
-        end
+M.iter = function (genfn, ...)
+  if (M.isgen(genfn)) then
+    local gen = genfn
+    assert(M.iscogen(gen))
+    return function ()
+      if gen:step() then
+        return (gen.val())
       end
     end
-  end, ...)
+  else
+    local fn = genfn
+    assert(compat.iscallable(fn))
+    return M.gen(function (yield, ...)
+      if yield == compat.noop then
+        while fn(...) ~= nil do end
+      else
+        local val
+        while true do
+          val = tup(fn(...))
+          if val() ~= nil then
+            yield(val())
+          else
+            break
+          end
+        end
+      end
+    end, ...)
+  end
 end
 
 M.step = function (gen, ...)
