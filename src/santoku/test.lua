@@ -63,9 +63,9 @@ M.runfiles = function (files, interp, match, stop)
         elseif str.endswith(fp, ".lua") then
           print("Test: " .. fp, ":  ")
           check.err(sent).ok(fs.loadfile(fp, setmetatable({}, MTG)))()
-        else -- luacheck: ignore
-          -- TODO: Should we show these?
-          -- print("Skip", fp)
+        else
+          print("Test: " .. fp)
+          check.err(sent).ok(sys.execute(fp))
         end
       end)
   end, function (a, ...)

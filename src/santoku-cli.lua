@@ -22,6 +22,16 @@ cbundle
   :count("*")
 
 cbundle
+  :option("--cflags", "set command-line CFLAGS")
+  :args(1)
+  :count("0-1")
+
+cbundle
+  :option("--ldflags", "set command-line LDFLAGS")
+  :args(1)
+  :count("0-1")
+
+cbundle
   :option("-E --cmpenv", "set an environment variable that applies only at runtime")
   :args(2)
   :count("*")
@@ -196,8 +206,9 @@ assert(err.pwrap(function (check)
   elseif args.bundle then
     check(bundle(
       args.file, args.output, args.outputname,
-      args.env, args.cmpenv, args.deps, args.depstarget,
-      args.load, args.ignore, args.noclose, args.noluac))
+      args.env, args.cflags, args.ldflags, args.cmpenv,
+      args.deps, args.depstarget, args.load, args.ignore,
+      args.noclose, args.noluac))
   elseif args.test then
     check(test.runfiles(args.files, args.interp, args.match, args.stop))
   else

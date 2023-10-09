@@ -107,7 +107,7 @@ M.mergelua = function (modules, infile, mods)
   end)
 end
 
-M.bundle = function (infile, outdir, outprefix, env, cmpenv, deps, depstarget, mods, ignores, noclose, noluac)
+M.bundle = function (infile, outdir, outprefix, env, cflags, ldflags, cmpenv, deps, depstarget, mods, ignores, noclose, noluac)
   mods = mods or {}
   env = vec.wrap(env)
   cmpenv = vec.wrap(cmpenv)
@@ -201,14 +201,21 @@ M.bundle = function (infile, outdir, outprefix, env, cmpenv, deps, depstarget, m
       args:append(table.concat({ var[1], "=\"", var[2], "\"" }))
     end)
     args:append(cmdcc, outcfp)
-    args:append("-lm", "-llua")
-    args:append("-o", outmainfp)
+    if cflags then
+      args:append(cflags)
+    end
+    if ldflags then
+      args:append(ldflags)
+    end
     args:append(cmdcflags)
     args:append(cmdldflags)
+    args:append("-lm", "-llua")
+    args:append("-o", outmainfp)
     gen.pairs(modules.c)
       :each(function (_, fp)
         args:append(fp)
       end)
+    print(args:concat(" "))
     check(sys.execute(args:unpack()))
   end)
 end
