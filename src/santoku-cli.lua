@@ -51,6 +51,10 @@ cbundle
   :count("*")
 
 cbundle
+  :flag("-J --jump", "set EXIT_JUMP (for use with santoku-web's val.yield())")
+  :count("0-1")
+
+cbundle
   :flag("-C --noclose", "don't call lua_close(...)")
   :count("0-1")
 
@@ -208,7 +212,7 @@ assert(err.pwrap(function (check)
       args.file, args.output, args.outputname,
       args.env, args.cflags, args.ldflags, args.cmpenv,
       args.deps, args.depstarget, args.load, args.ignore,
-      args.noclose, args.noluac))
+      args.noclose, args.jump, args.noluac))
   elseif args.test then
     check(test.runfiles(args.files, args.interp, args.match, args.stop))
   else

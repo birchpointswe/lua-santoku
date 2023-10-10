@@ -107,7 +107,7 @@ M.mergelua = function (modules, infile, mods)
   end)
 end
 
-M.bundle = function (infile, outdir, outprefix, env, cflags, ldflags, cmpenv, deps, depstarget, mods, ignores, noclose, noluac)
+M.bundle = function (infile, outdir, outprefix, env, cflags, ldflags, cmpenv, deps, depstarget, mods, ignores, noclose, jump, noluac)
   mods = mods or {}
   env = vec.wrap(env)
   cmpenv = vec.wrap(cmpenv)
@@ -146,6 +146,8 @@ M.bundle = function (infile, outdir, outprefix, env, cflags, ldflags, cmpenv, de
       #include "lauxlib.h"
     ]], cmpenv.n > 0 and [[
       #include "stdlib.h"
+    ]] or "", jump and [[
+      #include "setjmp.h"
     ]] or "", check(fs.readfile(outluahfp)), [[
       const char *reader (lua_State *L, void *data, size_t *sizep) {
         *sizep = data_len;
@@ -181,6 +183,13 @@ M.bundle = function (infile, outdir, outprefix, env, cflags, ldflags, cmpenv, de
           lua_settable(L, -3);
         }
         lua_setglobal(L, "arg");
+      ]], jump and [[
+        jmp_buf b;
+        if (setjmp(b))
+          goto exit;
+        lua_pushlightuserdata(L, &b);
+        lua_setglobal(L, "EXIT_JUMP");
+      ]] or "", [[
         if (LUA_OK != (rc = lua_pcall(L, 0, 0, 0)))
           goto err;
         goto end;
@@ -189,6 +198,8 @@ M.bundle = function (infile, outdir, outprefix, env, cflags, ldflags, cmpenv, de
       end:
       ]], not noclose and [[
         lua_close(L);
+      ]] or "", jump and [[
+        exit:
       ]] or "", [[
         return rc;
       }
