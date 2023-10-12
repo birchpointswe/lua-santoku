@@ -151,4 +151,21 @@ test("async", function ()
 
   end)
 
+  test("loop", function ()
+
+    local idx = 0
+    async.loop(function (loop, stop, ...)
+      idx = idx + 1
+      if idx > 5 then
+        return stop(true, ...)
+      else
+        return loop(idx, ...)
+      end
+    end, function (ok, ...)
+      assert.equals(true, ok)
+      assert.same({ 5, 4, 3, 2, 1 }, { ... })
+    end)
+
+  end)
+
 end)

@@ -215,7 +215,6 @@ M.bundle = function (infile, outdir, outprefix, env, cflags, ldflags, cmpenv, de
       :each(function (_, fp)
         args:append(fp)
       end)
-    print(args:concat(" "))
     check(sys.execute(args:unpack()))
   end)
 end

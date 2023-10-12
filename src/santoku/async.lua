@@ -66,4 +66,16 @@ M.iter = function (y, it, done)
   return iter(y, it, done)
 end
 
+local function loop (loop0, final, ...)
+  return loop0(function (...)
+    return loop(loop0, final, ...)
+  end, function (...)
+    return final(...)
+  end, ...)
+end
+
+M.loop = function (loop0, final)
+  return loop(loop0, final)
+end
+
 return M
