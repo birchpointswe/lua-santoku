@@ -44,7 +44,7 @@ end
 
 M.each = function (g, it, done)
   assert(gen.iscogen(g))
-  assert(compat.iscallable(it))
+  assert(compat.hasmeta.call(it))
   return each(g, it, done)
 end
 

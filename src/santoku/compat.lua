@@ -58,16 +58,75 @@ M.const = function (...)
   end
 end
 
-M.iscallable = function (f)
-  if type(f) == "function" then
-    return true
-  elseif type(f) == "table" then
-    local mt = getmetatable(f)
-    return mt and M.iscallable(mt.__call), "not callable: not a callable table", f
-  else
-    return false, "not callable: neither a function nor a callable table", f
+-- TODO: Extend to account for numbers, etc.
+-- compat.hasmeta.add(1) should be true.
+-- compat.hasmeta.concat("hi") should be true.
+--
+-- TODO: There must be some bugs hidden in
+-- this..
+M.hasmeta = setmetatable({}, {
+  __index = function (_, k)
+    k = "__" .. k
+    return function (o)
+      local mt = getmetatable(o)
+
+      if (mt and mt[k] ~= nil) or
+
+         -- TODO: Can we check without calling?
+         (k == "__pairs" and pcall(pairs, o)) or
+         (k == "__ipairs" and pcall(ipairs, o)) or
+
+         -- TODO: Are these necessary?
+         (k == "__newindex" and type(o) == "table") or
+         (k == "__index" and (type(o) == "table" or
+                              type(o) == "string")) or
+
+
+         (k == "__call" and type(o) == "function") or
+         (k == "__len" and type(o) == "string") or
+
+         (k == "__tostring" and (type(o) == "string" or
+                                 type(o) == "number")) or
+
+         (k == "__concat" and (type(o) == "string" or
+                               type(o) == "number")) or
+
+         (k == "__add" and type(o) == "number") or
+         (k == "__sub" and type(o) == "number") or
+         (k == "__mul" and type(o) == "number") or
+         (k == "__div" and type(o) == "number") or
+         (k == "__mod" and type(o) == "number") or
+         (k == "__pow" and type(o) == "number") or
+         (k == "__unm" and type(o) == "number") or
+         (k == "__idiv" and type(o) == "number") or
+         (k == "__band" and type(o) == "number") or
+         (k == "__bor" and type(o) == "number") or
+         (k == "__bxor" and type(o) == "number") or
+         (k == "__bnot" and type(o) == "number") or
+         (k == "__shl" and type(o) == "number") or
+         (k == "__shr" and type(o) == "number") or
+
+         (k == "__eq" and true) or
+         (k == "__ne" and M.hasmeta.eq(o)) or
+
+         (k == "__lt" and (type(o) == "number" or
+                           type(o) == "string")) or
+
+         (k == "__le" and (type(o) == "number" or
+                           type(o) == "string")) or
+
+         (k == "__gt" and M.hasmeta.lt(o)) or
+         (k == "__ge" and M.hasmeta.le(o))
+
+      then
+        return true
+      else
+        return false, "missing metamethod: " .. k
+      end
+
+    end
   end
-end
+})
 
 M.isarray = function (t)
   if type(t) ~= "table" then

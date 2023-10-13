@@ -2,6 +2,7 @@
 
 - Basic README
 - Documentation
+- Refactor gen, fn, etc to use compat.hasmeta
 
 - Support calling generators in a generic for
   loop

@@ -89,12 +89,12 @@ end
 -- creation.
 M.gen = function (run, ...)
   run = run or compat.noop
-  assert(compat.iscallable(run))
+  assert(compat.hasmeta.call(run))
   local args = tup(...)
   return setmetatable({
     run = function (yield, ...)
       yield = yield or compat.noop
-      assert(compat.iscallable(yield))
+      assert(compat.hasmeta.call(yield))
       return run(yield, args(...))
     end
   }, MTG)
@@ -111,7 +111,7 @@ M.iter = function (genfn, ...)
     end
   else
     local fn = genfn
-    assert(compat.iscallable(fn))
+    assert(compat.hasmeta.call(fn))
     return M.gen(function (yield, ...)
       if yield == compat.noop then
         while fn(...) ~= nil do end
@@ -155,7 +155,7 @@ end
 M.each = function (gen, fn, ...)
   assert(M.isgen(gen))
   fn = fn or compat.noop
-  assert(compat.iscallable(fn))
+  assert(compat.hasmeta.call(fn))
   if M.iscogen(gen) then
     while gen:step() do
       fn(gen.val(...))
@@ -263,7 +263,7 @@ end
 
 M.reduce = function (gen, acc, ...)
   assert(M.isgen(gen))
-  assert(compat.iscallable(acc))
+  assert(compat.hasmeta.call(acc))
   local ready = false
   local val, m = tup(...), tup.len(...)
   gen:each(function (...)
@@ -282,7 +282,7 @@ end
 M.filter = function (gen, fn)
   assert(M.isgen(gen))
   fn = fn or compat.id
-  assert(compat.iscallable(fn))
+  assert(compat.hasmeta.call(fn))
   return M.gen(function (yield)
     return gen:each(function (...)
       if fn(...) then

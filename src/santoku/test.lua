@@ -21,7 +21,7 @@ local MTG = { __index = _G }
 local tags = tup()
 
 M.test = function (tag, fn)
-  assert(compat.iscallable(fn))
+  assert(compat.hasmeta.call(fn))
   assert(type(tag) == "string")
   tags = tup(tags(tag))
   local ret = tup(xpcall(fn, function (...)

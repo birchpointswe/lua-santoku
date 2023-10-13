@@ -73,4 +73,13 @@ test("tuple", function ()
 
   end)
 
+  test("filter", function ()
+
+    local t = tup(1, 2, 3, 4, 5, 6)
+    assert.same({ 2, 4, 6 }, { tup.filter(function (x)
+      return x % 2 == 0
+    end, t()) })
+
+  end)
+
 end)

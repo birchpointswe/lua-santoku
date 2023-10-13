@@ -107,7 +107,10 @@ M.mergelua = function (modules, infile, mods)
   end)
 end
 
-M.bundle = function (infile, outdir, outprefix, env, cflags, ldflags, cmpenv, deps, depstarget, mods, ignores, noclose, noluac)
+M.bundle = function (
+    infile, outdir, outprefix, env, cflags,
+    ldflags, cmpenv, deps, depstarget,
+    mods, ignores, noclose, noluac)
   mods = mods or {}
   env = vec.wrap(env)
   cmpenv = vec.wrap(cmpenv)

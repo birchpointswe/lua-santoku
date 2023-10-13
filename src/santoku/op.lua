@@ -28,13 +28,13 @@ M.cat = function (a, b) return a .. b end
 M.caller = function (...)
   local args = tbl.pack(...)
   return function (f)
-    assert(compat.iscallable(f))
+    assert(compat.hasmeta.call(f))
     return f(args:unpack())
   end
 end
 
 M.call = function (f, ...)
-  assert(compat.iscallable(f))
+  assert(compat.hasmeta.call(f))
   return M.caller(...)(f)
 end
 

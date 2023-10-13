@@ -8,6 +8,7 @@ local M = {}
 M.narg = function (...)
   local idx = vec(...)
   return function (fn, ...)
+    assert(compat.hasmeta.call(fn))
     local bound = vec(...)
     return function (...)
       local args = vec(...):extend(bound)
@@ -22,6 +23,7 @@ M.narg = function (...)
 end
 
 M.bindr = function (fn, ...)
+  assert(compat.hasmeta.call(fn))
   local args = vec(...)
   return function (...)
     return fn(vec(...):extend(args):unpack())
@@ -29,6 +31,7 @@ M.bindr = function (fn, ...)
 end
 
 M.bindl = function (fn, ...)
+  assert(compat.hasmeta.call(fn))
   local args = vec(...)
   return function (...)
     return fn(args:append(...):unpack())
@@ -38,6 +41,7 @@ end
 M.bind = M.bindr
 
 M.maybel = function (fn, ...)
+  assert(compat.hasmeta.call(fn))
   fn = M.bindl(fn or compat.id, ...)
   return function (ok, ...)
     if ok then
@@ -49,6 +53,7 @@ M.maybel = function (fn, ...)
 end
 
 M.mayber = function (fn, ...)
+  assert(compat.hasmeta.call(fn))
   fn = M.bindr(fn or compat.id, ...)
   return function (ok, ...)
     if ok then
@@ -81,7 +86,7 @@ M.compose = function (...)
   return function(...)
     local args = vec(...)
     for i = fns.n, 1, -1 do
-      assert(compat.iscallable(fns[i]))
+      assert(compat.hasmeta.call(fns[i]))
       args = vec(fns[i](args:unpack()))
     end
     return args:unpack()
@@ -89,6 +94,7 @@ M.compose = function (...)
 end
 
 M.sel = function (n, f)
+  assert(compat.hasmeta.call(f))
   return function (...)
     return f(select(n, ...))
   end

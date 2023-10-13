@@ -164,13 +164,13 @@ end
 -- TODO
 M.binsert = function (t, cmp)
   assert(M.isvec(t))
-  assert(compat.iscallable(cmp))
+  assert(compat.hasmeta.call(cmp))
 end
 
 -- TODO
 M.bsearch = function (t, cmp)
   assert(M.isvec(t))
-  assert(compat.iscallable(cmp))
+  assert(compat.hasmeta.call(cmp))
 end
 
 M.slice = function (s, ss, se)
@@ -180,7 +180,7 @@ end
 
 M.find = function (t, fn, ...)
   assert(M.isvec(t))
-  assert(compat.iscallable(fn))
+  assert(compat.hasmeta.call(fn))
   for i = 1, t.n do
     if fn(t[i], ...) then
       return t[i], i
@@ -294,7 +294,7 @@ end
 
 M.each = function (t, fn, ...)
   assert(M.isvec(t))
-  assert(compat.iscallable(fn))
+  assert(compat.hasmeta.call(fn))
   for i = 1, t.n do
     fn(t[i], ...)
   end
@@ -302,7 +302,7 @@ end
 
 M.map = function (t, fn, ...)
   assert(M.isvec(t))
-  assert(compat.iscallable(fn))
+  assert(compat.hasmeta.call(fn))
   for i = 1, t.n do
     t[i] = fn(t[i], ...)
   end
@@ -311,7 +311,7 @@ end
 
 M.reduce = function (t, acc, ...)
   assert(M.isvec(t))
-  assert(compat.iscallable(acc))
+  assert(compat.hasmeta.call(acc))
   local start = 1
   local val, n = tup(...), tup.len(...)
   if t.n == 0 then
@@ -329,7 +329,7 @@ end
 M.filter = function (t, fn, ...)
   assert(M.isvec(t))
   fn = fn or compat.id
-  assert(compat.iscallable(fn))
+  assert(compat.hasmeta.call(fn))
   local rems = nil
   local reme = nil
   local i = 1
@@ -400,7 +400,7 @@ end
 M.span = function (t, fn, ...)
   assert(M.isvec(t))
   fn = fn or compat.id
-  assert(compat.iscallable(fn))
+  assert(compat.hasmeta.call(fn))
   return fn(t:unpack(...))
 end
 

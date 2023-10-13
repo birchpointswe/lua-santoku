@@ -43,4 +43,20 @@ test("compat", function ()
 
   end)
 
+  test("hasmeta", function ()
+
+    test("__pairs on table literal", function ()
+      assert(compat.hasmeta.pairs({}))
+    end)
+
+    test("__call on function literal", function ()
+      assert(compat.hasmeta.call(function () end))
+    end)
+
+    test("__add on number literal", function ()
+      assert(compat.hasmeta.add(1))
+    end)
+
+  end)
+
 end)

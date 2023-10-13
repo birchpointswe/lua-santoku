@@ -108,7 +108,7 @@ M.concat = function (...)
 end
 
 M.filter = function (fn, ...)
-  assert(compat.iscallable(fn))
+  assert(compat.hasmeta.call(fn))
   local n = M.len(...)
   if n == 0 then
     return
@@ -120,7 +120,7 @@ M.filter = function (fn, ...)
 end
 
 M.each = function (fn, ...)
-  assert(compat.iscallable(fn))
+  assert(compat.hasmeta.call(fn))
   if M.len(...) > 0 then
     fn((...))
     M.each(fn, M.sel(2, ...))
@@ -128,7 +128,7 @@ M.each = function (fn, ...)
 end
 
 M.map = function (fn, ...)
-  assert(compat.iscallable(fn))
+  assert(compat.hasmeta.call(fn))
   if M.len(...) == 0 then
     return
   else
