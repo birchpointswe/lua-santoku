@@ -83,7 +83,9 @@ M.hasmeta = setmetatable({}, {
 
 
          (k == "__call" and type(o) == "function") or
-         (k == "__len" and type(o) == "string") or
+
+         (k == "__len" and (type(o) == "string" or
+                            type(o) == "table")) or
 
          (k == "__tostring" and (type(o) == "string" or
                                  type(o) == "number")) or
