@@ -1,4 +1,5 @@
 -- TODO: Should these use pcalls?
+-- TODO: asserts
 
 local gen = require("santoku.gen")
 local compat = require("santoku.compat")

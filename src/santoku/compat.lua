@@ -58,6 +58,70 @@ M.const = function (...)
   end
 end
 
+M.lt = function (n, v)
+  assert(M.hasmeta.lt(n))
+  assert(M.hasmeta.lt(v))
+  if v < n then
+    return true
+  else
+    return false, "must be less than: " .. n
+  end
+end
+
+M.gt = function (n, v)
+  assert(M.hasmeta.gt(n))
+  assert(M.hasmeta.gt(v))
+  if v > n then
+    return true
+  else
+    return false, "must be greater than: " .. n
+  end
+end
+
+M.between = function (low, high, v)
+  assert(M.hasmeta.ge(v))
+  assert(M.hasmeta.ge(low))
+  assert(M.hasmeta.le(v))
+  assert(M.hasmeta.le(high))
+  if v >= low and v <= high then
+    return true
+  else
+    return false, "must be between " .. low .. " and " .. high .. " (inclusive)"
+  end
+end
+
+M.le = function (n, v)
+  assert(M.hasmeta.ge(n))
+  assert(M.hasmeta.ge(v))
+  if v <= n then
+    return true
+  else
+    return false, "must be less than or equal to: " .. n
+  end
+end
+
+M.ge = function (n, v)
+  assert(M.hasmeta.ge(n))
+  assert(M.hasmeta.ge(v))
+  if v >= n then
+    return true
+  else
+    return false, "must be greater than or equal to: " .. n
+  end
+end
+
+M.istype = setmetatable({}, {
+  __index = function (_, k)
+    return function (o)
+      if type(o) == k then
+        return true
+      else
+        return false, "type is not: " .. k
+      end
+    end
+  end
+})
+
 -- TODO: Extend to account for numbers, etc.
 -- compat.hasmeta.add(1) should be true.
 -- compat.hasmeta.concat("hi") should be true.

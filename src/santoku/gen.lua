@@ -35,6 +35,7 @@
 -- open files, etc.
 
 local tbl = require("santoku.table")
+local inherit = require("santoku.inherit")
 local vec = require("santoku.vector")
 local fun = require("santoku.fun")
 local co = require("santoku.co")
@@ -62,18 +63,19 @@ local MTG = {
   end
 }
 
--- TODO use inherit
 M.isgen = function (t)
-  if type(t) ~= "table" then
-    return false, "not a generator: not a table", t
+  if inherit.hasindex(t, M) then
+    return true
+  else
+    return false, "not a generator", t
   end
-  return (getmetatable(t) or {}).__index == M, "not a generator", t
 end
 
 M.iscogen = function (t)
-  if not M.isgen(t) then
-    return false, "not a co-generator: not a generator:", t
-  elseif not (type(t.cor) == "thread" and type(t.co) == "table") then
+  local ok, err = M.isgen(t)
+  if not ok then
+    return ok, err
+  elseif not (compat.istype.thread(t.cor) and compat.istype.table(t.co)) then
     return false, "not a co-generator: missing co and/or cor fields", t
   else
     return true
@@ -176,39 +178,33 @@ M.pack = function (...)
 end
 
 M.vals = function (t)
-  assert(type(t) == "table")
   return M.pairs(t):map(fun.nret(2))
 end
 
 M.keys = function (t)
-  assert(type(t) == "table")
   return M.pairs(t):map(fun.nret(1))
 end
 
 M.ivals = function (t, n)
-  assert(type(t) == "table")
   return M.ipairs(t, n):map(fun.nret(2))
 end
 
 M.nvals = function (t, n)
-  assert(type(t) == "table")
   return M.npairs(t, n):map(fun.nret(2))
 end
 
 M.ikeys = function (t)
-  assert(type(t) == "table")
   return M.ipairs(t):map(fun.nret(1))
 end
 
 M.nkeys = function (t)
-  assert(type(t) == "table")
   return M.npairs(t):map(fun.nret(1))
 end
 
 M.npairs = function (t, n)
-  assert(type(t) == "table")
+  assert(compat.hasmeta.index(t))
   n = n or 1
-  assert(type(n) == "number")
+  assert(compat.istype.number(n))
   return M.gen(function (yield)
     local i0, m
     if n > 0 then
@@ -223,7 +219,7 @@ M.npairs = function (t, n)
 end
 
 M.ipairs = function (t)
-  assert(type(t) == "table")
+  assert(compat.hasmeta.ipairs(t))
   return M.gen(function (yield)
     for k, v in ipairs(t) do
       yield(k, v)
@@ -232,7 +228,7 @@ M.ipairs = function (t)
 end
 
 M.pairs = function (t)
-  assert(type(t) == "table")
+  assert(compat.hasmeta.pairs(t))
   return M.gen(function (yield)
     for k, v in pairs(t) do
       yield(k, v)
@@ -254,6 +250,7 @@ end
 M.map = function (gen, fn)
   assert(M.isgen(gen))
   fn = fn or compat.id
+  assert(compat.hasmeta.call(fn))
   return M.gen(function (yield)
     return gen:each(function (...)
       return yield(fn(...))
@@ -340,7 +337,8 @@ end
 
 M.chunk = function (gen, n)
   assert(M.isgen(gen))
-  assert(type(n) == "number" and n > 0)
+  assert(compat.istype.number(n))
+  assert(n > 0)
   local chunk = vec()
   return M.gen(function (yield)
     gen:each(function(...)
@@ -451,7 +449,8 @@ end
 
 M.take = function (gen, n)
   assert(M.iscogen(gen))
-  assert(type(n) == "number" and n >= 0)
+  assert(compat.istype.number(n))
+  assert(compat.ge(0, n))
   return M.gen(function (yield)
     while n > 0 and gen:step() do
       n = n - 1
@@ -485,7 +484,7 @@ end
 M.tabulate = function (gen, opts, ...)
   assert(M.iscogen(gen))
   local keys, nkeys
-  if type(opts) == "table" then
+  if compat.istype.table(opts) then
     keys, nkeys = tup(...), tup.len(...)
   else
     keys, nkeys = tup(opts, ...), 1 + tup.len(...)
