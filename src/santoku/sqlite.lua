@@ -1,4 +1,5 @@
 local gen = require("santoku.gen")
+local compat = require("santoku.compat")
 local err = require("santoku.err")
 local sqlite = require("lsqlite3")
 
@@ -27,7 +28,7 @@ local function bind (stmt, ...)
     return stmt
   end
   local t = select(1, ...)
-  if type(t) == "table" then
+  if not compat.isprimitive(t) and compat.hasmeta.index(t) then
     return stmt:bind_names(t)
   else
     return stmt:bind_values(...)

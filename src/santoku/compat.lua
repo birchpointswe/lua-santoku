@@ -194,6 +194,11 @@ M.hasmeta = setmetatable({}, {
   end
 })
 
+M.isprimitive = function (t)
+  t = type(t)
+  return t == "number" or t == "string" or t == "boolean"
+end
+
 M.isarray = function (t)
   if type(t) ~= "table" then
     return false
