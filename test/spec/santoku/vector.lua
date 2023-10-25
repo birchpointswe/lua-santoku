@@ -203,4 +203,12 @@ test("vector", function ()
     assert.same({ 1, 2, 1, 2, n = 4 }, vec(1, 2):replicate(2))
   end)
 
+  test("sum", function ()
+    assert.equals(15, vec(1, 2, 3, 4, 5):sum())
+  end)
+
+  test("mean", function ()
+    assert.equals(2, vec(1, 2, 3):mean())
+  end)
+
 end)

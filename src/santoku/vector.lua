@@ -114,6 +114,16 @@ M.replicate = function (t, n)
   end
 end
 
+M.mean = function (t)
+  assert(M.isvec(t))
+  return t:sum() / t.n
+end
+
+M.sum = function (t)
+  assert(M.isvec(t))
+  return t:reduce(op.add)
+end
+
 M.set = function (t, i, v)
   assert(M.isvec(t))
   assert(type(i) == "number" and i > 0)
