@@ -100,6 +100,20 @@ M.insert = function (t, i, v)
   return t
 end
 
+M.replicate = function (t, n)
+  assert(M.isvec(t))
+  assert(type(n) == "number")
+  if (n < 1) then
+    return M.pack()
+  else
+    local m = t.n
+    for _ = 1, n - 1 do
+      t:copy(t, t.n + 1, 1, m)
+    end
+    return t
+  end
+end
+
 M.set = function (t, i, v)
   assert(M.isvec(t))
   assert(type(i) == "number" and i > 0)

@@ -199,4 +199,8 @@ test("vector", function ()
 
   end)
 
+  test("replicate", function ()
+    assert.same({ 1, 2, 1, 2, n = 4 }, vec(1, 2):replicate(2))
+  end)
+
 end)
