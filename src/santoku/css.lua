@@ -1,3 +1,5 @@
+-- NOTE: EXPERIMENTAL, NOT PRODUCTION READY
+
 -- TODO: Media queries
 -- TODO: The rest of the CSS3 spec
 

@@ -35,7 +35,6 @@
 -- open files, etc.
 
 local tbl = require("santoku.table")
-local inherit = require("santoku.inherit")
 local vec = require("santoku.vector")
 local fun = require("santoku.fun")
 local co = require("santoku.co")
@@ -45,13 +44,14 @@ local tup = require("santoku.tuple")
 
 local M = {}
 
-local MT = {
+M.MT = {
   __call = function (M, ...)
     return M.gen(...)
   end
 }
 
-local MTG = {
+M.MT_GEN = {
+  __name = "santoku_gen",
   __index = M,
   __call = function (gen, ...)
     if gen:iscogen() then
@@ -64,11 +64,7 @@ local MTG = {
 }
 
 M.isgen = function (t)
-  if inherit.hasindex(t, M) then
-    return true
-  else
-    return false, "not a generator", t
-  end
+  return compat.hasmeta(t, M.MT_GEN)
 end
 
 M.iscogen = function (t)
@@ -99,7 +95,7 @@ M.gen = function (run, ...)
       assert(compat.hasmeta.call(yield))
       return run(yield, args(...))
     end
-  }, MTG)
+  }, M.MT_GEN)
 end
 
 M.iter = function (genfn, ...)
@@ -564,4 +560,4 @@ end
 
 M.none = fun.compose(op["not"], M.find)
 
-return setmetatable(M, MT)
+return setmetatable(M, M.MT)

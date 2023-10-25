@@ -1,22 +1,17 @@
 local compat = require("santoku.compat")
 
-local M = setmetatable({}, {
+local M = {}
+
+M.MT = {
   __call = function (M, ...)
     return M.tuple(...)
   end
-})
+}
 
-local function tuple (n, a, ...)
-  if n == 0 then
-    return function (...)
-      return ...
-    end
-  else
-    local rest = tuple(n - 1, ...)
-    return function (...)
-      return a, rest(...)
-    end
-  end
+M.TUPLES = setmetatable({}, { __mode = "kv" })
+
+M.istuple = function (t)
+  return M.TUPLES[t]
 end
 
 M.len = function (...)
@@ -73,34 +68,51 @@ M.equals = function (a, ...)
   return true
 end
 
-M.tuple = function (...)
-  return tuple(M.len(...), ...)
+M._tuple = function (n, a, ...)
+  if n == 0 then
+    local t = function (...)
+      return ...
+    end
+    M.TUPLES[t] = true
+    return t
+  else
+    local rest = M._tuple(n - 1, ...)
+    local t = function (...)
+      return a, rest(...)
+    end
+    M.TUPLES[t] = true
+    return t
+  end
 end
 
-local function interleave (x, n, ...)
+M.tuple = function (...)
+  return M._tuple(M.len(...), ...)
+end
+
+M._interleave = function (x, n, ...)
   if n < 2 then
     return ...
   else
-    return ..., x, interleave(x, n - 1, M.sel(2, ...))
+    return ..., x, M._interleave(x, n - 1, M.sel(2, ...))
   end
 end
 
 M.interleave = function (x, ...)
-  return interleave(x, M.len(...), ...)
+  return M._interleave(x, M.len(...), ...)
 end
 
-local function reduce (fn, n, a, ...)
+M._reduce = function (fn, n, a, ...)
   if n == 0 then
     return
   elseif n == 1 then
     return a
   else
-    return reduce(fn, n - 1, fn(a, (...)), M.sel(2, ...))
+    return M._reduce(fn, n - 1, fn(a, (...)), M.sel(2, ...))
   end
 end
 
 M.reduce = function (fn, ...)
-  return reduce(fn, M.len(...), ...)
+  return M._reduce(fn, M.len(...), ...)
 end
 
 M.concat = function (...)
@@ -136,4 +148,4 @@ M.map = function (fn, ...)
   end
 end
 
-return M
+return setmetatable(M, M.MT)

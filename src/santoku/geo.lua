@@ -1,3 +1,5 @@
+-- NOTE: EXPERIMENTAL, NOT PRODUCTION READY
+
 local M = {}
 
 M.distance = function (one, two)

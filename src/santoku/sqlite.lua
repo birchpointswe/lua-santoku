@@ -3,11 +3,29 @@ local compat = require("santoku.compat")
 local err = require("santoku.err")
 local sqlite = require("lsqlite3")
 
-local M = setmetatable({}, {
-  __index = sqlite
-})
+local M = {}
 
-local function check (db, res, code, msg)
+M.MT = {
+  __index = sqlite
+}
+
+M.MT_SQLITE_DB = {
+  __name = "santoku_sqlite_db",
+  __index = function (o, k)
+    return o.db[k]
+  end
+}
+
+M.MT_SQLITE_STMT = {
+  __index = function (o, k)
+    return o.stmt[k]
+  end,
+  __call = function (o, ...)
+    return o.fn(...)
+  end
+}
+
+M._check = function (db, res, code, msg)
   if not res then
     if not msg and db then
       msg = db.db:errmsg()
@@ -23,7 +41,7 @@ end
 
 -- TODO: How does this work if I want to bind a
 -- list of values by position?
-local function bind (stmt, ...)
+M._bind = function (stmt, ...)
   if select("#", ...) == 0 then
     return stmt
   end
@@ -35,8 +53,8 @@ local function bind (stmt, ...)
   end
 end
 
-local function query (db, stmt, ...)
-  local ok = bind(stmt, ...)
+M._query = function (db, stmt, ...)
+  local ok = M._bind(stmt, ...)
   if not ok then
     return false, db.db:errmsg(), db.db:errcode()
   else
@@ -62,8 +80,8 @@ local function query (db, stmt, ...)
   end
 end
 
-local function get_one (db, stmt, ...)
-  local ok = bind(stmt, ...)
+M._get_one = function (db, stmt, ...)
+  local ok = M._bind(stmt, ...)
   if not ok then
     return false, db.db:errmsg(), db.db:errcode()
   else
@@ -83,8 +101,8 @@ local function get_one (db, stmt, ...)
   end
 end
 
-local function get_val (db, stmt, prop, ...)
-  local ok, val = get_one(db, stmt, ...)
+M._get_val = function (db, stmt, prop, ...)
+  local ok, val = M._get_one(db, stmt, ...)
   if ok and val then
     return true, val[prop]
   elseif ok and not val then
@@ -95,7 +113,7 @@ local function get_val (db, stmt, prop, ...)
 end
 
 M.open = function (...)
-  local ok, db, cd = check(nil, sqlite.open(...))
+  local ok, db, cd = M._check(nil, sqlite.open(...))
   if not ok then
     return false, db, cd
   else
@@ -104,7 +122,7 @@ M.open = function (...)
 end
 
 M.open_memory = function (...)
-  local ok, db, cd = check(nil, sqlite.open_memory(...))
+  local ok, db, cd = M._check(nil, sqlite.open_memory(...))
   if not ok then
     return false, db, cd
   else
@@ -113,7 +131,7 @@ M.open_memory = function (...)
 end
 
 M.open_ptr = function (...)
-  local ok, db, cd = check(nil, sqlite.open_ptr(...))
+  local ok, db, cd = M._check(nil, sqlite.open_ptr(...))
   if not ok then
     return false, db, cd
   else
@@ -166,23 +184,23 @@ M.wrap = function (db)
     end,
 
     iter = function (db, sql)
-      local ok, stmt, cd = check(db, db.db:prepare(sql))
+      local ok, stmt, cd = M._check(db, db.db:prepare(sql))
       if not ok then
         return false, stmt, cd
       else
         return true, M.wrapstmt(stmt, function (...)
-          return query(db, stmt, ...)
+          return M._query(db, stmt, ...)
         end)
       end
     end,
 
     all = function (db, sql)
-      local ok, stmt, cd = check(db, db.db:prepare(sql))
+      local ok, stmt, cd = M._check(db, db.db:prepare(sql))
       if not ok then
         return false, stmt, cd
       else
         return true, M.wrapstmt(stmt, function (...)
-          local ok, iter, cd = query(db, stmt, ...)
+          local ok, iter, cd = M._query(db, stmt, ...)
           if not ok then
             return ok, iter, cd
           else
@@ -195,12 +213,12 @@ M.wrap = function (db)
     end,
 
     runner = function (db, sql)
-      local ok, stmt, cd = check(db, db.db:prepare(sql))
+      local ok, stmt, cd = M._check(db, db.db:prepare(sql))
       if not ok then
         return false, stmt, cd
       else
         return true, M.wrapstmt(stmt, function (...)
-          local ok, iter, cd = query(db, stmt, ...)
+          local ok, iter, cd = M._query(db, stmt, ...)
           if not ok then
             return false, iter, cd
           end
@@ -214,15 +232,15 @@ M.wrap = function (db)
     end,
 
     getter = function (db, sql, prop)
-      local ok, stmt, cd = check(db, db.db:prepare(sql))
+      local ok, stmt, cd = M._check(db, db.db:prepare(sql))
       if not ok then
         return false, stmt, cd
       else
         return true, M.wrapstmt(stmt, function (...)
           if prop then
-            return get_val(db, stmt, prop, ...)
+            return M._get_val(db, stmt, prop, ...)
           else
-            return get_one(db, stmt, ...)
+            return M._get_one(db, stmt, ...)
           end
         end)
       end
@@ -244,9 +262,7 @@ M.wrap = function (db)
       end
     end
 
-  }, {
-    __index = db
-  })
+  }, M.MT_SQLITE_DB)
 
 end
 
@@ -254,12 +270,7 @@ M.wrapstmt = function (stmt, fn)
   return setmetatable({
     stmt = stmt,
     fn = fn,
-  }, {
-    __index = stmt,
-    __call = function (_, ...)
-      return fn(...)
-    end
-  })
+  }, M.MT_SQLITE_STMT)
 end
 
-return M
+return setmetatable(M, M.MT)

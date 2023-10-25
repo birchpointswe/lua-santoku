@@ -62,7 +62,7 @@ local co = require("santoku.co")
 
 local M = {}
 
-local MT = {
+M.MT = {
   __call = function (wrapper, ...)
     return wrapper.ok(...)
   end
@@ -129,7 +129,7 @@ M.pwrapper = function (co, ...)
       end
     end
   }
-  return setmetatable(wrapper, MT)
+  return setmetatable(wrapper, M.MT)
 end
 
 -- TODO: Allow user to specify whether unchecked

@@ -10,13 +10,17 @@ local fs = require("santoku.fs")
 local sys = require("santoku.system")
 local str = require("santoku.string")
 
-local M = setmetatable({}, {
+local M = {}
+
+M.MT = {
   __call = function (M, ...)
     return M.test(...)
   end
-})
+}
 
-local MTG = { __index = _G }
+M.MT_TEST = {
+  __index = _G
+}
 
 local tags = tup()
 
@@ -62,7 +66,7 @@ M.runfiles = function (files, interp, match, stop)
           check.err(sent).ok(sys.execute(interp, fp))
         elseif str.endswith(fp, ".lua") then
           print("Test: " .. fp, ":  ")
-          check.err(sent).ok(fs.loadfile(fp, setmetatable({}, MTG)))()
+          check.err(sent).ok(fs.loadfile(fp, setmetatable({}, M.MT_TEST)))()
         else
           print("Test: " .. fp)
           check.err(sent).ok(sys.execute(fp))
@@ -79,4 +83,4 @@ M.runfiles = function (files, interp, match, stop)
   end)
 end
 
-return M
+return setmetatable(M, M.MT)

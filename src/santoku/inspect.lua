@@ -3,6 +3,12 @@ local tbl = require("santoku.table")
 
 local M = {}
 
+M.MT = {
+	__call = function (_, ...)
+		return M.inspect(...)
+	end
+}
+
 M.inspect = function (obj, opts)
 	opts = opts or {}
 	return inspect(obj, tbl({
@@ -14,8 +20,4 @@ M.inspect = function (obj, opts)
 	}):merge(opts))
 end
 
-return setmetatable(M, {
-	__call = function (_, ...)
-		return M.inspect(...)
-	end
-})
+return setmetatable(M, M.MT)

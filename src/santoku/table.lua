@@ -15,20 +15,23 @@
 
 local compat = require("santoku.compat")
 
-local M = setmetatable({}, {
+local M = {}
+
+M.MT = {
   __call = function (M, t)
     return M.wrap(t)
   end
-})
+}
 
-local MTT = {
+M.MT_TABLE = {
+  __name = "santoku_table",
   __index = M
 }
 
 -- TODO use inherit
 M.wrap = function (t)
   t = t or {}
-  return setmetatable(t, MTT)
+  return setmetatable(t, M.MT_TABLE)
 end
 
 M.unwrap = function (t)
@@ -190,4 +193,4 @@ M.len = function (t)
          compat.hasmeta.len(t) and #t or nil
 end
 
-return M
+return setmetatable(M, M.MT)

@@ -1,3 +1,5 @@
+-- NOTE: EXPERIMENTAL, NOT PRODUCTION READY
+
 local zlib = require("zlib")
 local gen = require("santoku.gen")
 local vec = require("santoku.vector")

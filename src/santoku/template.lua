@@ -24,6 +24,22 @@ local compat = require("santoku.compat")
 
 local M = {}
 
+M.MT = {
+  __call = function (_, ...)
+    return M.compile(...)
+  end
+}
+
+M.MT_TEMPLATE = {
+  __name = "santoku_template",
+  __index = function (tmpl, k)
+    return tmpl.index[k]
+  end,
+  __call = function (tmpl, ...)
+    return tmpl:render(...)
+  end
+}
+
 M.open = "<%"
 M.close = "%>"
 M.tagclose = "%"
@@ -32,7 +48,7 @@ M.STR = {}
 M.FN = {}
 
 M.istemplate = function (t)
-  return inherit.hasindex(t, M)
+  return compat.hasmeta(t, M.MT_TEMPLATE)
 end
 
 M.compiledir = function (parent, dir, opts)
@@ -130,6 +146,7 @@ M.compile = function (parent, ...)
     local showstack = vec(true)
 
     local ret = setmetatable({
+      index = {},
       fenv = fenv,
       source = tmpl,
       deps = deps,
@@ -137,15 +154,11 @@ M.compile = function (parent, ...)
       config = config,
       parent = parent,
       parts = parts,
-    }, {
-      __call = function (tmpl, ...)
-        return tmpl:render(...)
-      end
-    })
+    }, M.MT_TEMPLATE)
 
-    inherit.pushindex(ret, M)
+    inherit.pushindex(ret.index, M)
 
-    inherit.pushindex(ret, {
+    inherit.pushindex(ret.index, {
       push = function (t, tf)
         assert(M.istemplate(t), "first argument to push must be a template")
         assert(type(tf) == "boolean", "second argument to push must be a boolean")
@@ -239,11 +252,11 @@ M.renderfile = function (fp, config)
   end)
 end
 
-local function should_insert (ok)
+M._should_insert = function (ok)
   return ok == true or type(ok) == "string"
 end
 
-local function get_prefix (data)
+M._get_prefix = function (data)
 
   if not data then
     return
@@ -259,9 +272,9 @@ local function get_prefix (data)
 
 end
 
-local function append_prefix (left, ...)
+M._append_prefix = function (left, ...)
 
-  local prefix = get_prefix(left)
+  local prefix = M._get_prefix(left)
 
   if not prefix then
     return ...
@@ -273,19 +286,19 @@ local function append_prefix (left, ...)
 
 end
 
-local function insert (output, left, ok, ...)
+M._insert = function (output, left, ok, ...)
   if (ok == nil) then -- luacheck: ignore
     -- do nothing
     return true
   elseif type(ok) == "string" then
     -- TODO: should we check that the remaining
     -- args are strings?
-    output:append(append_prefix(left, ok, ...))
+    output:append(M._append_prefix(left, ok, ...))
     return true
   elseif ok == true then
     -- TODO: should we check that the remaining
     -- args are strings?
-    output:append(append_prefix(left, ...))
+    output:append(M._append_prefix(left, ...))
     return true
   elseif ok == false then
     return false, ...
@@ -309,11 +322,11 @@ M.render = function (tmpl, env)
       local typ, data = part()
       if typ == M.STR then
         if tmpl:showing() then
-          check(insert(output, nil, tup.sel(2, part())))
+          check(M._insert(output, nil, tup.sel(2, part())))
         end
       elseif typ == M.FN then
         local res = tup(data())
-        if not should_insert(res()) then
+        if not M._should_insert(res()) then
           local lpat = "\n[^%S\n]*$"
           local rpat = "^[^%S\n]*\n[^%S\n]*"
           local left = parts:get(i - 1) or tup()
@@ -328,7 +341,7 @@ M.render = function (tmpl, env)
           end
         end
         if tmpl:showing() then
-          check(insert(output, parts:get(i - 1) or tup(), res()))
+          check(M._insert(output, parts:get(i - 1) or tup(), res()))
         end
       else
         error("this is a bug: chunk has an undefined type")
@@ -348,8 +361,4 @@ M.render = function (tmpl, env)
   end)
 end
 
-return setmetatable(M, {
-  __call = function (_, ...)
-    return M.compile(...)
-  end
-})
+return setmetatable(M, M.MT)

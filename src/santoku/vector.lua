@@ -26,18 +26,22 @@ local tup = require("santoku.tuple")
 local op = require("santoku.op")
 local tbl = require("santoku.table")
 
-local M = setmetatable({}, {
+local M = {}
+
+M.MT = {
   __call = function (M, ...)
     return M.pack(...)
   end
-})
+}
+
+M.MT_VECTOR = {
+  __name = "santoku_vector",
+  __index = M
+}
 
 -- TODO use inherit
 M.isvec = function (t)
-  if type(t) ~= "table" or t.n == nil then
-    return false
-  end
-  return (getmetatable(t) or {}).__index == M
+  return compat.hasmeta(t, M.MT_VECTOR)
 end
 
 -- TODO use inherit
@@ -45,9 +49,7 @@ M.wrap = function (t)
   t = t or {}
   assert(type(t) == "table")
   t.n = t.n or #t
-  return setmetatable(t, {
-    __index = M
-  })
+  return setmetatable(t, M.MT_VECTOR)
 end
 
 M.unwrap = function (t)
@@ -463,4 +465,4 @@ M.reverse = function (t)
   return t
 end
 
-return M
+return setmetatable(M, M.MT)

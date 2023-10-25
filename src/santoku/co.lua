@@ -75,7 +75,7 @@ return function (tag)
   end
 
   function coroutine.yield (...)
-    return yield (tag, ...)
+    return yield(tag, ...)
   end
 
   return coroutine

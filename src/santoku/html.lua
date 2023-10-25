@@ -1,6 +1,14 @@
+-- NOTE: EXPERIMENTAL, NOT PRODUCTION READY
+
 local vec = require("santoku.vector")
 
 local M = {}
+
+M.MT = {
+  __call = function (_, ...)
+    return M.render(...)
+  end
+}
 
 M.selfclosed = vec(
   "area", "base", "br", "col", "embed",
@@ -11,7 +19,7 @@ M.selfclosed = vec(
   return a
 end, {})
 
-local function compile (spec, result)
+M.compile = function (spec, result)
 
   if type(spec) ~= "table" then
     result:append(spec)
@@ -39,7 +47,7 @@ local function compile (spec, result)
     result:append(">")
     local i = 2
     while spec[i] do
-      compile(spec[i], result)
+      M.compile(spec[i], result)
       i = i + 1
     end
     result:append("</", tag, ">")
@@ -49,12 +57,8 @@ end
 
 M.render = function (spec)
   local result = vec()
-  compile(spec, result)
+  M.compile(spec, result)
   return result:concat()
 end
 
-return setmetatable(M, {
-  __call = function (_, ...)
-    return M.render(...)
-  end
-})
+return setmetatable(M, M.MT)

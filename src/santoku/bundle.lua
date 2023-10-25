@@ -7,14 +7,14 @@ local fs = require("santoku.fs")
 
 local M = {}
 
-local MT = {
+M.MT = {
   __index = M,
   __call = function(M, ...)
     return M.bundle(...)
   end
 }
 
-local function write_deps (check, modules, infile, outfile)
+M.write_deps = function (check, modules, infile, outfile)
   local depsfile = outfile .. ".d"
   local out = gen.chain(
       gen.pack(outfile, ": "),
@@ -24,7 +24,7 @@ local function write_deps (check, modules, infile, outfile)
   check(fs.writefile(depsfile, out))
 end
 
-local function addmod (check, modules, mod, path, cpath)
+M.addmod = function (check, modules, mod, path, cpath)
   if not (modules.lua[mod] or modules.c[mod]) then
     local fp, typ = check(M.searchpaths(mod, path, cpath))
     modules[typ][mod] = fp
@@ -32,19 +32,17 @@ local function addmod (check, modules, mod, path, cpath)
   end
 end
 
-local parsemodule, parsemodules
-
-parsemodule = function (check, mod, modules, ignores, path, cpath)
+M.parsemodule = function (check, mod, modules, ignores, path, cpath)
   if ignores[mod] then
     return
   end
-  local fp, typ = addmod(check, modules, mod, path, cpath)
+  local fp, typ = M.addmod(check, modules, mod, path, cpath)
   if typ == "lua" then
-    parsemodules(check, fp, modules, ignores, path, cpath)
+    M.parsemodules(check, fp, modules, ignores, path, cpath)
   end
 end
 
-parsemodules = function (check, infile, modules, ignores, path, cpath)
+M.parsemodules = function (check, infile, modules, ignores, path, cpath)
   check(fs.lines(infile))
     :map(function (line)
       -- TODO: The second match causes the bundler
@@ -63,7 +61,7 @@ parsemodules = function (check, infile, modules, ignores, path, cpath)
     end)
     :flatten()
     :each(function (mod)
-      parsemodule(check, mod, modules, ignores, path, cpath)
+      M.parsemodule(check, mod, modules, ignores, path, cpath)
     end)
 end
 
@@ -85,9 +83,9 @@ M.parsemodules = function (infile, mods, ignores, path, cpath)
   return err.pwrap(function (check)
     local modules = { c = {}, lua = {} }
     gen.ivals(mods):each(function(mod)
-      parsemodule(check, mod, modules, ignores, path, cpath)
+      M.parsemodule(check, mod, modules, ignores, path, cpath)
     end)
-    parsemodules(check, infile, modules, ignores, path, cpath)
+    M.parsemodules(check, infile, modules, ignores, path, cpath)
     return modules
   end)
 end
@@ -141,7 +139,7 @@ M.bundle = function (
     local outcfp = fs.join(outdir, outprefix .. ".c")
     local outmainfp = fs.join(outdir, outprefix)
     if deps then
-      write_deps(check, modules, infile, depstarget or outmainfp)
+      M.write_deps(check, modules, infile, depstarget or outmainfp)
     end
     check(fs.writefile(outcfp, table.concat({[[
       #include "lua.h"
@@ -222,4 +220,4 @@ M.bundle = function (
   end)
 end
 
-return setmetatable(M, MT)
+return setmetatable(M, M.MT)
