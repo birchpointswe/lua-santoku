@@ -4,6 +4,8 @@
 - Documentation
 - Refactor gen, fn, etc to use compat.hasmeta
 
+- santoku.lua for binding useful c-api functions
+  for error checking, etc
 - Support calling generators in a generic for
   loop
 - template: allow `<%- ... %>` or similar to

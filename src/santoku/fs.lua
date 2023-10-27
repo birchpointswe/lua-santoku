@@ -15,7 +15,7 @@ local vec = require("santoku.vector")
 local M = {}
 
 M.mkdirp = function (dir)
-  local p0 = nil
+  local p0 = str.startswith(dir, M.pathdelim) and M.pathdelim or nil
   for p1 in dir:gmatch("([^" .. str.escape(M.pathdelim) .. "]+)/?") do
     if p0 then
       p1 = M.join(p0, p1)

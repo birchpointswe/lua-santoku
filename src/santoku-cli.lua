@@ -136,10 +136,10 @@ ctest
 local args = parser:parse()
 
 -- TODO: Move this logic into santoku.template
-local function write_deps (check, deps, input, output)
+local function write_deps (check, deps, input, output, fp_config)
   local depsfile = output .. ".d"
   local out = gen.chain(
-      gen.pack(output, ": "),
+      gen.pack(output, ": ", fp_config),
       gen.ivals(deps):intersperse(" "),
       gen.pack("\n", depsfile, ": ", input, "\n"))
     :vec()
@@ -148,24 +148,24 @@ local function write_deps (check, deps, input, output)
 end
 
 -- TODO: Same as above
-local function process_file (check, conf, input, output, deps)
+local function process_file (check, conf, input, output, deps, fp_config)
   local data = check(fs.readfile(input))
   local tmpl = check(tpl(data, conf))
   local out = check(tmpl(conf.env))
   check(fs.mkdirp(fs.dirname(output)))
   check(fs.writefile(output, out))
   if deps then
-    write_deps(check, tmpl.deps, input, output)
+    write_deps(check, tmpl.deps, input, output, fp_config)
   end
 end
 
 -- TODO: Same as above
-local function process_files (check, conf, trim, input, mode, output, deps)
+local function process_files (check, conf, trim, input, mode, output, deps, fp_config)
   if mode == "directory" then
     fs.files(input, { recurse = true })
       :map(check)
       :each(function (fp, mode)
-        process_files(check, conf, trim, fp, mode, output, deps)
+        process_files(check, conf, trim, fp, mode, output, deps, fp_config)
       end)
   elseif mode == "file" then
     local trimlen = trim and string.len(trim)
@@ -174,7 +174,7 @@ local function process_files (check, conf, trim, input, mode, output, deps)
       outfile = outfile:sub(trimlen + 1)
     end
     output = fs.join(output, outfile)
-    process_file(check, conf, input, output, deps)
+    process_file(check, conf, input, output, deps, fp_config)
   else
     error("Unexpected mode: " .. mode .. " for file: " .. input)
   end
@@ -196,10 +196,10 @@ assert(err.pwrap(function (check)
       check(fs.mkdirp(args.output))
       gen.ivals(args.input):each(function (i)
         local mode = check(fs.attr(i, "mode"))
-        process_files(check, conf, args.trim, i, mode, args.output, args.deps)
+        process_files(check, conf, args.trim, i, mode, args.output, args.deps, args.config)
       end)
     elseif args.file then
-      process_file(check, conf, args.file, args.output, args.deps)
+      process_file(check, conf, args.file, args.output, args.deps, args.config)
     else
       parser:error("either -f --file or -d --directory must be provided")
     end
