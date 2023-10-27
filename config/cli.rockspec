@@ -14,7 +14,8 @@ description = {
 
 dependencies = {
   "santoku == <% return os.getenv('VERSION') %>",
-  "argparse >= 0.7.1-1"
+  "argparse >= 0.7.1-1",
+  "luafilesystem >= 1.8.0-1"
 }
 
 build = {

@@ -27,7 +27,7 @@ M.sh = function (...)
       if ok and t == "exit" then
         return true, cd
       else
-        return false, t, cd
+        return ok, t, cd
       end
     end
   else

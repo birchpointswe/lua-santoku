@@ -8,8 +8,10 @@ LIB_ROCKSPEC_T ?= config/lib.rockspec
 
 LIB_LUACOV_CFG ?= $(BUILD_DIR)/luacov.lua
 LIB_LUACOV_CFG_T ?= test/luacov.lua
-LIB_LUACOV_STATS_FILE ?= $(BUILD_DIR)/luacov.stats.out
-LIB_LUACOV_REPORT_FILE ?= $(BUILD_DIR)/luacov.report.out
+# LIB_LUACOV_STATS_FILE ?= $(BUILD_DIR)/luacov.stats.out
+# LIB_LUACOV_REPORT_FILE ?= $(BUILD_DIR)/luacov.report.out
+LIB_LUACOV_STATS_FILE ?= $(PWD)/luacov.stats.out
+LIB_LUACOV_REPORT_FILE ?= $(PWD)/luacov.report.out
 
 TEST_LUA_PATH ?= src/?.lua;$(LUA_PATH)
 TEST_LUA_CPATH ?= $(LUA_CPATH)
@@ -59,8 +61,8 @@ $(LIB_ROCKSPEC): $(LIB_ROCKSPEC_T)
 		$(TOKU) template -f "$^" -o "$@"
 
 $(LIB_LUACOV_CFG): $(LIB_LUACOV_CFG_T)
-	STATS_FILE="$(PWD)/$(LIB_LUACOV_STATS_FILE)" \
-	REPORT_FILE="$(PWD)/$(LIB_LUACOV_REPORT_FILE)" \
+	STATS_FILE="$(LIB_LUACOV_STATS_FILE)" \
+	REPORT_FILE="$(LIB_LUACOV_REPORT_FILE)" \
 		$(TOKU) template -f "$^" -o "$@"
 
 .PHONY: lib-install luarocks-lib-install lib-upload test iterate luarocks-test

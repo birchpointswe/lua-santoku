@@ -105,14 +105,12 @@ M.mergelua = function (modules, infile, mods)
   end)
 end
 
-M.bundle = function (
-    infile, outdir, outprefix, env, cflags,
-    ldflags, cmpenv, deps, depstarget,
-    mods, ignores, noclose, noluac)
-  mods = mods or {}
-  env = vec.wrap(env)
-  cmpenv = vec.wrap(cmpenv)
-  ignores = gen.ivals(ignores or {}):set()
+M.bundle = function (infile, outdir, opts)
+  opts = opts or {}
+  local mods = opts.mods or {}
+  local env = vec.wrap(opts.env)
+  local cmpenv = vec.wrap(opts.cmpenv)
+  local ignores = gen.ivals(opts.ignores or {}):set()
   return err.pwrap(function (check)
     local path = (env:find(function (p)
       return p[1] == "LUA_PATH"
@@ -120,13 +118,13 @@ M.bundle = function (
     local cpath = (env:find(function (p)
       return p[1] == "LUA_CPATH"
     end) or { "", os.getenv("LUA_CPATH") })[2]
-    outprefix = outprefix or fs.splitexts(fs.basename(infile)).name
+    local outprefix = opts.outprefix or fs.splitexts(fs.basename(infile)).name
     local modules = check(M.parsemodules(infile, mods, ignores, path, cpath))
     local outluafp = fs.join(outdir, outprefix .. ".lua")
     local outluadata = check(M.mergelua(modules, infile, mods))
     check(fs.writefile(outluafp, outluadata))
     local outluacfp
-    if not noluac then
+    if not opts.noluac then
       outluacfp = fs.join(outdir, outprefix .. ".luac")
       local cmdluac = os.getenv("LUAC") or "luac"
       check(sys.execute(cmdluac, "-s", "-o", outluacfp, outluafp))
@@ -138,8 +136,8 @@ M.bundle = function (
     check(sys.execute(cmdxxd, "-i", "-n", "data", outluacfp, outluahfp))
     local outcfp = fs.join(outdir, outprefix .. ".c")
     local outmainfp = fs.join(outdir, outprefix)
-    if deps then
-      M.write_deps(check, modules, infile, depstarget or outmainfp)
+    if opts.deps then
+      M.write_deps(check, modules, infile, opts.depstarget or outmainfp)
     end
     check(fs.writefile(outcfp, table.concat({[[
       #include "lua.h"
@@ -188,7 +186,7 @@ M.bundle = function (
       err:
         fprintf(stderr, "%s\n", lua_tostring(L, -1));
       end:
-      ]], not noclose and [[
+      ]], not opts.noclose and [[
         lua_close(L);
       ]] or "", [[
         return rc;
@@ -202,15 +200,14 @@ M.bundle = function (
       args:append(table.concat({ var[1], "=\"", var[2], "\"" }))
     end)
     args:append(cmdcc, outcfp)
-    if cflags then
-      args:append(cflags)
+    if opts.cflags then
+      args:append(opts.cflags)
     end
-    if ldflags then
-      args:append(ldflags)
+    if opts.ldflags then
+      args:append(opts.ldflags)
     end
     args:append(cmdcflags)
     args:append(cmdldflags)
-    args:append("-lm", "-llua")
     args:append("-o", outmainfp)
     gen.pairs(modules.c)
       :each(function (_, fp)

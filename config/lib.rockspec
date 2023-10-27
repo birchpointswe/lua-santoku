@@ -38,7 +38,8 @@ test_dependencies = {
   "lua-zlib >= 1.2-2",
   "luafilesystem >= 1.8.0-1",
   "lsqlite3 >= 0.9.5",
-  "inspect >= 3.1.3-0"
+  "inspect >= 3.1.3-0",
+  "luassert >= 1.9.0-1"
 }
 
 build = {

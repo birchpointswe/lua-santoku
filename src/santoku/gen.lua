@@ -443,6 +443,12 @@ M.co = function (gen)
   return gen
 end
 
+M.head = function (gen)
+  assert(M.iscogen(gen))
+  gen:step()
+  return gen.val()
+end
+
 M.take = function (gen, n)
   assert(M.iscogen(gen))
   assert(compat.istype.number(n))

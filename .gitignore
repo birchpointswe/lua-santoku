@@ -3,3 +3,5 @@ test/luacov.stats.out
 test/luacov.report.out.index
 test/spec/santoku/bundle/test
 build
+luacov.stats.out
+luacov.report.out
