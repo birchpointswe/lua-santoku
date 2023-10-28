@@ -46,7 +46,6 @@ end
 
 M.runfiles = function (files, interp, match, stop)
   local sent = tup()
-  print("test 1")
   return err.pwrap(function (check)
     print()
     gen.ivals(files)

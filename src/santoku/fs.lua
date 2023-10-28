@@ -255,7 +255,12 @@ end
 M.writefile = function (fp, str, flag)
   flag = flag or "w"
   assert(type(flag) == "string")
-  local fh, err = io.open(fp, flag)
+  local fh, err
+  if fp == io.stdout then
+    fh = io.stdout
+  else
+    fh, err = io.open(fp, flag)
+  end
   if not fh then
     return false, err
   else
@@ -268,7 +273,12 @@ end
 M.readfile = function (fp, flag)
   flag = flag or "r"
   assert(type(flag) == "string")
-  local fh, err = io.open(fp, flag)
+  local fh, err
+  if fp == io.stdin then
+    fh = io.stdin
+  else
+    fh, err = io.open(fp, flag)
+  end
   if not fh then
     return false, err
   else

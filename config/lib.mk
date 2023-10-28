@@ -39,6 +39,7 @@ luarocks-test: $(LIB_ROCKSPEC) $(LIB_LUACOV_CFG)
 	@if LUACOV_CONFIG="$(PWD)/$(LIB_LUACOV_CFG)" \
   LUA_PATH="$(TEST_LUA_PATH)" \
 	LUA_CPATH="$(TEST_LUA_CPATH)" \
+	TOKU='$(TOKU)' \
 		$(TOKU) test -s test/spec -i "$(LUA) -l luacov" -m ".*.lua$$"; \
 	then \
 		luacov -c $(PWD)/$(LIB_LUACOV_CFG); \

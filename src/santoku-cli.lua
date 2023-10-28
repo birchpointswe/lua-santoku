@@ -149,11 +149,11 @@ end
 
 -- TODO: Same as above
 local function process_file (check, conf, input, output, deps, fp_config)
-  local data = check(fs.readfile(input))
+  local data = check(fs.readfile(input == "-" and io.stdin or input))
   local tmpl = check(tpl(data, conf))
   local out = check(tmpl(conf.env))
   check(fs.mkdirp(fs.dirname(output)))
-  check(fs.writefile(output, out))
+  check(fs.writefile(output == "-" and io.stdout or output, out))
   if deps then
     write_deps(check, tmpl.deps, input, output, fp_config)
   end
