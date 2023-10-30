@@ -39,7 +39,7 @@ CONFIG_DEPS += $(addprefix $(BUILD_DIR)/, $(SRC) $(BIN) $(TEST) $(RES) $(DEPS))
 
 TARBALL = $(TARBALL_DIR).tar.gz
 TARBALL_DIR = $(NAME)-$(VERSION)
-TARBALL_SRCS = Makefile $(shell find src deps res -type f 2>/dev/null)
+TARBALL_SRCS = Makefile src/Makefile dist/Makefile $(shell find src deps res -type f 2>/dev/null)
 
 all: $(CONFIG_DEPS)
 	@echo "Running all"
