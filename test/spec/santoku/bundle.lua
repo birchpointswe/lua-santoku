@@ -17,8 +17,8 @@ test("bundle", function ()
         check(fs.mkdirp(outdir))
         fs.files(outdir):map(check):map(os.remove):each(check)
         check(bundle(infile, outdir, {
-          cflags = check(sys.sh("pkg-config lua54 --cflags")):co():head(),
-          ldflags = check(sys.sh("pkg-config lua54 --libs")):co():head(),
+          cflags = "-I" .. check(sys.sh("luarocks config variables.LUA_INCDIR")):co():head(),
+          ldflags = "-L" .. check(sys.sh("luarocks config variables.LUA_LIBDIR")):co():head() .. " -llua -lm",
         }))
         assert(check(fs.exists(fs.join(outdir, "test.lua"))))
         assert(check(fs.exists(fs.join(outdir, "test.luac"))))

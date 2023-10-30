@@ -1,7 +1,7 @@
 local _ENV = {}
 
 name = "santoku"
-version = "0.0.98-1"
+version = "0.0.99-1"
 variable_prefix = "TK"
 
 license = "MIT"
@@ -31,7 +31,7 @@ dependencies = {
 }
 
 test_dependencies = {
-  "luacov >= 0.15.0",
+  "luacov >= 0.15.0-1",
   "luacheck >= 1.1.0-1",
   "lua-zlib >= 1.2-2",
   "luafilesystem >= 1.8.0-1",

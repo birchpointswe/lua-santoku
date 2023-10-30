@@ -4,6 +4,10 @@
 - Documentation
 - Refactor gen, fn, etc to use compat.hasmeta
 
+- bundle doesn't work with busybox xxd since it is missing the -n flag, which
+  allows us to specify the name of the variable the compiled lua file is stored
+  in
+
 - toku template excludes functionality is a bit confusing in that it excludes
   the file from being templated, but, when invoked via the command line, still
   copies it. First, this functionality should be the same whether invoked from
