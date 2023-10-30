@@ -77,15 +77,23 @@ clean-all:
 
 tarball: $(BUILD_DIR)/$(TARBALL)
 
-upload: all
+check-release-status:
 	@if test -z "$(LUAROCKS_API_KEY)"; then echo "Missing LUAROCKS_API_KEY variable"; exit 1; fi
 	@if ! git diff --quiet; then echo "Commit your changes first"; exit 1; fi
+
+github-release-create: check-release-status tarball
+	@gh release create $(VERSION) $(BUILD_DIR)/$(TARBALL)
+
+luarocks-upload: check-release-status tarball
+	@luarocks upload --skip-pack --api-key "$(LUAROCKS_API_KEY)" "$(ROCKSPEC)"
+
+upload: check-release-status all
 	@git tag "$(VERSION)"
 	@git push --tags
 	@git push
 	@$(MAKE) tarball
-	@gh release create $(VERSION) $(BUILD_DIR)/$(TARBALL)
-	@luarocks upload --skip-pack --api-key "$(LUAROCKS_API_KEY)" "$(ROCKSPEC)"
+	@$(MAKE) github-release-create
+	@$(MAKE) luarocks-upload
 
 $(BUILD_DIR)/$(TARBALL): all
 	@rm -f $(BUILD_DIR)/$(TARBALL) || true
@@ -141,5 +149,5 @@ $(BUILD_DIR)/%: %
 
 -include $(shell find $(BUILD_DIR) -regex ".*/deps/.*/.*" -prune -o -name "*.d" -print 2>/dev/null)
 
-.PHONY: all test iterate install touch clean clean-all upload tarball
+.PHONY: all test iterate install touch clean clean-all upload tarball check-release-status github-release-create luarocks-upload
 .DEFAULT_GOAL: all
