@@ -1,7 +1,7 @@
 local _ENV = {}
 
 name = "santoku"
-version = "0.0.97-1"
+version = "0.0.98-1"
 variable_prefix = "TK"
 
 license = "MIT"

@@ -63,13 +63,23 @@ M.runfiles = function (files, interp, match, stop)
         end
         if interp then
           print("Test: " .. fp)
-          check.err(sent).ok(sys.execute(interp, fp))
+          local tmp = os.tmpname()
+          local ok, err, cd = sys.execute(interp, fp, " 2> ", tmp)
+          if not ok then
+            sys.execute("cat ", tmp)
+          end
+          check.err(sent).ok(ok, err, cd)
         elseif str.endswith(fp, ".lua") then
           print("Test: " .. fp, ":  ")
           check.err(sent).ok(fs.loadfile(fp, setmetatable({}, M.MT_TEST)))()
         else
           print("Test: " .. fp)
-          check.err(sent).ok(sys.execute(fp))
+          local tmp = os.tmpname()
+          local ok, err, cd = sys.execute(fp, " 2> ", tmp)
+          if not ok then
+            sys.execute("cat ", tmp)
+          end
+          check.err(sent).ok(ok, err, cd)
         end
       end)
   end, function (a, ...)
