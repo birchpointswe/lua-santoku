@@ -472,8 +472,8 @@ M.find = function (gen, fn, ...)
 end
 
 M.includes = function (gen, v)
-  assert(M.isgen(gen))
-  return nil ~= gen:co():find(function (x)
+  assert(M.iscogen(gen))
+  return nil ~= gen:find(function (x)
     return x == v
   end)
 end

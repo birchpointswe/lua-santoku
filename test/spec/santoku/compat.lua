@@ -19,7 +19,7 @@ test("compat", function ()
 
     test("should a function that returns the arguments", function ()
       local fn = compat.const(1, 2, 3)
-      for i = 1, 10 do
+      for _ = 1, 10 do
         local a, b, c = fn()
         assert(1 == a)
         assert(2 == b)

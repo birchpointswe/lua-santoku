@@ -6,7 +6,7 @@ test("css", function ()
 
   test("basic classes", function ()
 
-    local c, i, k, render = css()
+    local c, _, _, render = css()
 
     local str, names = render(
       c.header / c.title % {
@@ -28,7 +28,7 @@ test("css", function ()
 
   test("basic ids", function ()
 
-    local c, i, k, render = css()
+    local _, i, _, render = css()
 
     local str, names = render(
       i.something % {
@@ -42,7 +42,7 @@ test("css", function ()
 
   test("basic keyframes", function ()
 
-    local c, i, k, render = css()
+    local _, _, k, render = css()
 
     local str, names = render(
       k.loading % {

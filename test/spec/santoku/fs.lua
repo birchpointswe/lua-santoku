@@ -12,7 +12,7 @@ test("fs", function ()
 
     test("should return the correct number of lines", function ()
 
-      local fp = "test/spec/santoku/fs.tst1.txt"
+      local fp = "test/res/fs.tst1.txt"
       local ok, gen = fs.lines(fp)
       assert(ok)
 
@@ -84,12 +84,12 @@ test("fs", function ()
 
     test("should list directory files", function ()
       local files = vec(
-        "test/spec/santoku/fs/a/a.txt",
-        "test/spec/santoku/fs/b/a.txt",
-        "test/spec/santoku/fs/a/b.txt",
-        "test/spec/santoku/fs/b/b.txt")
+        "test/res/fs/a/a.txt",
+        "test/res/fs/b/a.txt",
+        "test/res/fs/a/b.txt",
+        "test/res/fs/b/b.txt")
       local i = 0
-      fs.files("test/spec/santoku/fs", { recurse = true })
+      fs.files("test/res/fs", { recurse = true })
         :each(function (ok, fp, mode)
           assert(ok, fp)
           assert(files:find(fun.bindr(op.eq, fp)))

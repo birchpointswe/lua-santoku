@@ -1,15 +1,13 @@
-package = "<% return os.getenv('NAME') %>"
-version = "<% return os.getenv('VERSION') %>"
-rockspec_format = "3.0"
+local _ENV = {}
 
-source = {
-  url = "git+ssh://<% return os.getenv('GIT_URL') %>",
-  tag = "<% return os.getenv('VERSION') %>"
-}
+name = "santoku"
+version = "0.0.94-1"
+variable_prefix = "TK"
 
-description = {
-  homepage = "<% return os.getenv('HOMEPAGE') %>",
-  license = "<% return os.getenv('LICENSE') %>"
+license = "MIT"
+
+luacov_include = {
+  "^%./santoku.*"
 }
 
 -- TODO: can we do optional dependencies for
@@ -42,15 +40,15 @@ test_dependencies = {
   "luassert >= 1.9.0-1"
 }
 
-build = {
-  type = "make",
-  install_target = "luarocks-lib-install",
-  install_variables  =  {
-    INST_LUADIR = "$(LUADIR)",
-  },
-}
+homepage = "https://github.com/treadwelllane/lua-" .. name
+tarball = name .. "-" .. version .. ".tar.gz"
+download = homepage .. "/releases/download/" .. version .. "/" .. tarball
 
-test = {
-  type = "command",
-  command = "make luarocks-test"
+return {
+  env = _ENV,
+  excludes = {
+    "src/santoku/template.lua",
+    "test/spec/santoku/template.lua",
+    "test/spec/santoku/cli/template.lua"
+  },
 }

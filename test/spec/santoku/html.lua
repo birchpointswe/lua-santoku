@@ -21,6 +21,6 @@ test("html", function ()
       { "div", class = { "item", "additional" },
         { "h1", "Two" } } })
 
-  assert.equals(str, [[<div class="container"><div class="item"><h1>One</h1></div><div class="item additional"><h1>Two</h1></div></div>]])
+  assert.equals(str, [[<div class="container"><div class="item"><h1>One</h1></div><div class="item additional"><h1>Two</h1></div></div>]]) -- luacheck: ignore
 
 end)

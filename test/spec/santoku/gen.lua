@@ -359,7 +359,6 @@ test("santoku.gen", function ()
 
       local gen = gen.empty():append(1, 2):append(3, 4):co()
 
-      local a, b
       gen:step()
       assert.same({ 1, 2 }, { gen.val() })
       gen:step()
@@ -432,7 +431,7 @@ test("santoku.gen", function ()
 
       local called = false
 
-      local val = gen(function (yield)
+      gen(function (yield)
         called = true
         yield(1)
         yield(2)
@@ -454,7 +453,6 @@ test("santoku.gen", function ()
       end):tup()
 
       local a, b = vals()
-      local x, y
 
       assert.same({ 1, 2 }, { a() })
       assert.same({ 3, 4 }, { b() })
@@ -505,7 +503,7 @@ test("santoku.gen", function ()
 
     test("throw errors that occur in the coroutine", function ()
 
-      local gen = gen(function (yield)
+      local gen = gen(function ()
         error("err")
       end):co()
 

@@ -4,7 +4,6 @@ local assert = require("luassert")
 local test = require("santoku.test")
 
 local tbl = require("santoku.table")
-local fun = require("santoku.fun")
 local op = require("santoku.op")
 
 test("table", function ()

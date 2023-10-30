@@ -22,7 +22,7 @@ test("inherit", function ()
       local t = {}
       local i1 = { a = 1 }
       local i2 = { a = 2 }
-      local i 
+      local i
 
       inherit.pushindex(t, i1)
 

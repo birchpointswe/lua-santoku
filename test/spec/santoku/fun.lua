@@ -2,7 +2,6 @@ local assert = require("luassert")
 local test = require("santoku.test")
 
 local fun = require("santoku.fun")
-local compat = require("santoku.compat")
 local op = require("santoku.op")
 
 test("fun", function ()
@@ -126,8 +125,8 @@ test("fun", function ()
     end)
 
     test("should call from right to left", function ()
-      local fna = function (a, b) return a * 2 end
-      local fnb = function (a, b) return a + 2 end
+      local fna = function (a) return a * 2 end
+      local fnb = function (a) return a + 2 end
       local a = fun.compose(fna, fnb)(3)
       assert.equals(10, a)
     end)

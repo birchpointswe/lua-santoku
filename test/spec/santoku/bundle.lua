@@ -11,8 +11,8 @@ test("bundle", function ()
   test("bundle", function ()
 
     test("should produce a standalone executable from a lua file", function ()
-      local infile = "test/spec/santoku/bundle/test.lua"
-      local outdir = "test/spec/santoku/bundle/test"
+      local infile = "test/res/bundle/test.lua"
+      local outdir = "test/res/bundle/test"
       assert(err.pwrap(function (check)
         check(fs.mkdirp(outdir))
         fs.files(outdir):map(check):map(os.remove):each(check)

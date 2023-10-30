@@ -1,11 +1,8 @@
 local assert = require("luassert")
 local test = require("santoku.test")
-local fs = require("santoku.fs")
 
 local geo = require("santoku.geo")
 local num = require("santoku.num")
-
-local inspect = require("santoku.inspect")
 
 test("geo", function ()
 

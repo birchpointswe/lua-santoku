@@ -51,6 +51,18 @@ M.istemplate = function (t)
   return compat.hasmeta(t, M.MT_TEMPLATE)
 end
 
+M._should_include = function (ext, fp, opts)
+  if opts.exts and not gen.vals(opts.exts):co():includes(ext) then
+    return false
+  end
+  if opts.excludes and gen.vals(opts.excludes):co():find(function (ex)
+    return string.match(fp, ex)
+  end) then
+    return false
+  end
+  return true
+end
+
 M.compiledir = function (parent, dir, opts)
   if not M.istemplate(parent) then
     opts = dir
@@ -69,8 +81,8 @@ M.compiledir = function (parent, dir, opts)
         local ext = fs.extension(fp)
         return ext, fp
       end)
-      :filter(function (ext)
-        return not opts.exts or gen.vals(opts.exts):includes(ext)
+      :filter(function (ext, fp)
+        return M._should_include(ext, fp, opts)
       end)
       :each(function (ext, fp)
         local tmpl = parent

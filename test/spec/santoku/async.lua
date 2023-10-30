@@ -9,7 +9,7 @@ test("async", function ()
   test("pipe true", function ()
 
     local in_url = "https://santoku.rocks"
-    local in_resp = { url = url, status = 200 }
+    local in_resp = { url = in_url, status = 200 }
 
     local function fetch (done, url)
       assert.equals(in_url, url)
@@ -33,7 +33,6 @@ test("async", function ()
   test("pipe first false", function ()
 
     local in_url = "https://santoku.rocks"
-    local in_resp = { url = url, status = 200 }
     local in_err = "some error"
 
     local function fetch (done, url)
@@ -57,7 +56,7 @@ test("async", function ()
   test("pipe last false", function ()
 
     local in_url = "https://santoku.rocks"
-    local in_resp = { url = url, status = 200 }
+    local in_resp = { url = in_url, status = 200 }
     local in_err = "some error"
 
     local function fetch (done, url)
@@ -82,7 +81,7 @@ test("async", function ()
   test("pipe true", function ()
 
     local in_url = "https://santoku.rocks"
-    local in_resp = { url = url, status = 200 }
+    local in_resp = { url = in_url, status = 200 }
     local in_extra = "testing"
 
     local function fetch (done, url)
@@ -112,7 +111,7 @@ test("async", function ()
     local t = 0
     local final = false
 
-    async.each(g, function (done, n)
+    async.each(g, function (done)
       t = t + 1
       done(true)
     end, function (ok, err)
