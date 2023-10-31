@@ -1,14 +1,10 @@
 local _ENV = {}
 
 name = "santoku"
-version = "0.0.99-1"
+version = "0.0.100-1"
 variable_prefix = "TK"
 
 license = "MIT"
-
-luacov_include = {
-  "^%./santoku.*"
-}
 
 -- TODO: can we do optional dependencies for
 -- things like luafilesystem, socket, sqlite,
