@@ -211,4 +211,8 @@ test("vector", function ()
     assert.equals(2, vec(1, 2, 3):mean())
   end)
 
+  test("includes", function ()
+    assert.equals(true, vec(1, 2, 3, 4):includes(3))
+  end)
+
 end)

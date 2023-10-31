@@ -455,7 +455,7 @@ end
 
 M.includes = function (t, v)
   assert(M.isvec(t))
-  return nil ~= v:find(function (v0)
+  return nil ~= t:find(function (v0)
     return v == v0
   end)
 end
