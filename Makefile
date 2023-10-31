@@ -155,5 +155,5 @@ $(BUILD_DIR)/%: %
 
 -include $(shell find $(BUILD_DIR) -regex ".*/deps/.*/.*" -prune -o -name "*.d" -print 2>/dev/null)
 
-.PHONY: all test iterate install touch clean clean-all upload tarball check-release-status github-release-create luarocks-upload
+.PHONY: all test iterate install touch clean clean-all upload check-release-status github-release-create luarocks-upload
 .DEFAULT_GOAL: all
