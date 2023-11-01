@@ -149,7 +149,10 @@ M.interp = function (s, t)
     delim = true
   }):map(function (s)
     local v = s:match("%%(%w*)")
-    if v ~= nil then
+    local n = tonumber(v)
+    if n and not t[v] then
+      return t[n] or ""
+    elseif v then
       return t[v] or ""
     else
       return s

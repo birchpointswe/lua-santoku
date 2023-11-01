@@ -44,6 +44,12 @@ test("string", function ()
 
     end)
 
+    test("should work with integer indices on tables", function ()
+
+      assert.equals("a c b", str.interp("%1 %3 %2", { "a", "b", "c" }))
+
+    end)
+
   end)
 
   test("quote", function ()

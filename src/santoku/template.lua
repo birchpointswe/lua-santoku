@@ -173,8 +173,7 @@ M.compile = function (parent, ...)
     inherit.pushindex(ret.index, {
       push = function (t, tf)
         assert(M.istemplate(t), "first argument to push must be a template")
-        assert(type(tf) == "boolean", "second argument to push must be a boolean")
-        t.showstack:push(tf)
+        t.showstack:push(not not tf) -- not not converts to boolean
         return t
       end,
       pop = function (t)
