@@ -126,7 +126,7 @@ check-release-status:
 	@if ! git diff --quiet; then echo "Commit your changes first"; exit 1; fi
 
 github-release: check-release-status tarball
-	@gh release create $(VERSION) $(BUILD_DIR)/$(TARBALL)
+	@gh release create --generate-notes "$(VERSION)" "$(BUILD_DIR)/$(TARBALL)" "$(ROCKSPEC)"
 
 luarocks-upload: check-release-status
 	@luarocks upload --skip-pack --api-key "$(LUAROCKS_API_KEY)" "$(ROCKSPEC)"
