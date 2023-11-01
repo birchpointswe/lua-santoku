@@ -128,7 +128,7 @@ check-release-status:
 github-release: check-release-status tarball
 	@gh release create $(VERSION) $(BUILD_DIR)/$(TARBALL)
 
-luarocks-upload: check-release-status tarball
+luarocks-upload: check-release-status
 	@luarocks upload --skip-pack --api-key "$(LUAROCKS_API_KEY)" "$(ROCKSPEC)"
 
 release: check-release-status all
