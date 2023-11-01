@@ -115,13 +115,17 @@ clean-all:
 
 ifeq ($($(VPFX)_PUBLIC),1)
 
-tarball: $(BUILD_DIR)/$(TARBALL)
+tarball:
+	@rm -f $(BUILD_DIR)/$(TARBALL) || true
+	@cd $(BUILD_DIR) && \
+		tar --dereference --transform 's#^#$(TARBALL_DIR)/#' -czvf $(TARBALL) \
+			$$(ls $(TARBALL_SRCS) 2>/dev/null)
 
 check-release-status:
 	@if test -z "$(LUAROCKS_API_KEY)"; then echo "Missing LUAROCKS_API_KEY variable"; exit 1; fi
 	@if ! git diff --quiet; then echo "Commit your changes first"; exit 1; fi
 
-github-release-create: check-release-status tarball
+github-release: check-release-status tarball
 	@gh release create $(VERSION) $(BUILD_DIR)/$(TARBALL)
 
 luarocks-upload: check-release-status tarball
@@ -131,15 +135,8 @@ release: check-release-status all
 	@git tag "$(VERSION)"
 	@git push --tags
 	@git push
-	@$(MAKE) tarball
-	@$(MAKE) github-release-create
+	@$(MAKE) github-release
 	@$(MAKE) luarocks-upload
-
-$(BUILD_DIR)/$(TARBALL): all
-	@rm -f $(BUILD_DIR)/$(TARBALL) || true
-	@cd $(BUILD_DIR) && \
-		tar --dereference --transform 's#^#$(TARBALL_DIR)/#' -czvf $(TARBALL) \
-			$$(ls $(TARBALL_SRCS) 2>/dev/null)
 
 endif
 
@@ -215,5 +212,5 @@ $(BUILD_DIR)/%: %
 
 -include $(shell find $(BUILD_DIR) -regex ".*/deps/.*/.*" -prune -o -name "*.d" -print 2>/dev/null)
 
-.PHONY: all test iterate install touch clean clean-all release check-release-status github-release-create luarocks-upload
+.PHONY: all test iterate install touch clean clean-all release check-release-status github-release luarocks-upload
 .DEFAULT_GOAL: all
