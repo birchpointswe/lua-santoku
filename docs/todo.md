@@ -8,6 +8,9 @@
   in toku templates (i.e. for injecting an external_dependencies) table into a
   rockspec
 
+- templates: a failing "check" call doesn't cause toku template to exit with a
+  failed status
+
 - bundle doesn't work with busybox xxd since it is missing the -n flag, which
   allows us to specify the name of the variable the compiled lua file is stored
   in
