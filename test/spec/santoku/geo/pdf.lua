@@ -7,7 +7,7 @@ local geo = require("santoku.geo.pdf")
 test("geo/pdf", function ()
 
   test("extract_pdf_georefs", function ()
-    local ok, data = fs.readfile("test/res/geo/map.pdf")
+    local ok, data = fs.readfile("res/geo/map.pdf")
     assert(ok, data)
     local ok, data = geo.extract_pdf_georefs(data)
     assert(ok, data)
