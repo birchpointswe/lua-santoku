@@ -288,6 +288,24 @@ M.readfile = function (fp, flag)
   end
 end
 
+M.rm = function (fp, allow_noexist)
+  local ok, err, cd = os.remove(fp)
+  if not ok and (not allow_noexist and cd == 2) then
+    return false, err, cd
+  else
+    return true
+  end
+end
+
+M.mv = function (old, new)
+  local ok, err, cd = os.rename(old, new)
+  if not ok then
+    return false, err, cd
+  else
+    return true
+  end
+end
+
 M.rmdir = function (dir)
   local ok, err, code = lfs.rmdir(dir)
   if ok == nil then
