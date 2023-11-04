@@ -267,6 +267,8 @@ M.wrap = function (db)
     migrate = function (db, fp)
       return err.pwrap(function (check)
 
+        check(db:begin())
+
         check(db:exec([[
           create table if not exists migrations (
             id integer primary key,
@@ -279,8 +281,6 @@ M.wrap = function (db)
 
         -- TODO: Consider not pulling these all into memory
         local files = fs.files(fp):map(check):map(fun.nret(1)):vec():sort()
-
-        check(db:begin())
 
         gen.ivals(files):filter(function (fp)
           return not check(get_migration(fp))
