@@ -1,6 +1,8 @@
 local gen = require("santoku.gen")
 local compat = require("santoku.compat")
 local err = require("santoku.err")
+local fun = require("santoku.fun")
+local fs = require("santoku.fs")
 local sqlite = require("lsqlite3")
 
 local M = {}
@@ -260,7 +262,40 @@ M.wrap = function (db)
           end
         end
       end
+    end,
+
+    migrate = function (db, fp)
+      return err.pwrap(function (check)
+
+        check(db:exec([[
+          create table if not exists migrations (
+            id integer primary key,
+            filename text not null
+          );
+        ]]))
+
+        local get_migration = check(db:getter("select id from migrations where filename = ?", "id"))
+        local add_migration = check(db:inserter("insert into migrations (filename) values (?)"))
+
+        -- TODO: Consider not pulling these all into memory
+        local files = fs.files(fp):map(check):map(fun.nret(1)):vec():sort()
+
+        check(db:begin())
+
+        gen.ivals(files):filter(function (fp)
+          return not check(get_migration(fp))
+        end):map(function (fp)
+          return fp, check(fs.readfile(fp))
+        end):each(function (fp, data)
+          check(db:exec(data))
+          check(add_migration(fp))
+        end)
+
+        check(db:commit())
+
+      end)
     end
+
 
   }, M.MT_SQLITE_DB)
 

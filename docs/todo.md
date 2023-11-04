@@ -8,6 +8,9 @@
   in toku templates (i.e. for injecting an external_dependencies) table into a
   rockspec
 
+- abstract database interface to work with luasql dbs (refer to the
+  santoku.web.sqlite compatibility layer)
+
 - templates: a failing "check" call doesn't cause toku template to exit with a
   failed status
 
