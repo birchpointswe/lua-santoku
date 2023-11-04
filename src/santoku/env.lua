@@ -1,4 +1,5 @@
 local vec = require("santoku.vector")
+local tup = require("santoku.tuple")
 
 local M = {}
 
@@ -22,6 +23,17 @@ M.interpreter = function (args)
     end
   end
   return ret
+end
+
+M.var = function (...)
+  local n = tup.len(...)
+  local name, def = ...
+  local val = os.getenv(name)
+  if not val and n > 1 then
+    return def
+  else
+    error("Missing environment variable: " .. name)
+  end
 end
 
 return M
