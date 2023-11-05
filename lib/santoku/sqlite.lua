@@ -274,7 +274,7 @@ M.wrap = function (db)
 
           local fp = opts
           files = fs.files(fp):map(check):vec():sort():map(function (fp)
-            return tup(fp, function ()
+            return tup(fs.basename(fp), function ()
               return check(fs.readfile(fp))
             end)
           end)
@@ -283,7 +283,7 @@ M.wrap = function (db)
 
           local tbl = opts
           files = gen.keys(tbl):vec():sort():map(function (fp)
-            return tup(fp, function ()
+            return tup(fs.basename(fp), function ()
               return opts[fp]
             end)
           end)
