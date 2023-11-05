@@ -1,10 +1,7 @@
 -- TODO: Probably shouldn't import this
-local tbl = require("santoku.table")
 local compat = require("santoku.compat")
 
 local M = {}
-
--- TODO: Add the 'er' functions
 
 M.eq = function (a, b) return a == b end
 M.neq = function (a, b) return a ~= b end
@@ -25,17 +22,9 @@ M.exp = function (a, b) return a ^ b end
 M.len = function (a) return #a end
 M.cat = function (a, b) return a .. b end
 
-M.caller = function (...)
-  local args = tbl.pack(...)
-  return function (f)
-    assert(compat.hasmeta.call(f))
-    return f(args:unpack())
-  end
-end
-
 M.call = function (f, ...)
   assert(compat.hasmeta.call(f))
-  return M.caller(...)(f)
+  return f(...)
 end
 
 return M
