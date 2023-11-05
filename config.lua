@@ -1,7 +1,7 @@
 local _ENV = {}
 
 name = "santoku"
-version = "0.0.111-1"
+version = "0.0.112-1"
 variable_prefix = "TK"
 license = "MIT"
 public = true
@@ -43,7 +43,7 @@ download = homepage .. "/releases/download/" .. version .. "/" .. tarball
 return {
   env = _ENV,
   excludes = {
-    "src/santoku/template.lua",
+    "lib/santoku/template.lua",
     "test/spec/santoku/template.lua",
     "test/spec/santoku/cli/template.lua"
   },

@@ -1,5 +1,6 @@
 local test = require("santoku.test")
 local compat = require("santoku.compat")
+local assert = require("luassert")
 
 test("compat", function ()
 
@@ -57,6 +58,11 @@ test("compat", function ()
       assert(compat.hasmeta.add(1))
     end)
 
+  end)
+
+  test("istype", function ()
+    assert.equals(true, compat.istype.string("hello"))
+    assert.equals(true, compat.istype("hello", "string"))
   end)
 
 end)

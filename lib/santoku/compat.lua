@@ -111,6 +111,9 @@ M.ge = function (n, v)
 end
 
 M.istype = setmetatable({}, {
+  __call = function (_, v, t)
+    return type(v) == t
+  end,
   __index = function (_, k)
     return function (o)
       if type(o) == k then
