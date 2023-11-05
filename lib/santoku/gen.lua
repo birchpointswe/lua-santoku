@@ -484,25 +484,32 @@ M.group = function (gen, n)
 end
 
 M.tabulate = function (gen, opts, ...)
-  assert(M.iscogen(gen))
-  local keys, nkeys
-  if compat.istype.table(opts) then
-    keys, nkeys = tup(...), tup.len(...)
+  if M.iscogen(gen) then
+    local keys, nkeys
+    if compat.istype.table(opts) then
+      keys, nkeys = tup(...), tup.len(...)
+    else
+      keys, nkeys = tup(opts, ...), 1 + tup.len(...)
+      opts = {}
+    end
+    local rest = opts.rest
+    local ret = tbl()
+    local idx = 0
+    while idx < nkeys and gen:step() do
+      idx = idx + 1
+      ret[select(idx, keys())] = gen.val()
+    end
+    if rest then
+      ret[rest] = gen:vec()
+    end
+    return ret
   else
-    keys, nkeys = tup(opts, ...), 1 + tup.len(...)
-    opts = {}
+    assert(M.isgen(gen))
+    return gen:reduce(function (a, k, v)
+      a[k] = v
+      return a
+    end, {})
   end
-  local rest = opts.rest
-  local ret = tbl()
-  local idx = 0
-  while idx < nkeys and gen:step() do
-    idx = idx + 1
-    ret[select(idx, keys())] = gen.val()
-  end
-  if rest then
-    ret[rest] = gen:vec()
-  end
-  return ret
 end
 
 M.zip = function (opts, ...)

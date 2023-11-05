@@ -611,6 +611,14 @@ test("santoku.gen", function ()
 
     end)
 
+    test("works with normal generators with pairs of arguments", function ()
+      assert.same({ a = 1, b = 2, c = 3 }, gen(function (yield)
+        yield("a", 1)
+        yield("b", 2)
+        yield("c", 3)
+      end):tabulate())
+    end)
+
   end)
 
   test("none", function ()
