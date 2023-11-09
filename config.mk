@@ -1,0 +1,1 @@
+export LUAC = luajit -b

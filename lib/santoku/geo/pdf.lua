@@ -57,7 +57,7 @@ M.extract_pdf_georefs = function (data)
     if not mediabox then
       check(false, "Couldn't find a MediaBox")
     end
-    local x0, y0, x1, y1 = str.match(mediabox:sub(2, #mediabox - 1), "%d*"):map(function (n)
+    local x0, y0, x1, y1 = str.match(mediabox:sub(2, #mediabox - 1), "%d+"):map(function (n)
       return check(pcall(tonumber, n))
     end):unpack()
     mediabox = { { x = x0, y = y0 }, { x = x1, y = y1 } }
@@ -74,17 +74,17 @@ M.extract_pdf_georefs = function (data)
       if not bbox then
         check(false, "Couldn't find a bbox")
       end
-      local left, bottom, top, right = str.match(bbox:sub(2, #bbox - 1), "[^%s]*"):map(function (n)
+      local left, bottom, top, right = str.match(bbox:sub(2, #bbox - 1), "[^%s]+"):map(function (n)
         return check(pcall(tonumber, n))
       end):unpack()
       bbox = vec({ x = left, y = bottom }, { x = left, y = top }, { x = right, y = top }, { x = right, y = bottom })
-      local measure = b:match("/Measure (%d*) 0 R/")
+      local measure = b:match("/Measure (%d+) 0 R/")
       if not measure then
         check(false, "Couldn't find a measure")
       end
       for fd in data:gmatch("/FlateDecode/.-stream\r?\n.-\r?\nendstream") do
         if fd:match("Type/ObjStm.-stream") then
-          local first = fd:match("First (%d*)")
+          local first = fd:match("First (%d+)")
           if not first then
             check(false, "Missing 'First' key")
           end
@@ -92,7 +92,7 @@ M.extract_pdf_georefs = function (data)
           local stream = fd:match("stream\r\n(.-)endstream")
           local ok, inflated = pcall(zlib.inflate(), stream)
           if ok then
-            local _, offset = gen.ivals(str.match(inflated:sub(1, first), "%d*")):group(2):co():find(function (id)
+            local _, offset = gen.ivals(str.match(inflated:sub(1, first), "[^%s]+")):group(2):co():find(function (id)
               return id == measure
             end)
             if offset then
@@ -101,7 +101,7 @@ M.extract_pdf_georefs = function (data)
                 local gpts = dict:match("GPTS(%b[])")
                 if err.pwrap(function (check)
                   local i = 1
-                  gen.ipairs(gen.ivals(str.match(gpts:sub(2, #gpts - 1), "[^%s]*"))
+                  gen.ipairs(gen.ivals(str.match(gpts:sub(2, #gpts - 1), "[^%s]+"))
                     :map(function (i)
                       return check(pcall(tonumber, i))
                     end)

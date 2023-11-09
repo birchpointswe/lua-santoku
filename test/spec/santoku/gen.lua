@@ -734,4 +734,17 @@ test("santoku.gen", function ()
 
   end)
 
+  test("chunk groups values in vectors", function ()
+    local g = gen.pack(1, 2, 3, 4):chunk(2):co()
+    assert.equals(true, g:step())
+    assert.same({ 1, 2, n = 2 }, g.val())
+    assert.equals(true, g:step())
+    assert.same({ 3, 4, n = 2 }, g.val())
+    assert.equals(false, g:step())
+  end)
+
+  test("group groups a generator into arguments", function ()
+    assert.same({ { 1, 2, n = 2 }, { 3, 4, n = 2 }, n = 2 }, gen.pack(1, 2, 3, 4):group(2):vec())
+  end)
+
 end)

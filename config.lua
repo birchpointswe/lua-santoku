@@ -1,50 +1,54 @@
-local _ENV = {}
+local env = {
 
-name = "santoku"
-version = "0.0.116-1"
-variable_prefix = "TK"
-license = "MIT"
-public = true
+  name = "santoku",
+  version = "0.0.117-1",
+  variable_prefix = "TK",
+  license = "MIT",
+  public = true,
 
--- TODO: can we do optional dependencies for
--- things like luafilesystem, socket, sqlite,
--- posix, etc?
---
--- TODO: Create a santoku lib to gracefully wrap
--- functions which require an optional
--- dependency
-dependencies = {
+  -- TODO: can we do optional dependencies for
+  -- things like luafilesystem, socket, sqlite,
+  -- posix, etc?
+  --
+  -- TODO: Create a santoku lib to gracefully wrap
+  -- functions which require an optional
+  -- dependency
+  dependencies = {
 
-  "lua >= 5.1",
+    "lua >= 5.1",
 
-  -- Optional dependencies:
+    -- Optional dependencies:
 
-  -- "lua-zlib >= 1.2-2",
-  -- "luafilesystem >= 1.8.0-1",
-  -- "lsqlite3 >= 0.9.5",
-  -- "inspect >= 3.1.3-0"
+    -- "lua-zlib >= 1.2-2",
+    -- "luafilesystem >= 1.8.0-1",
+    -- "lsqlite3 >= 0.9.5",
+    -- "inspect >= 3.1.3-0"
+
+  },
+
+  test_dependencies = {
+    "luacov >= 0.15.0-1",
+    "luacheck >= 1.1.0-1",
+    "lua-zlib >= 1.2-2",
+    "luafilesystem >= 1.8.0-1",
+    "lsqlite3 >= 0.9.5",
+    "inspect >= 3.1.3-0",
+    "luassert >= 1.9.0-1",
+    "luaposix >= 36.2.1-1"
+  },
 
 }
 
-test_dependencies = {
-  "luacov >= 0.15.0-1",
-  "luacheck >= 1.1.0-1",
-  "lua-zlib >= 1.2-2",
-  "luafilesystem >= 1.8.0-1",
-  "lsqlite3 >= 0.9.5",
-  "inspect >= 3.1.3-0",
-  "luassert >= 1.9.0-1"
-}
-
-homepage = "https://github.com/treadwelllane/lua-" .. name
-tarball = name .. "-" .. version .. ".tar.gz"
-download = homepage .. "/releases/download/" .. version .. "/" .. tarball
+env.homepage = "https://github.com/treadwelllane/lua-" .. env.name
+env.tarball = env.name .. "-" .. env.version .. ".tar.gz"
+env.download = env.homepage .. "/releases/download/" .. env.version .. "/" .. env.tarball
 
 return {
-  env = _ENV,
+  env = env,
   excludes = {
     "lib/santoku/template.lua",
     "test/spec/santoku/template.lua",
     "test/spec/santoku/cli/template.lua"
   },
 }
+

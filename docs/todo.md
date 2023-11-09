@@ -3,6 +3,7 @@
 - Basic README
 - Documentation
 - Refactor gen, fn, etc to use compat.hasmeta
+- Very basic linux library supporting better popen (exit status, etc) and fork
 
 - inspect.literal(...) should show a literal representation of the value for use
   in toku templates (i.e. for injecting an external_dependencies) table into a

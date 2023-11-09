@@ -249,4 +249,13 @@ M.load = function (code, env)
   end
 end
 
+M.atan = function (...)
+  if select("#", ...) > 1 and math.atan2  -- luacheck: ignore
+  then
+    return math.atan2(...) -- luacheck: ignore
+  else
+    return math.atan(...)
+  end
+end
+
 return M

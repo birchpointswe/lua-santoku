@@ -1,4 +1,5 @@
 -- NOTE: EXPERIMENTAL, NOT PRODUCTION READY
+local compat = require("santoku.compat")
 
 local M = {}
 
@@ -33,7 +34,7 @@ M.earth_distance = function (one, two)
   local lat2 = math.rad(two.lat)
   local a = math.sin(d_lat / 2) * math.sin(d_lat / 2) +
             math.sin(d_lon / 2) * math.sin(d_lon / 2) * math.cos(lat1) * math.cos(lat2)
-  local c = 2 * math.atan(math.sqrt(a), math.sqrt(1 - a))
+  local c = 2 * compat.atan(math.sqrt(a), math.sqrt(1 - a))
   return earth_radius * c
 end
 
@@ -49,7 +50,7 @@ M.angle = function (one, two)
   if one.x == two.x and one.y == two.y then
     return 0
   end
-  local theta = math.atan(two.x - one.x, two.y - one.y)
+  local theta = compat.atan(two.x - one.x, two.y - one.y)
   return (math.deg(theta) + 360) % 360
 end
 
@@ -58,7 +59,7 @@ M.bearing = function (one, two)
   local y = math.sin(dLon) * math.cos(two.lat)
   local x = math.cos(one.lat) * math.sin(two.lat) - math.sin(one.lat)
           * math.cos(two.lat) * math.cos(dLon)
-  return 360 - (math.deg(math.atan(y, x)) + 360) % 360
+  return 360 - (math.deg(compat.atan(y, x)) + 360) % 360
 end
 
 return M

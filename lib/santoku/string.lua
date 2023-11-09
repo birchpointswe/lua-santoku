@@ -223,6 +223,9 @@ M.startswith = function (str, pat)
 end
 
 M.stripprefix = function (str, pfx)
+  if not M.startswith(str, M.escape(pfx)) then
+    return str
+  end
   local pfxlen = pfx:len()
   local strlen = str:len()
   return str:sub(pfxlen + 1, strlen)

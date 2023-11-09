@@ -217,6 +217,14 @@ end
 M.stripextension = function (fp)
   local parts = M.splitparts(fp)
   local last = parts[parts.n]
+  last = string.match(last, "(.*)%..*") or last
+  parts[parts.n] = last
+  return table.concat(parts, M.pathdelim)
+end
+
+M.stripextensions = function (fp)
+  local parts = M.splitparts(fp)
+  local last = parts[parts.n]
   local idot = string.find(last, "%.")
   if idot then
     last = last:sub(1, idot - 1)
@@ -226,6 +234,14 @@ M.stripextension = function (fp)
 end
 
 M.extension = function (fp)
+  fp = M.basename(fp)
+  local idot = string.match(fp, ".*%.(.*)")
+  if idot then
+    return fp:sub(idot + 1, fp:len())
+  end
+end
+
+M.extensions = function (fp)
   fp = M.basename(fp)
   local idot = string.find(fp, "%.")
   if idot then

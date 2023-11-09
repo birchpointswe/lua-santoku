@@ -107,35 +107,36 @@ end
 
 M.bundle = function (infile, outdir, opts)
   opts = opts or {}
-  local mods = opts.mods or {}
-  local env = vec.wrap(opts.env)
-  local cmpenv = vec.wrap(opts.cmpenv)
+  opts.mods = vec.wrap(opts.mods)
+  opts.env = vec.wrap(opts.env)
+  opts.env_compile = vec.wrap(opts.env_compile)
+  opts.flags = vec.wrap(opts.flags)
   local ignores = gen.ivals(opts.ignores or {}):set()
   return err.pwrap(function (check)
-    local path = (env:find(function (p)
-      return p[1] == "LUA_PATH"
-    end) or { "", os.getenv("LUA_PATH") })[2]
-    local cpath = (env:find(function (p)
-      return p[1] == "LUA_CPATH"
-    end) or { "", os.getenv("LUA_CPATH") })[2]
-    local outprefix = opts.outprefix or fs.splitexts(fs.basename(infile)).name
-    local modules = check(M.parsemodules(infile, mods, ignores, path, cpath))
-    local outluafp = fs.join(outdir, outprefix .. ".lua")
-    local outluadata = check(M.mergelua(modules, infile, mods))
+    opts.path = opts.path or ""
+    opts.cpath = opts.cpath or ""
+    opts.outprefix = opts.outprefix or fs.splitexts(fs.basename(infile)).name
+    local modules = check(M.parsemodules(infile, opts.mods, ignores, opts.path, opts.cpath))
+    local outluafp = fs.join(outdir, opts.outprefix .. ".lua")
+    local outluadata = check(M.mergelua(modules, infile, opts.mods))
     check(fs.writefile(outluafp, outluadata))
     local outluacfp
-    if not opts.noluac then
-      outluacfp = fs.join(outdir, outprefix .. ".luac")
-      local cmdluac = os.getenv("LUAC") or "luac"
-      check(sys.execute(cmdluac, "-s", "-o", outluacfp, outluafp))
+    if opts.luac then
+      if opts.luac == true then
+        opts.luac = "luac -s -o %output %input"
+      end
+      outluacfp = fs.join(outdir, opts.outprefix .. ".luac")
+      opts.luac = str.interp(opts.luac, { input = outluafp, output = outluacfp })
+      local args = str.split(opts.luac)
+      check(sys.execute(args:unpack()))
     else
       outluacfp = outluafp
     end
-    local outluahfp = fs.join(outdir, outprefix .. ".h")
-    local cmdxxd = os.getenv("XXD") or "xxd"
-    check(sys.execute(cmdxxd, "-i", "-n", "data", outluacfp, outluahfp))
-    local outcfp = fs.join(outdir, outprefix .. ".c")
-    local outmainfp = fs.join(outdir, outprefix)
+    opts.xxd = opts.xxd or "xxd -i -n data"
+    local outluahfp = fs.join(outdir, opts.outprefix .. ".h")
+    check(sys.execute(str.split(opts.xxd):append(outluacfp, outluahfp):unpack()))
+    local outcfp = fs.join(outdir, opts.outprefix .. ".c")
+    local outmainfp = fs.join(outdir, opts.outprefix)
     if opts.deps then
       M.write_deps(check, modules, infile, opts.depstarget or outmainfp)
     end
@@ -143,7 +144,7 @@ M.bundle = function (infile, outdir, opts)
       #include "lua.h"
       #include "lualib.h"
       #include "lauxlib.h"
-    ]], cmpenv.n > 0 and [[
+    ]], opts.env_compile.n > 0 and [[
       #include "stdlib.h"
     ]] or "", check(fs.readfile(outluahfp)), [[
       const char *reader (lua_State *L, void *data, size_t *sizep) {
@@ -155,7 +156,7 @@ M.bundle = function (infile, outdir, opts)
       return "int " .. sym .. "(lua_State *L);"
     end):concat("\n"), "\n", [[
       int main (int argc, char **argv) {
-    ]], gen.ivals(cmpenv):map(function (e)
+    ]], gen.ivals(opts.env_compile):map(function (e)
       return string.format("setenv(%s, %s, 1);", str.quote(e[1]), str.quote(e[2]))
     end):concat(), "\n", [[
     ]], [[
@@ -186,34 +187,22 @@ M.bundle = function (infile, outdir, opts)
       err:
         fprintf(stderr, "%s\n", lua_tostring(L, -1));
       end:
-      ]], not opts.noclose and [[
+      ]], (opts.close == false) and [[
         lua_close(L);
       ]] or "", [[
         return rc;
       }
     ]]})))
-    local cmdcc = os.getenv("CC") or "cc"
-    local cmdcflags = os.getenv("CFLAGS") or ""
-    local cmdldflags = os.getenv("LDFLAGS") or ""
-    local args = vec("2>&1")
-    env:each(function (var)
-      args:append(table.concat({ var[1], "=\"", var[2], "\"" }))
-    end)
-    args:append(cmdcc, outcfp)
-    if opts.cflags then
-      args:append(opts.cflags)
-    end
-    if opts.ldflags then
-      args:append(opts.ldflags)
-    end
-    args:append(cmdcflags)
-    args:append(cmdldflags)
-    args:append("-o", outmainfp)
+    opts.cc = opts.cc or "cc"
+    local args = vec()
+    args:append(opts.cc, outcfp)
+    args:extend(opts.flags)
     gen.pairs(modules.c)
       :each(function (_, fp)
         args:append(fp)
       end)
-    check(sys.execute(args:unpack()))
+    args:append("-o", outmainfp)
+    check(sys.execute({ env = opts.env }, args:unpack()))
   end)
 end
 
