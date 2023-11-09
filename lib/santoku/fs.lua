@@ -235,10 +235,7 @@ end
 
 M.extension = function (fp)
   fp = M.basename(fp)
-  local idot = string.match(fp, ".*%.(.*)")
-  if idot then
-    return fp:sub(idot + 1, fp:len())
-  end
+  return (string.match(fp, ".*%.(.*)"))
 end
 
 M.extensions = function (fp)
