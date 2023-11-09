@@ -1,7 +1,7 @@
 local env = {
 
   name = "santoku",
-  version = "0.0.118-1",
+  version = "0.0.119-1",
   variable_prefix = "TK",
   license = "MIT",
   public = true,
@@ -27,14 +27,13 @@ local env = {
   },
 
   test_dependencies = {
-    "luacov >= 0.15.0-1",
-    "luacheck >= 1.1.0-1",
-    "lua-zlib >= 1.2-2",
-    "luafilesystem >= 1.8.0-1",
-    "lsqlite3 >= 0.9.5",
     "inspect >= 3.1.3-0",
+    "lsqlite3 >= 0.9.5",
+    "lua-zlib >= 1.2-2",
+    "luacheck >= 1.1.0-1",
+    "luacov >= 0.15.0-1",
+    "luaposix >= 36.2.1-1",
     "luassert >= 1.9.0-1",
-    "luaposix >= 36.2.1-1"
   },
 
 }

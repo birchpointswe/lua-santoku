@@ -101,6 +101,11 @@ test("fs", function ()
 
   end)
 
+  test("exists", function ()
+    assert.same({ true, true, "directory" }, { fs.exists("spec") } )
+    assert.same({ true, false }, { fs.exists("spec__doesntexist") } )
+  end)
+
   test("splitexts", function ()
 
     test("should split a path into namme and extensions", function ()

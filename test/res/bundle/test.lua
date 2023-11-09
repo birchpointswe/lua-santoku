@@ -1,7 +1,7 @@
 local str = require("santoku.string")
-local lfs = require("lfs")
+local unistd = require("posix.unistd")
 
-local dir = lfs.currentdir() 
+local dir = unistd.getcwd()
 str.split(dir, "/"):each(function ()
   -- nothing
 end)

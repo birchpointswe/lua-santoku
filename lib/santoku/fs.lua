@@ -1,8 +1,6 @@
 -- TODO: Add asserts
 -- TODO: fs.parse
 
-local lfs = require("lfs")
-
 local compat = require("santoku.compat")
 local inherit = require("santoku.inherit")
 local str = require("santoku.string")
@@ -11,6 +9,10 @@ local gen = require("santoku.gen")
 local tup = require("santoku.tuple")
 local fun = require("santoku.fun")
 local vec = require("santoku.vector")
+
+local unistd = require("posix.unistd")
+local dirent = require("posix.dirent")
+local stat = require("posix.sys.stat")
 
 local M = {}
 
@@ -21,7 +23,7 @@ M.mkdirp = function (dir)
       p1 = M.join(p0, p1)
     end
     p0 = p1
-    local ok, err, code = lfs.mkdir(p1)
+    local ok, err, code = stat.mkdir(p1)
     if not ok and code ~= 17 then
       return ok, err, code
     end
@@ -29,53 +31,73 @@ M.mkdirp = function (dir)
   return true
 end
 
--- TODO: Use this instead of lfs.attributes
-M.attr = function (fp, attr)
-  local mode, err, code = lfs.attributes(fp, attr)
-  if not mode then
-    return false, err, code
+M.stat = function (fp)
+  local st, err, cd = stat.stat(fp)
+  if not st then
+    return false, err, cd
   else
-    return true, mode
+    return true, st
   end
 end
 
--- TODO: Use this instead of lfs.attributes
+M.mode = function (fp)
+  local ok, st, cd = M.stat(fp)
+  if not ok then
+    return false, st, cd
+  elseif stat.S_ISBLK(st.st_mode) ~= 0 then
+    return true, "block"
+  elseif stat.S_ISCHR(st.st_mode) ~= 0 then
+    return true, "character"
+  elseif stat.S_ISDIR(st.st_mode) ~= 0 then
+    return true, "directory"
+  elseif stat.S_ISFIFO(st.st_mode) ~= 0 then
+    return true, "fifo"
+  elseif stat.S_ISLNK(st.st_mode) ~= 0 then
+    return true, "link"
+  elseif stat.S_ISREG(st.st_mode) ~= 0 then
+    return true, "file"
+  elseif stat.S_ISSOCK(st.st_mode) ~= 0 then
+    return true, "socket"
+  else
+    return false, "unknown mode", st.st_mode
+  end
+end
+
 M.isdir = function (fp)
-  local mode, err, code = lfs.attributes(fp, "mode")
-  if not mode then
-    return false, err, code
+  local ok, mode, cd = M.mode(fp)
+  if not ok then
+    return false, mode, cd
   else
     return true, mode == "directory"
   end
 end
 
--- TODO: Use this instead of lfs.attributes
 M.isfile = function (fp)
-  local mode, err, code = lfs.attributes(fp, "mode")
-  if not mode then
-    return false, err, code
+  local ok, mode, cd = M.mode(fp)
+  if not ok then
+    return false, mode, cd
   else
     return true, mode == "file"
   end
 end
 
 M.exists = function (fp)
-  local mode, err, code = lfs.attributes(fp, "mode")
-  if mode == nil and code == 2 then
+  local ok, mode, code = M.mode(fp)
+  if not ok and code == 2 then
     return true, false
-  elseif mode ~= nil then
-    return true, true
+  elseif ok then
+    return true, true, mode
   else
     return false, err, code
   end
 end
 
 M.dir = function (dir)
-  local ok, entries, state = pcall(lfs.dir, dir)
-  if ok then
-    return true, gen.iter(entries, state)
+  local files, cd = dirent.dir(dir)
+  if not files then
+    return false, files, cd
   else
-    return false, entries, state
+    return true, gen.ivals(files)
   end
 end
 
@@ -95,9 +117,9 @@ M.walk = function (dir, opts)
       return entries:each(function (it)
         if it ~= M.dirparent and it ~= M.dirthis then
           it = M.join(dir, it)
-          local mode, err, code = lfs.attributes(it, "mode")
-          if not mode then
-            return each(false, err, code)
+          local ok, mode, code = M.mode(it)
+          if not ok then
+            return each(false, mode, code)
           elseif mode == "directory" then
             if not prune(it, mode) then
               if not leaves then
@@ -320,7 +342,7 @@ M.mv = function (old, new)
 end
 
 M.rmdir = function (dir)
-  local ok, err, code = lfs.rmdir(dir)
+  local ok, err, code = unistd.rmdir(dir)
   if ok == nil then
     return false, err, code
   else
@@ -338,7 +360,7 @@ M.rmdirs = function (dir)
 end
 
 M.cwd = function ()
-  local dir, err, cd = lfs.currentdir()
+  local dir, err, cd = unistd.getcwd()
   if not dir then
     return false, err, cd
   else
