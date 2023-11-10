@@ -3,6 +3,7 @@ local tup = require("santoku.tuple")
 
 local M = {}
 
+M.parallel = require("santoku.system.parallel")
 M.pread = require("santoku.system.pread")
 M.sh = require("santoku.system.sh")
 

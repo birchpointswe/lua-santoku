@@ -6,18 +6,18 @@ local unistd = require("posix.unistd")
 local wait = require("posix.sys.wait")
 local poll = require("posix.poll")
 
-local function run_child (check, file, args, sr, sw, er, ew)
-  check.exists(unistd.close(sr))
-  check.exists(unistd.close(er))
-  check.exists(unistd.dup2(sw, unistd.STDOUT_FILENO))
-  check.exists(unistd.dup2(ew, unistd.STDERR_FILENO))
-  local _, err, cd = unistd.execp(file, args)
+local function run_child (child)
+  assert(unistd.close(child.stdout[1]))
+  assert(unistd.close(child.stderr[1]))
+  assert(unistd.dup2(child.stdout[2], unistd.STDOUT_FILENO))
+  assert(unistd.dup2(child.stderr[2], unistd.STDERR_FILENO))
+  local _, err, cd = unistd.execp(child.file, child.args)
   io.stderr:write(table.concat({ err, ": ", cd, "\n" }))
   io.stderr:flush()
   os.exit(1)
 end
 
-local function run_parent_loop (check, yield, opts, pid, fds, sr, er)
+local function run_parent_loop (check, yield, opts, child, fds)
   while true do
 
     check.exists(poll.poll(fds))
@@ -26,9 +26,9 @@ local function run_parent_loop (check, yield, opts, pid, fds, sr, er)
 
       if cfg.revents.IN then
         local res = check.exists(unistd.read(fd, opts.bufsize))
-        if fd == sr then
+        if fd == child.stdout[1] then
           yield("stdout", res)
-        elseif fd == er then
+        elseif fd == child.stderr[1] then
           yield("stderr", res)
         else
           check(false, "Invalid state: fd neither sr nor er")
@@ -39,7 +39,7 @@ local function run_parent_loop (check, yield, opts, pid, fds, sr, er)
       end
 
       if not next(fds) then
-        local _, reason, status = check.exists(wait.wait(pid))
+        local _, reason, status = check.exists(wait.wait(child.pid))
         yield("exit", reason, status)
         return
       end
@@ -48,17 +48,17 @@ local function run_parent_loop (check, yield, opts, pid, fds, sr, er)
   end
 end
 
-local function run_parent (check, opts, pid, sr, sw, er, ew)
+local function run_parent (check, opts, child)
 
-  check.exists(unistd.close(sw))
-  check.exists(unistd.close(ew))
+  check.exists(unistd.close(child.stdout[2]))
+  check.exists(unistd.close(child.stderr[2]))
 
-  local fds = { [sr] = { events = { IN = true } },
-                [er] = { events = { IN = true } } }
+  local fds = { [child.stdout[1]] = { events = { IN = true } },
+                [child.stderr[1]] = { events = { IN = true } } }
 
   return gen(function (yield)
     err.check(err.pwrap(function (check)
-      return run_parent_loop(check, yield, opts, pid, fds, sr, er)
+      return run_parent_loop(check, yield, opts, child, fds)
     end))
   end)
 
@@ -84,14 +84,19 @@ return function (...)
   return err.pwrap(function (check)
 
     io.flush()
-    local sr, sw = check.exists(unistd.pipe())
-    local er, ew = check.exists(unistd.pipe())
-    local pid = check.exists(unistd.fork())
 
-    if pid == 0 then
-      return run_child(check, file, args, sr, sw, er, ew)
+    local child = {
+      file = file,
+      args = args,
+      stdout = { check.exists(unistd.pipe()) },
+      stderr = { check.exists(unistd.pipe()) },
+      pid = check.exists(unistd.fork())
+    }
+
+    if child.pid == 0 then
+      return run_child(child)
     else
-      return run_parent(check, opts, pid, sr, sw, er, ew)
+      return run_parent(check, opts, child)
     end
 
   end)

@@ -1,0 +1,36 @@
+local assert = require("luassert")
+local test = require("santoku.test")
+local tup = require("santoku.tuple")
+local sys = require("santoku.system")
+
+test("parallel", function ()
+
+  test("should allow communication between a parent and N subprocesses over pipes", function ()
+
+    print("Creating parallel")
+    io.flush()
+    local ok, para = sys.parallel({ jobs = 1, delim = "\n" }, "sh", "-c", "echo started $$ >&2; while read x; do echo $$ $x; done")
+    print("Created")
+    io.flush()
+    assert.equals(true, ok, para)
+
+    print("Writing test")
+    io.flush()
+    para:write("test\n")
+    io.flush()
+    print("Reading")
+    io.flush()
+    print(tup.map(require("santoku.inspect"), para:read()))
+    io.flush()
+    print(tup.map(require("santoku.inspect"), para:done()))
+    io.flush()
+    print(tup.map(require("santoku.inspect"), para:read()))
+    io.flush()
+    print(tup.map(require("santoku.inspect"), para:close()))
+    io.flush()
+    print("Done")
+    io.flush()
+
+  end)
+
+end)
