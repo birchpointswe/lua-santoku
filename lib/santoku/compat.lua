@@ -111,8 +111,13 @@ M.ge = function (n, v)
 end
 
 M.istype = setmetatable({}, {
-  __call = function (_, v, t)
-    return type(v) == t
+  __call = function (_, v, ...)
+    for i = 1, select("#", ...) do
+      if type(v) == (select(i, ...)) then
+        return true
+      end
+    end
+    return false, "type is not one of: ", table.concat({ ... }, ", ")
   end,
   __index = function (_, k)
     return function (o)
