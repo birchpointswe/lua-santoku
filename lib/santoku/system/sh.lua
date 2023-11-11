@@ -6,45 +6,55 @@ local str = require("santoku.string")
 
 local pread = require("santoku.system.pread")
 
-local function yield_results (yield, chunks, out)
-  if not out then
-    local res = chunks:concat()
-    if res ~= "" then
-      yield(true, res)
+local function yield_data_ (yield, ev, data, pid)
+  if ev == "stdout" then
+    if data ~= "" then
+      yield(true, data, pid)
     end
   else
-    local nlidx = out:find("\n")
-    if nlidx then
-      chunks:append(out:sub(1, nlidx - 1))
-      yield(true, chunks:concat())
-      chunks:trunc()
-      out = out:sub(nlidx + 1)
-      if out ~= "" then
-        local outs = str.split(out, "\n")
-        for i = 1, outs.n - 1 do
-          yield(true, outs[i])
-        end
-        chunks:append(outs[outs.n])
-      end
-    else
-      chunks:append(out)
-    end
+    io.stderr:write(data)
   end
 end
 
+local function yield_data (yield, chunks, ev, data, pid)
+  local nlidx = data:find("\n")
+  if nlidx then
+    chunks:append(data:sub(1, nlidx - 1))
+    yield_data_(yield, ev, chunks:concat(), pid)
+    chunks:trunc()
+    data = data:sub(nlidx + 1)
+    if data ~= "" then
+      local datas = str.split(data, "\n")
+      for i = 1, datas.n - 1 do
+        yield_data_(yield, ev, datas[i], pid)
+      end
+      chunks:append(datas[datas.n])
+    end
+  else
+    chunks:append(data)
+  end
+end
+
+local function yield_remaining (yield, chunks, pid)
+  chunks.stdout:each(function (data)
+    yield_data_(yield, "stdout", data, pid)
+  end)
+  chunks.stderr:each(function (data)
+    yield_data_(yield, "stdout", data, pid)
+  end)
+end
+
 local function process_events (yield, iter, chunks)
+  local ev, reason, status, data, pid
   while iter:step() do
-    local ev, out, status = iter.val()
-    if ev == "exit" and not (out == "exited" and status == 0) then
-      yield(false, out, status)
-      break
+    ev, reason, status, pid = iter.val()
+    if ev == "exit" and not (reason == "exited" and status == 0) then
+      yield(false, reason, status, pid)
     elseif ev == "exit" then
-      yield_results(yield, chunks)
-      break
-    elseif ev == "stdout" then
-      yield_results(yield, chunks, out)
+      yield_remaining(yield, chunks[pid], pid)
     else
-      io.stderr:write(out)
+      ev, data, pid = iter.val()
+      yield_data(yield, chunks[pid][ev], ev, data, pid)
     end
   end
 end
@@ -52,10 +62,13 @@ end
 return function (...)
   local args = tup(...)
   return err.pwrap(function (check)
-    local iter = check(pread(args())):co()
+    local iter, children, fds = check(pread(args()))
     return gen(function (yield)
-      local chunks = vec()
-      process_events(yield, iter, chunks)
-    end)
+      local chunks = children:reduce(function (chunks, child)
+        chunks[child.pid] = { stdout = vec(), stderr = vec() }
+        return chunks
+      end, {})
+      process_events(yield, iter:co(), chunks)
+    end), children, fds
   end)
 end

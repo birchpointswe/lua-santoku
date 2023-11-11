@@ -6,6 +6,7 @@ local str = require("santoku.string")
 local bundle = require("santoku.bundle")
 local fs = require("santoku.fs")
 local err = require("santoku.err")
+local fun = require("santoku.fun")
 
 test("bundle", function ()
 
@@ -17,9 +18,12 @@ test("bundle", function ()
       assert(err.pwrap(function (check)
         check(fs.mkdirp(outdir))
         fs.files(outdir):map(check):map(fs.rm):each(check)
-        local incdir = check(sys.sh("luarocks", "config", "variables.LUA_INCDIR")):map(check):concat()
-        local libdir = check(sys.sh("luarocks", "config", "variables.LUA_LIBDIR")):map(check):concat()
-        local libfile = check(sys.sh("luarocks", "config", "variables.LUA_LIBDIR_FILE")):map(check):concat()
+        local incdir = check(sys.sh("luarocks", "config", "variables.LUA_INCDIR"))
+          :map(check):map(fun.nret(1)):concat()
+        local libdir = check(sys.sh("luarocks", "config", "variables.LUA_LIBDIR"))
+          :map(check):map(fun.nret(1)):concat()
+        local libfile = check(sys.sh("luarocks", "config", "variables.LUA_LIBDIR_FILE"))
+          :map(check):map(fun.nret(1)):concat()
         local libname = str.stripprefix(fs.stripextension(libfile), "lib")
         check(bundle(infile, outdir, {
           -- luac = "luajit -b %input %output",

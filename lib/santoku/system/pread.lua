@@ -1,4 +1,8 @@
+-- TODO: Allow injecting different arguments to different jobs
+-- TODO: Signal handlers for child process exits
+
 local err = require("santoku.err")
+local vec = require("santoku.vector")
 local tup = require("santoku.tuple")
 local gen = require("santoku.gen")
 
@@ -6,30 +10,35 @@ local unistd = require("posix.unistd")
 local wait = require("posix.sys.wait")
 local poll = require("posix.poll")
 
-local function run_child (check, file, args, sr, sw, er, ew)
-  check.exists(unistd.close(sr))
-  check.exists(unistd.close(er))
-  check.exists(unistd.dup2(sw, unistd.STDOUT_FILENO))
-  check.exists(unistd.dup2(ew, unistd.STDERR_FILENO))
+local function run_child (file, args, child)
+  assert(unistd.close(child.stdout.read))
+  assert(unistd.close(child.stderr.read))
+  assert(unistd.dup2(child.stdout.write, unistd.STDOUT_FILENO))
+  assert(unistd.dup2(child.stderr.write, unistd.STDERR_FILENO))
   local _, err, cd = unistd.execp(file, args)
   io.stderr:write(table.concat({ err, ": ", cd, "\n" }))
-  io.stderr:flush()
   os.exit(1)
 end
 
-local function run_parent_loop (check, yield, opts, pid, fds, sr, er)
+local function run_parent_loop (check, yield, opts, children, fds)
   while true do
 
     check.exists(poll.poll(fds))
 
     for fd, cfg in pairs(fds) do
 
+      -- TODO: Use a table lookup
+      local child = children:find(function (child)
+        return fd == child.stdout.read or
+               fd == child.stderr.read
+      end)
+
       if cfg.revents.IN then
         local res = check.exists(unistd.read(fd, opts.bufsize))
-        if fd == sr then
-          yield("stdout", res)
-        elseif fd == er then
-          yield("stderr", res)
+        if fd == child.stdout.read then
+          yield("stdout", res, child.pid)
+        elseif fd == child.stderr.read then
+          yield("stderr", res, child.pid)
         else
           check(false, "Invalid state: fd neither sr nor er")
         end
@@ -39,8 +48,18 @@ local function run_parent_loop (check, yield, opts, pid, fds, sr, er)
       end
 
       if not next(fds) then
-        local _, reason, status = check.exists(wait.wait(pid))
-        yield("exit", reason, status)
+        local nexit = 0
+        while nexit < children.n do
+          local rc, reason, status = check.exists(wait.wait())
+          nexit = nexit + 1
+          if rc == 0 then
+            break
+          elseif rc < 0 then
+            check(false, "Error waiting for child process", reason, status)
+          else
+            yield("exit", reason, status, child.pid)
+          end
+        end
         return
       end
 
@@ -48,19 +67,22 @@ local function run_parent_loop (check, yield, opts, pid, fds, sr, er)
   end
 end
 
-local function run_parent (check, opts, pid, sr, sw, er, ew)
+local function run_parent (check, opts, children)
 
-  check.exists(unistd.close(sw))
-  check.exists(unistd.close(ew))
+  local fds = {}
 
-  local fds = { [sr] = { events = { IN = true } },
-                [er] = { events = { IN = true } } }
+  children:each(function (child)
+    check.exists(unistd.close(child.stdout.write))
+    check.exists(unistd.close(child.stderr.write))
+    fds[child.stdout.read] = { events = { IN = true } }
+    fds[child.stderr.read] = { events = { IN = true } }
+  end)
 
   return gen(function (yield)
     err.check(err.pwrap(function (check)
-      return run_parent_loop(check, yield, opts, pid, fds, sr, er)
+      return run_parent_loop(check, yield, opts, children, fds)
     end))
-  end)
+  end), children, fds
 
 end
 
@@ -80,19 +102,35 @@ return function (...)
 
   -- TODO: PIPE_BUF is probably not the best default
   opts.bufsize = opts.bufsize or unistd._PC_PIPE_BUF
+  opts.jobs = opts.jobs or 1
 
   return err.pwrap(function (check)
 
     io.flush()
-    local sr, sw = check.exists(unistd.pipe())
-    local er, ew = check.exists(unistd.pipe())
-    local pid = check.exists(unistd.fork())
 
-    if pid == 0 then
-      return run_child(check, file, args, sr, sw, er, ew)
-    else
-      return run_parent(check, opts, pid, sr, sw, er, ew)
+    local children = vec()
+
+    for _ = 1, opts.jobs do
+
+      local sr, sw = check.exists(unistd.pipe())
+      local er, ew = check.exists(unistd.pipe())
+      local pid = check.exists(unistd.fork())
+
+      local child = {
+        pid = pid,
+        stdout = { read = sr, write = sw },
+        stderr = { read = er, write = ew },
+      }
+
+      if pid == 0 then
+        return run_child(file, args, child)
+      else
+        children:append(child)
+      end
+
     end
+
+    return run_parent(check, opts, children)
 
   end)
 end
