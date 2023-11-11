@@ -17,21 +17,25 @@ local function yield_data_ (yield, ev, data, pid)
 end
 
 local function yield_data (yield, chunks, ev, data, pid)
-  local nlidx = data:find("\n")
-  if nlidx then
-    chunks:append(data:sub(1, nlidx - 1))
-    yield_data_(yield, ev, chunks:concat(), pid)
-    chunks:trunc()
-    data = data:sub(nlidx + 1)
-    if data ~= "" then
-      local datas = str.split(data, "\n")
-      for i = 1, datas.n - 1 do
-        yield_data_(yield, ev, datas[i], pid)
-      end
-      chunks:append(datas[datas.n])
-    end
+  if data == nil then
+    yield(true, nil, pid)
   else
-    chunks:append(data)
+    local nlidx = data:find("\n")
+    if nlidx then
+      chunks:append(data:sub(1, nlidx - 1))
+      yield_data_(yield, ev, chunks:concat(), pid)
+      chunks:trunc()
+      data = data:sub(nlidx + 1)
+      if data ~= "" then
+        local datas = str.split(data, "\n")
+        for i = 1, datas.n - 1 do
+          yield_data_(yield, ev, datas[i], pid)
+        end
+        chunks:append(datas[datas.n])
+      end
+    else
+      chunks:append(data)
+    end
   end
 end
 

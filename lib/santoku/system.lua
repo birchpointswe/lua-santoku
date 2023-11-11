@@ -9,7 +9,9 @@ M.sh = require("santoku.system.sh")
 M.execute = function (...)
   local args = tup(...)
   return err.pwrap(function (check)
-    check(M.sh(args())):map(check):each(print)
+    check(M.sh(args())):map(check):each(function (line)
+      print(line)
+    end)
   end)
 end
 

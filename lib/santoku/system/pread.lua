@@ -1,5 +1,7 @@
 -- TODO: Allow injecting different arguments to different jobs
 -- TODO: Signal handlers for child process exits
+-- TODO: Infinite hang when calling the generator after it has finished, likely
+-- due to poll being called on no fds
 
 local err = require("santoku.err")
 local vec = require("santoku.vector")
@@ -9,6 +11,9 @@ local gen = require("santoku.gen")
 local unistd = require("posix.unistd")
 local wait = require("posix.sys.wait")
 local poll = require("posix.poll")
+local fcntl = require("posix.fcntl")
+local errno = require("posix.errno")
+local bit = require("bit32")
 
 local function run_child (file, args, child)
   assert(unistd.close(child.stdout.read))
@@ -20,10 +25,21 @@ local function run_child (file, args, child)
   os.exit(1)
 end
 
+local function read_fd (check, opts, fd)
+  local bytes, err, cd = unistd.read(fd, opts.bufsize)
+  if bytes ~= nil then
+    return bytes
+  elseif bytes == nil and cd == errno.EAGAIN then
+    return nil
+  else
+    return check(false, err, cd)
+  end
+end
+
 local function run_parent_loop (check, yield, opts, children, fds)
   while true do
 
-    check.exists(poll.poll(fds))
+    check.exists(poll.poll(fds, opts.block == false and 0 or -1))
 
     for fd, cfg in pairs(fds) do
 
@@ -34,7 +50,7 @@ local function run_parent_loop (check, yield, opts, children, fds)
       end)
 
       if cfg.revents.IN then
-        local res = check.exists(unistd.read(fd, opts.bufsize))
+        local res = read_fd(check, opts, fd)
         if fd == child.stdout.read then
           yield("stdout", res, child.pid)
         elseif fd == child.stderr.read then
@@ -76,6 +92,13 @@ local function run_parent (check, opts, children)
     check.exists(unistd.close(child.stderr.write))
     fds[child.stdout.read] = { events = { IN = true } }
     fds[child.stderr.read] = { events = { IN = true } }
+    if opts.block == false then
+      local flags
+      flags = check.exists(fcntl.fcntl(child.stdout.read, fcntl.F_GETFL, 0))
+      check.exists(fcntl.fcntl(child.stdout.read, fcntl.F_SETFL, bit.bor(flags, fcntl.O_NONBLOCK)))
+      flags = check.exists(fcntl.fcntl(child.stderr.read, fcntl.F_GETFL, 0))
+      check.exists(fcntl.fcntl(child.stderr.read, fcntl.F_SETFL, bit.bor(flags, fcntl.O_NONBLOCK)))
+    end
   end)
 
   return gen(function (yield)
