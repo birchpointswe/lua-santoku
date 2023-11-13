@@ -1,3 +1,5 @@
+-- TODO: tup.all, tup.any
+
 local compat = require("santoku.compat")
 
 local M = {}
