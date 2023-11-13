@@ -41,7 +41,7 @@ test("table", function ()
 
     test("should set deep vals in objects", function ()
       local obj = tbl({ a = { b = { 1, 2, { 3, 4 } } } })
-      obj:set("x", "a", "b", 3, 2)
+      obj:set("a", "b", 3, 2, "x")
       assert.equals("x", obj.a.b[3][2])
       assert.equals("x", obj:get("a", "b", 3, 2))
     end)
