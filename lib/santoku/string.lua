@@ -206,7 +206,7 @@ M.isempty = function (s)
 end
 
 M.endswith = function (str, pat)
-  if s ~= nil and str:match(pat .. "$") then
+  if str ~= nil and str:match(pat .. "$") then
     return true
   else
     return false
@@ -214,7 +214,7 @@ M.endswith = function (str, pat)
 end
 
 M.startswith = function (str, pat)
-  if s ~= nil and str:match("^" .. pat) then
+  if str ~= nil and str:match("^" .. pat) then
     return true
   else
     return false
