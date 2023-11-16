@@ -169,7 +169,6 @@ M.indent = function (s, opts) -- luacheck: ignore
   err.unimplemented("indent")
 end
 
--- TODO
 -- Trim strings
 --   opts = string pattern for string.sub, defaults to
 --   whitespace
@@ -199,7 +198,7 @@ M.trim = function (s, opts)
 end
 
 M.isempty = function (s)
-  if s:match("^%s*$") then
+  if s == nil or s:match("^%s*$") then
     return true
   else
     return false
@@ -207,7 +206,7 @@ M.isempty = function (s)
 end
 
 M.endswith = function (str, pat)
-  if str:match(pat .. "$") then
+  if str ~= nil and str:match(pat .. "$") then
     return true
   else
     return false
@@ -215,7 +214,7 @@ M.endswith = function (str, pat)
 end
 
 M.startswith = function (str, pat)
-  if str:match("^" .. pat) then
+  if str ~= nil and str:match("^" .. pat) then
     return true
   else
     return false

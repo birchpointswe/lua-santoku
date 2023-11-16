@@ -82,4 +82,13 @@ test("tuple", function ()
 
   end)
 
+  test("tabulate", function ()
+
+    local keys = tup("a", "b", "c")
+    local vals = tup(1, 2, 3)
+
+    assert.same({ a = 1, b = 2, c = 3 }, tup.tabulate(keys, vals))
+
+  end)
+
 end)

@@ -1,3 +1,5 @@
+-- TODO: tup.all, tup.any
+
 local compat = require("santoku.compat")
 
 local M = {}
@@ -30,15 +32,15 @@ M.take = function (i, ...)
   end
 end
 
-M.get = function (i, ...) -- luacheck: ignore
+M.get = function (i, ...)
   return (M.sel(i, ...))
 end
 
-M.set = function (i, v, ...) -- luacheck: ignore
-  -- TODO
+M.set = function (i, v, ...)
+  return M.tuple(M.take(i - 1, ...), v, M.sel(i + 1, ...))
 end
 
-M.append = function (a, ...) -- luacheck: ignore
+M.append = function (a, ...)
   return M.tuple(...)(a)
 end
 
@@ -113,6 +115,15 @@ end
 
 M.reduce = function (fn, ...)
   return M._reduce(fn, M.len(...), ...)
+end
+
+M.tabulate = function (keys, vals)
+  local t = {}
+  local m = M.len(keys())
+  for i = 1, m do
+    t[M.get(i, keys())] = M.get(i, vals())
+  end
+  return t
 end
 
 M.concat = function (...)

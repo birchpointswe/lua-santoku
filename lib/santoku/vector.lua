@@ -137,8 +137,12 @@ end
 -- and then a filter. Can we make it faster?
 M.sort = function (t, opts)
   assert(M.isvec(t))
-  opts = opts or {}
-  assert(type(opts) == "table")
+  if compat.hasmeta.call(opts) then
+    opts = { fn = opts }
+  else
+    opts = opts or {}
+  end
+  assert(compat.hasmeta.index(opts))
   local fn = opts.fn or op.lt
   local unique = opts.unique or false
   assert(type(unique) == "boolean")

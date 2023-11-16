@@ -14,6 +14,7 @@
 -- the API user
 
 local compat = require("santoku.compat")
+local tup = require("santoku.tuple")
 
 local M = {}
 
@@ -45,12 +46,12 @@ end
 
 M.get = function (t, ...)
   assert(compat.hasmeta.index(t))
-  local m = select("#", ...)
+  local m = tup.len(...)
   if m == 0 then
     return t
   else
     for i = 1, m do
-      t = t[select(i, ...)]
+      t = t[tup.get(i, ...)]
       if t == nil then
         break
       end
@@ -59,14 +60,27 @@ M.get = function (t, ...)
   end
 end
 
-M.set = function (t, v, ...)
-  local m = select("#", ...)
-  assert(m > 0, "one or more keys must be provided")
+M.update = function (t, ...)
+  local m = tup.len(...)
+  assert(m > 1, "one or more keys must be provided")
+  local ks = tup(tup.take(m - 1, ...))
+  local fn = tup.get(m, ...)
+  assert(compat.hasmeta.call(fn))
+  local v = M.get(t, ks())
+  M.set(t, ks(fn(v)))
+  return t
+end
+
+M.set = function (t, ...)
+  local m = tup.len(...)
+  assert(m > 1, "one or more keys must be provided")
+  local v = tup.get(m, ...)
+  m = m - 1
   local t0 = t
   for i = 1, m - 1 do
     assert(compat.hasmeta.index(t0))
     assert(compat.hasmeta.newindex(t0))
-    local k = select(i, ...)
+    local k = tup.get(i, ...)
     if t0 == nil then
       return
     end
@@ -77,16 +91,16 @@ M.set = function (t, v, ...)
     end
     t0 = t0[k]
   end
-  t0[select(m, ...)] = v
+  t0[tup.get(m, ...)] = v
   return t
 end
 
 M.assign = function (t, ...)
   assert(compat.hasmeta.index(t))
   assert(compat.hasmeta.newindex(t))
-  local m = select("#", ...)
+  local m = tup.len(...)
   for i = 1, m do
-    local t0 = select(i, ...)
+    local t0 = tup.get(i, ...)
     assert(compat.hasmeta.pairs(t0))
     for k, v in pairs(t0) do
       t[k] = v
@@ -118,9 +132,9 @@ end
 -- present in a but not in ts
 M.equals = function (a, ...)
   assert(compat.hasmeta.index(a))
-  local m = select("#", ...)
+  local m = tup.len(...)
   for i = 1, m do
-    local t0 = select(i, ...)
+    local t0 = tup.get(i, ...)
     assert(compat.hasmeta.pairs(t0))
     for k, v in pairs(t0) do
       if a[k] ~= v then
@@ -134,8 +148,8 @@ end
 M.merge = function (t, ...)
   assert(compat.hasmeta.index(t))
   assert(compat.hasmeta.newindex(t))
-  for i = 1, select("#", ...) do
-    local t0 = select(i, ...)
+  for i = 1, tup.len(...) do
+    local t0 = tup.get(i, ...)
     for k, v in pairs(t0) do
       if not compat.hasmeta.index(v) or not compat.hasmeta.index(t[k]) then
         t[k] = v
@@ -164,6 +178,7 @@ end
 
 M.paths = function (t, fn, stop)
   stop = stop or function (v)
+    -- TODO: should be hasmeta.pairs, right?
     return not compat.hasmeta.index(v)
   end
   assert(compat.hasmeta.call(stop))
@@ -175,14 +190,13 @@ end
 -- vector of path vectors?
 -- TODO: This might be better off called reduce
 M.mergeWith = function (t, spec, ...)
-  for i = 1, select("#", ...) do
-    local t0 = select(i, ...)
+  for i = 1, tup.len(...) do
+    local t0 = tup.get(i, ...)
     M.paths(spec, function (...)
-      M.set(t,
+      M.set(t, tup(...)(
         M.get(spec, ...)(
           M.get(t, ...),
-          M.get(t0, ...)),
-        ...)
+          M.get(t0, ...))))
     end)
   end
   return t
