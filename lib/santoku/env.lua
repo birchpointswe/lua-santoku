@@ -24,12 +24,13 @@ M.interpreter = function (args)
   return ret
 end
 
-M.var = function (name, def)
+M.var = function (name, ...)
   local val = os.getenv(name)
+  local n = select("#", ...)
   if val then
     return val
-  elseif def then
-    return def
+  elseif n >= 1 then
+    return (...)
   else
     error("Missing environment variable: " .. name)
   end

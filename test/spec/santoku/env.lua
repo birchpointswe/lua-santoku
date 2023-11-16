@@ -41,6 +41,10 @@ test("utils", function ()
     assert.equals(true, ok)
     assert.equals("hello", val)
 
+    local ok, val = pcall(env.var, "ASDF123", nil)
+    assert.equals(true, ok)
+    assert.is_nil(val)
+
   end)
 
 end)
