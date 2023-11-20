@@ -151,7 +151,7 @@ M.merge = function (t, ...)
   for i = 1, tup.len(...) do
     local t0 = tup.get(i, ...)
     for k, v in pairs(t0) do
-      if not compat.hasmeta.index(v) or not compat.hasmeta.index(t[k]) then
+      if not compat.hasmeta.pairs(v) or not compat.hasmeta.index(t[k]) then
         t[k] = v
       else
         M.merge(t[k], v)

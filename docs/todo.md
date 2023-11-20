@@ -29,13 +29,11 @@
   the command line or from a library call, and second, instead, there should be
   a way to differentiate between files that should be totally excluded (neither
   templated nor copied) and files that should not be templated but still copied.
-  Als
 
 - santoku.lua for binding useful c-api functions for error checking, etc
 - Support calling generators in a generic for loop
 - template: allow `<%- ... %>` or similar to indicate that prefix should not be
   interpreted
-- tuple equality: tup(1, 2) == tup(1, 2)
 - stack.pop should accept "n"
 
 - Add missing asserts
