@@ -536,7 +536,7 @@ test("santoku.gen", function ()
       local gen1 = gen.pack(1, 2, 3, 4):co()
       local gen2 = gen.pack(1, 2, 3, 4):co()
 
-      local v = gen1:zip(gen2):tup()
+      local v = gen.zip({ tups = true }, gen1, gen2):tup()
 
       local a, b, c, d = v()
       local x, y
@@ -553,6 +553,11 @@ test("santoku.gen", function ()
       x, y = d()
       assert.same({ 4, 4 }, { x(), y() })
 
+    end)
+
+    test("by default unpacks tuples", function ()
+      assert.same({ { 1, 3, n = 2 }, { 2, 4, n = 2 }, n = 2 },
+        gen.pack(1, 2):co():zip(gen.pack(3, 4):co()):vec())
     end)
 
   end)

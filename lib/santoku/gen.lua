@@ -545,7 +545,13 @@ M.zip = function (opts, ...)
       if nb == 0 then
         break
       else
-        yield(ret())
+        if opts.tups == true then
+          yield(ret())
+        else
+          yield(tup.reduce(function (n, t)
+            return tup(n(t()))
+          end, ret())())
+        end
       end
     end
   end, gens())
@@ -572,7 +578,7 @@ end
 -- second. Can we somehow do this without
 -- resorting to a manual implemetation?
 M.equals = function (...)
-  local vals = M.zip({ mode = "longest" }, ...):map(tup.equals):all()
+  local vals = M.zip({ tups = true, mode = "longest" }, ...):map(tup.equals):all()
   return vals and M.pack(...):map(M.done):all()
 end
 
