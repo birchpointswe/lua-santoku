@@ -747,4 +747,8 @@ test("santoku.gen", function ()
     assert.same({ { 1, 2, n = 2 }, { 3, 4, n = 2 }, n = 2 }, gen.pack(1, 2, 3, 4):group(2):vec())
   end)
 
+  test("sum", function ()
+    assert.equals(10, gen.pack(4, 4, 2):sum())
+  end)
+
 end)

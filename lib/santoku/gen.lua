@@ -407,6 +407,11 @@ M.max = function (gen, ...)
   end, ...)
 end
 
+M.sum = function (gen)
+  assert(M.isgen(gen))
+  return gen:reduce(op.add)
+end
+
 M.concat = function (gen, delim)
   return gen:vec():concat(delim)
 end
