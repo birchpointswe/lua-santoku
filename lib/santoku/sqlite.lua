@@ -57,6 +57,7 @@ M._bind = function (stmt, ...)
 end
 
 M._query = function (db, stmt, ...)
+  stmt:reset()
   local ok = M._bind(stmt, ...)
   if not ok then
     return false, db.db:errmsg(), db.db:errcode()

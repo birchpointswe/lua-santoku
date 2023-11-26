@@ -1,5 +1,6 @@
 local assert = require("luassert")
 local test = require("santoku.test")
+local err = require("santoku.err")
 
 local sql = require("santoku.sqlite")
 
@@ -95,6 +96,35 @@ test("sqlite", function ()
     assert.same(states[2], { name = "Buffalo", state = "New York" })
     assert.same(states[3], { name = "Albany", state = "New York" })
     assert.equals(states.n, 5)
+
+  end)
+
+  test("should handle co iterators", function ()
+
+    local db = err.check(sql.open_memory())
+
+    err.check(db:exec([[
+      create table numbers (
+        n integer
+      );
+    ]]))
+
+    local addn = err.check(db:inserter([[
+      insert into numbers (n) values ($1)
+    ]]))
+
+    for i = 1, 100 do
+      err.check(addn(i))
+    end
+
+    local getns = err.check(db:iter([[
+      select * from numbers
+    ]]))
+
+    local as = err.check(getns()):co():take(2):map(err.check):vec()
+    local bs = err.check(getns()):co():take(2):map(err.check):vec()
+
+    assert.same(as, bs)
 
   end)
 
