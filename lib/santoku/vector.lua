@@ -119,6 +119,28 @@ M.mean = function (t)
   return t:sum() / t.n
 end
 
+M.max = function (t, ...)
+  assert(M.isvec(t))
+  return t:reduce(function(a, b)
+    if a > b then
+      return a
+    else
+      return b
+    end
+  end, ...)
+end
+
+M.min = function (t, ...)
+  assert(M.isvec(t))
+  return t:reduce(function(a, b)
+    if a < b then
+      return a
+    else
+      return b
+    end
+  end, ...)
+end
+
 M.sum = function (t)
   assert(M.isvec(t))
   return t:reduce(op.add)

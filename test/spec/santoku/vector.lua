@@ -207,6 +207,14 @@ test("vector", function ()
     assert.equals(15, vec(1, 2, 3, 4, 5):sum())
   end)
 
+  test("max", function ()
+    assert.equals(10, vec(1, 10, 2, 3, 4, 5):max())
+  end)
+
+  test("min", function ()
+    assert.equals(0, vec(1, 10, 2, 3, 0, 4, 5):min())
+  end)
+
   test("mean", function ()
     assert.equals(2, vec(1, 2, 3):mean())
   end)

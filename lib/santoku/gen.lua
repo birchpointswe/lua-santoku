@@ -407,6 +407,17 @@ M.max = function (gen, ...)
   end, ...)
 end
 
+M.min = function (gen, ...)
+  assert(M.isgen(gen))
+  return gen:reduce(function(a, b)
+    if a < b then
+      return a
+    else
+      return b
+    end
+  end, ...)
+end
+
 M.sum = function (gen)
   assert(M.isgen(gen))
   return gen:reduce(op.add)

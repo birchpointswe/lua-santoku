@@ -383,6 +383,14 @@ test("santoku.gen", function ()
 
   end)
 
+  test("max", function ()
+    assert.equals(10, gen.pack(1, 10, 2, 3, 4, 5):max())
+  end)
+
+  test("min", function ()
+    assert.equals(0, gen.pack(1, 10, 2, 3, 0, 4, 5):min())
+  end)
+
   test("empty", function ()
 
     test("should produce an empty generator", function ()
