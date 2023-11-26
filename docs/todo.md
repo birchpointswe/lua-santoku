@@ -1,5 +1,8 @@
 # Now
 
+- it's called intersperse in gen but interleave in tuple!
+- str.split/etc should return a generator if the underlying vector isnt needed
+
 - Basic README
 - Documentation
 - Refactor gen, fn, etc to use compat.hasmeta
