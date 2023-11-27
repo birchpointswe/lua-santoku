@@ -303,7 +303,7 @@ M.pastel = function (gen, ...)
   end)
 end
 
-M.intersperse = function (gen, ...)
+M.interleave = function (gen, ...)
   assert(M.isgen(gen))
   local args = tup(...)
   local isfirst = true

@@ -1,6 +1,7 @@
 # Now
 
-- it's called intersperse in gen but interleave in tuple!
+- convert stemmer to pure lua
+- port remove_diacritics from sqlite
 - str.split/etc should return a generator if the underlying vector isnt needed
 
 - Basic README

@@ -717,11 +717,11 @@ test("santoku.gen", function ()
 
   end)
 
-  test("intersperse", function ()
+  test("interleave", function ()
 
-    test("intersperses values into a generator", function ()
+    test("interleave values into a generator", function ()
 
-      local v = gen.pack(1, 2, 3, 4):intersperse("x"):vec()
+      local v = gen.pack(1, 2, 3, 4):interleave("x"):vec()
 
       assert.same(v, vec(1, "x", 2, "x", 3, "x", 4))
 
