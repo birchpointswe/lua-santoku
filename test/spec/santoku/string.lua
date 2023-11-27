@@ -2,6 +2,7 @@ local assert = require("luassert")
 local test = require("santoku.test")
 
 local str = require("santoku.string")
+local tbl = require("santoku.table")
 local stemmer = require("santoku.string.stemmer")
 
 test("string", function ()
@@ -46,8 +47,24 @@ test("string", function ()
     end)
 
     test("should work with integer indices on tables", function ()
-
       assert.equals("a c b", str.interp("%1 %3 %2", { "a", "b", "c" }))
+    end)
+
+    test("should support format strings", function ()
+      assert.equals("1.0", str.interp("%.1f#(1)", { 1 }))
+      assert.equals("1.0", str.interp("%.1f#(number)", { number = 1 }))
+    end)
+
+  end)
+
+  test("parse", function ()
+
+    test("should support mapping string.match strings into an object", function ()
+
+      local s = "2023-10-26 09:10:26"
+      local obj = str.parse(s, "(%d+)#(year)-(%d+)#(month)-(%d+)#(day) (%d+)#(hour):(%d+)#(minute):(%d+)#(second)")
+      tbl.map(obj, tonumber)
+      assert.same({ year = 2023, month = 10, day = 26, hour = 9, minute = 10, second = 26 }, obj)
 
     end)
 

@@ -8,6 +8,7 @@
 
 local err = require("santoku.err")
 local vec = require("santoku.vector")
+local gen = require("santoku.gen")
 
 -- TODO: Consider optionally allowing users to
 -- use match, split, etc. lazily via generators
@@ -143,21 +144,57 @@ end
 --
 -- Interpolate strings
 --   "Hello %name. %adjective to meet you."
---   "Name: %name. Age: %d:age"
+--   "Name: %name. Age: %d#age"
 M.interp = function (s, t)
-  return table.concat(M.split(s, "%%%w*", {
-    delim = true
-  }):map(function (s)
-    local v = s:match("%%(%w*)")
-    local n = tonumber(v)
-    if n and not t[v] then
-      return t[n] or ""
-    elseif v then
-      return t[v] or ""
-    else
+
+  local fmtpat = "%%[%w.]+"
+  local keypat = "^#%b()"
+
+  local segments = M.split(s, fmtpat, { delim = true })
+
+  return gen.ipairs(segments):map(function (i, s)
+
+    if not s:match(fmtpat) then
       return s
     end
-  end))
+
+    local format = s
+    local key = i <= segments.n and segments[i + 1]:match(keypat)
+
+    if key then
+      segments[i + 1] = segments[i + 1]:sub(#key + 1)
+      key = key:sub(3, #key - 1)
+    else
+      key = format:sub(2)
+      format = nil
+    end
+
+    local nkey = tonumber(key)
+    local result
+
+    if nkey and not t[key] then
+      result = t[nkey] or ""
+    else
+      result = t[key] or ""
+    end
+
+    return format and string.format(format, result) or result
+
+  end):concat()
+
+end
+
+M.parse = function (s, pat)
+  local keys = vec()
+  pat = pat:gsub("%b()#%b()", function (k)
+    local fmt = k:match("%b()")
+    local key = k:sub(#fmt + 2)
+    key = key:sub(2, #key - 1)
+    keys:append(key)
+    return fmt
+  end)
+  local vals = vec.pack(string.match(s, pat))
+  return gen.ivals(keys):co():zip(gen.ivals(vals):co()):tabulate()
 end
 
 -- TODO
