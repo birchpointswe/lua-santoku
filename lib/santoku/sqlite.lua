@@ -274,7 +274,16 @@ M.wrap = function (db)
         if type(opts) == "string" then
 
           local fp = opts
-          files = fs.files(fp):map(check):vec():sort():map(function (fp)
+          -- TODO: Should this sorting function be part of str?
+          files = fs.files(fp):map(check):vec():sort(function (a, b)
+            if #a < #b then
+              return true
+            elseif #b < #a then
+              return false
+            else
+              return a < b
+            end
+          end):map(function (fp)
             return tup(fs.basename(fp), function ()
               return check(fs.readfile(fp))
             end)
