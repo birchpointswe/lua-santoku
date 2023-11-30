@@ -1,4 +1,5 @@
 local gen = require("santoku.gen")
+local str = require("santoku.string")
 local compat = require("santoku.compat")
 local err = require("santoku.err")
 local op = require("santoku.op")
@@ -274,16 +275,7 @@ M.wrap = function (db)
         if type(opts) == "string" then
 
           local fp = opts
-          -- TODO: Should this sorting function be part of str?
-          files = fs.files(fp):map(check):vec():sort(function (a, b)
-            if #a < #b then
-              return true
-            elseif #b < #a then
-              return false
-            else
-              return a < b
-            end
-          end):map(function (fp)
+          files = fs.files(fp):map(check):vec():sort(str.compare):map(function (fp)
             return tup(fs.basename(fp), function ()
               return check(fs.readfile(fp))
             end)
@@ -292,7 +284,7 @@ M.wrap = function (db)
         elseif type(opts) == "table" then
 
           local tbl = opts
-          files = gen.keys(tbl):vec():sort():map(function (fp)
+          files = gen.keys(tbl):vec():sort(str.compare):map(function (fp)
             return tup(fs.basename(fp), function ()
               return opts[fp]
             end)

@@ -291,6 +291,16 @@ M.commonprefix = function (...)
   return prefix
 end
 
+M.compare = function (a, b)
+  if #a < #b then
+    return true
+  elseif #b < #a then
+    return false
+  else
+    return a < b
+  end
+end
+
 return M
 
 -- TODO: see note on M.wrap for why this doesn't
