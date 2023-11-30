@@ -1,7 +1,11 @@
 # Now
 
+- finish parallel implementation
+
 - convert stemmer to pure lua
 - port remove_diacritics from sqlite
+- Support sqlite "in" cluase
+- support iter:clone()/recompile for sqlite
 - str.split/etc should return a generator if the underlying vector isnt needed
 
 - Basic README

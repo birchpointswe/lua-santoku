@@ -1,3 +1,7 @@
+/* Copied from SQLite ext/fts5/fts5_tokenizers.c
+ * https://github.com/sqlite/sqlite/blob/master/ext/fts5/fts5_tokenize.c
+ */
+
 #include "lua.h"
 #include "lauxlib.h"
 
