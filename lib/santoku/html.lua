@@ -14,8 +14,8 @@ M.closing_tag = P("</") * L.space^0 * Cg((P(1) - (P(">") + L.space))^0, "close")
 M.opening_tag_open = (P("<") - M.closing_tag) * Cg((P(1) - (P(">") + P("/>") + L.space))^0, "open") * L.space^0
 M.opening_tag_close = Cg((P(">") + P("/>")), "open_close")
 M.text = Cg((P(1) - (M.opening_tag_open + M.closing_tag))^1, "text")
-M.value = P("=") * ((P('"') * Cg((P('\\"') + (P(1) - P('"')))^0, "value") * P('"')) +
-                    (P("'") * Cg((P("\\'") + (P(1) - P("'")))^0, "value") * P("'")))
+M.value = P("=") * ((Cg(P('"'), "quote") * Cg((P('\\"') + (P(1) - P('"')))^0, "value") * P('"')) +
+                    (Cg(P("'"), "quote") * Cg((P("\\'") + (P(1) - P("'")))^0, "value") * P("'")))
 M.attribute = Cg(Ct(Cg((L.alnum + S("_-"))^1, "name") * M.value^0^-1), "attribute") * L.space^0
 
 -- Matches text, opening tags, or closing tags. If an open tag is matched, state
@@ -42,6 +42,12 @@ M.parse = function (text)
         yield(m)
       elseif m.open_close then
         state = M.state_default
+      elseif m.attribute then
+        -- TODO: Ugly hack.
+        -- How can we just modify the capture so that \\" becomes "?
+        m.attribute.value = m.attribute.value:gsub("\\" .. m.attribute.quote, m.attribute.quote)
+        m.attribute.quote = nil
+        yield(m)
       else
         yield(m)
       end
