@@ -1,3 +1,7 @@
+-- TODO: Match the most general xml spec possible
+-- TODO: Allow adding text in chunks (perhaps final generator value is the
+-- unprocessed text?)
+
 local gen = require("santoku.gen")
 local L = require("lpeg")
 local P = L.P
@@ -16,6 +20,9 @@ M.opening_tag_close = Cg((P(">") + P("/>")), "open_close")
 M.text = Cg((P(1) - (M.opening_tag_open + M.closing_tag))^1, "text")
 M.value = P("=") * ((Cg(P('"'), "quote") * Cg((P('\\"') + (P(1) - P('"')))^0, "value") * P('"')) +
                     (Cg(P("'"), "quote") * Cg((P("\\'") + (P(1) - P("'")))^0, "value") * P("'")))
+
+-- TODO: Attribute names are defined here as alnum/_/- but this is not accurate
+-- per the spec
 M.attribute = Cg(Ct(Cg((L.alnum + S("_-"))^1, "name") * M.value^0^-1), "attribute") * L.space^0
 
 -- Matches text, opening tags, or closing tags. If an open tag is matched, state
@@ -45,7 +52,9 @@ M.parse = function (text)
       elseif m.attribute then
         -- TODO: Ugly hack.
         -- How can we just modify the capture so that \\" becomes "?
-        m.attribute.value = m.attribute.value:gsub("\\" .. m.attribute.quote, m.attribute.quote)
+        if m.attribute.value and m.attribute.quote then
+          m.attribute.value = m.attribute.value:gsub("\\" .. m.attribute.quote, m.attribute.quote)
+        end
         m.attribute.quote = nil
         yield(m)
       else
