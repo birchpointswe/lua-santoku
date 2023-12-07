@@ -1,5 +1,6 @@
 # Now
 
+- html parser
 - finish parallel implementation
 
 - convert stemmer to pure lua

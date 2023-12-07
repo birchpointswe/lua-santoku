@@ -4,23 +4,12 @@ local assert = require("luassert")
 
 test("html", function ()
 
-  local str
+  local text = "this is a test of <span class=\"thing\" id='hi' failme='test: \"blah\": it\\'s bound to fail'>something</span>"
 
-  str = html({ "h1", "One" })
+  local tokens = html.parse(text):vec()
 
-  assert.equals(str, [[<h1>One</h1>]])
-
-  str = html({ "input", type = "text" })
-
-  assert.equals(str, [[<input type="text"/>]])
-
-  str = html(
-    { "div", class = "container",
-      { "div", class = "item",
-        { "h1", "One" } },
-      { "div", class = { "item", "additional" },
-        { "h1", "Two" } } })
-
-  assert.equals(str, [[<div class="container"><div class="item"><h1>One</h1></div><div class="item additional"><h1>Two</h1></div></div>]]) -- luacheck: ignore
+  assert.same({
+    { start = 1, position = 19, text = "this is a test of " },
+  }, tokens)
 
 end)

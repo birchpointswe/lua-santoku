@@ -1,64 +1,52 @@
--- NOTE: EXPERIMENTAL, NOT PRODUCTION READY
-
-local vec = require("santoku.vector")
+local gen = require("santoku.gen")
+local L = require("lpeg")
+local P = L.P
+local S = L.S
+local Cg = L.Cg
+local Ct = L.Ct
+local Cp = L.Cp
 
 local M = {}
 
-M.MT = {
-  __call = function (_, ...)
-    return M.render(...)
-  end
-}
+L.locale(L)
 
-M.selfclosed = vec(
-  "area", "base", "br", "col", "embed",
-  "hr", "img", "input", "link", "meta",
-  "param", "source", "track", "wbr"
-):reduce(function (a, n)
-  a[n] = true
-  return a
-end, {})
+M.closing_tag = P("</") * L.space^0 * Cg((P(1) - (P(">") + L.space))^0, "close") * L.space^0 * L.P(">")
+M.opening_tag_open = (P("<") - M.closing_tag) * Cg((P(1) - (P(">") + P("/>") + L.space))^0, "open") * L.space^0
+M.opening_tag_close = Cg((P(">") + P("/>")), "open_close")
+M.text = Cg((P(1) - (M.opening_tag_open + M.closing_tag))^1, "text")
+M.value = P("=") * ((P('"') * Cg((P('\\"') + (P(1) - P('"')))^0, "value") * P('"')) +
+                    (P("'") * Cg((P("\\'") + (P(1) - P("'")))^0, "value") * P("'")))
+M.attribute = Cg(Ct(Cg((L.alnum + S("_-"))^1, "name") * M.value^0^-1), "attribute") * L.space^0
 
-M.compile = function (spec, result)
+-- Matches text, opening tags, or closing tags. If an open tag is matched, state
+-- moves to attributes
+M.state_default = Ct((M.text + M.opening_tag_open + M.closing_tag) * Cg(Cp(), "position"))
 
-  if type(spec) ~= "table" then
-    result:append(spec)
-    return
-  end
+-- Matches attributes or tag close
+M.state_attributes = Ct((M.attribute + M.opening_tag_close) * Cg(Cp(), "position"))
 
-  local tag = spec[1]
-
-  local selfclosed = M.selfclosed[tag]
-
-  result:append("<", tag)
-
-  for k, v in pairs(spec) do
-    if type(k) == "string" then
-      if type(v) == "table" then
-        v = table.concat(v, " ")
+M.parse = function (text)
+  return gen(function (yield)
+    local state = M.state_default
+    local max = #text
+    local start = 1
+    while start <= max do
+      local m = state:match(text, start)
+      if not m then
+        break
       end
-      result:append(" ", k, "=", "\"", v, "\"")
+      m.start = start
+      start = m.position
+      if m.open then
+        state = M.state_attributes
+        yield(m)
+      elseif m.open_close then
+        state = M.state_default
+      else
+        yield(m)
+      end
     end
-  end
-
-  if selfclosed then
-    result:append("/>")
-  else
-    result:append(">")
-    local i = 2
-    while spec[i] do
-      M.compile(spec[i], result)
-      i = i + 1
-    end
-    result:append("</", tag, ">")
-  end
-
+  end)
 end
 
-M.render = function (spec)
-  local result = vec()
-  M.compile(spec, result)
-  return result:concat()
-end
-
-return setmetatable(M, M.MT)
+return M
