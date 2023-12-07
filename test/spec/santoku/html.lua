@@ -4,7 +4,7 @@ local assert = require("luassert")
 
 test("html", function ()
 
-  local text = "this is a test of <span class=\"thing\" id='\"hi\"' failme=\"test: \\\"blah\\\": it's bound to fail\">something</span>"
+  local text = "this is a test of <span class=\"thing\" id='\"hi\"' failme=\"test: \\\"blah\\\": it's bound to fail\">something</span>" -- luacheck: ignore
 
   local tokens = html.parse(text):vec()
 
