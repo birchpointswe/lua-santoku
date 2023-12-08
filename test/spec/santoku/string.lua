@@ -1,6 +1,7 @@
 local assert = require("luassert")
 local test = require("santoku.test")
 
+local iconv = require("santoku.string.iconv")
 local str = require("santoku.string")
 local tbl = require("santoku.table")
 local stemmer = require("santoku.string.stemmer")
@@ -85,5 +86,11 @@ test("string", function ()
     assert.equals("literari", stemmer.porter("literary"))
     assert.equals("literari", stemmer.porter("literaries"))
   end)
+
+  -- test("iconv", function ()
+  --   assert.same(
+  --     { true, "aaaaaeeeeeiiiiiooooouuuuuuuuuAAAAAEEEEEIIIIIOOOOOUUUUUUUUU" },
+  --     { iconv("aāáǎàeēéěèiīíǐìoōóǒòuūúǔùǖǘǚǜAĀÁǍÀEĒÉĚÈIĪÍǏÌOŌÓǑÒUŪÚǓÙǕǗǙǛ", "utf-8", "ascii", "translit") })
+  -- end)
 
 end)
