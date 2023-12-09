@@ -1,11 +1,10 @@
 # Now
 
-- html parser
+- iconv doesn't work as expected. See string.lua iconv tests
 - finish parallel implementation
 
 - convert stemmer to pure lua
-- port remove_diacritics from sqlite
-- Support sqlite "in" cluase
+- Support sqlite "in" cluase with json_each
 - support iter:clone()/recompile for sqlite
 - str.split/etc should return a generator if the underlying vector isnt needed
 

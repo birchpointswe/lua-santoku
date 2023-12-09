@@ -128,4 +128,32 @@ test("sqlite", function ()
 
   end)
 
+  test("should handle with clauses", function ()
+
+    local db = err.check(sql.open_memory())
+
+    err.check(db:exec([[
+      create table numbers (
+        n integer
+      );
+    ]]))
+
+    local addn = err.check(db:inserter([[
+      insert into numbers (n) values ($1)
+    ]]))
+
+    for i = 1, 100 do
+      err.check(addn(i))
+    end
+
+    local getns = err.check(db:getter([[
+      with evens as (select * from numbers where n % 2 == 0)
+      select n from evens
+      order by n desc
+    ]]))
+
+    assert.same({ true, { n = 100 } }, { getns() })
+
+  end)
+
 end)

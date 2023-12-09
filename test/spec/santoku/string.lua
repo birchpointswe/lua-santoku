@@ -1,7 +1,7 @@
 local assert = require("luassert")
 local test = require("santoku.test")
 
-local iconv = require("santoku.string.iconv")
+-- local iconv = require("santoku.string.iconv")
 local str = require("santoku.string")
 local tbl = require("santoku.table")
 local stemmer = require("santoku.string.stemmer")
@@ -87,6 +87,9 @@ test("string", function ()
     assert.equals("literari", stemmer.porter("literaries"))
   end)
 
+  -- TODO: For some reason this fails here but works if executed via the CLI as:
+  --   echo "aāáǎàeēéěèiīíǐìoōóǒòuūúǔùǖǘǚǜAĀÁǍÀEĒÉĚÈIĪÍǏÌOŌÓǑÒUŪÚǓÙǕǗǙǛ" | \
+  --     iconv -t ASCII//TRANSLIT -f UTF-8
   -- test("iconv", function ()
   --   assert.same(
   --     { true, "aaaaaeeeeeiiiiiooooouuuuuuuuuAAAAAEEEEEIIIIIOOOOOUUUUUUUUU" },
