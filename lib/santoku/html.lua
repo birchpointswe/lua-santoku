@@ -14,7 +14,7 @@ local M = {}
 
 L.locale(L)
 
-M.closing_tag = P("</") * L.space^0 * Cg((P(1) - (P(">") + L.space))^0, "close") * L.space^0 * L.P(">")
+M.closing_tag = P("</") * L.space^0 * Cg((P(1) - (P(">") + L.space))^0, "close") * L.space^0 * P(">")
 M.opening_tag_open = (P("<") - M.closing_tag) * Cg((P(1) - (P(">") + P("/>") + L.space))^0, "open") * L.space^0
 M.opening_tag_close = Cg((P(">") + P("/>")), "open_close")
 M.text = Cg((P(1) - (M.opening_tag_open + M.closing_tag))^1, "text")
