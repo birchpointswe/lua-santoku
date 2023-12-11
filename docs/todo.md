@@ -1,5 +1,9 @@
 # Now
 
+- Santoku implementation of inspect allowing literal representation of the value
+  for use in toku templates (i.e. for injecting an external_dependencies) table
+  into a rockspec
+
 - finish parallel implementation
 
 - convert stemmer to pure lua
@@ -9,10 +13,6 @@
 - Documentation
 - Refactor gen, fn, etc to use compat.hasmeta
 - Very basic linux library supporting better popen (exit status, etc) and fork
-
-- inspect.literal(...) should show a literal representation of the value for use
-  in toku templates (i.e. for injecting an external_dependencies) table into a
-  rockspec
 
 - templates: a failing "check" call doesn't cause toku template to exit with a
   failed status
