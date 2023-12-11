@@ -1,6 +1,5 @@
 # Now
 
-- iconv doesn't work as expected. See string.lua iconv tests
 - finish parallel implementation
 
 - convert stemmer to pure lua
