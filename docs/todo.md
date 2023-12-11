@@ -3,8 +3,6 @@
 - finish parallel implementation
 
 - convert stemmer to pure lua
-- Support sqlite "in" cluase with json_each
-- support iter:clone()/recompile for sqlite
 - str.split/etc should return a generator if the underlying vector isnt needed
 
 - Basic README
@@ -15,9 +13,6 @@
 - inspect.literal(...) should show a literal representation of the value for use
   in toku templates (i.e. for injecting an external_dependencies) table into a
   rockspec
-
-- abstract database interface to work with luasql dbs (refer to the
-  santoku.web.sqlite compatibility layer)
 
 - templates: a failing "check" call doesn't cause toku template to exit with a
   failed status
@@ -76,11 +71,6 @@
 - Benchmark gen, tuple, vec
 
 - Ensure we're using tail calls (return fn(...))
-
-- os.getenv wrapper that fails if missing
-- sqlite helper for automatically computing column names for inserts and updates
-- Helper to reduce pairs of key/vals into a table
-- gen.sum, vec.sum, etc
 
 - Write a true generic PDF parser
 
