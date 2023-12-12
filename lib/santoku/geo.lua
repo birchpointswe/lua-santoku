@@ -1,4 +1,3 @@
--- NOTE: EXPERIMENTAL, NOT PRODUCTION READY
 local compat = require("santoku.compat")
 
 local M = {}
