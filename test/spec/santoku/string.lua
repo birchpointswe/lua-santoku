@@ -3,7 +3,6 @@ local test = require("santoku.test")
 
 local str = require("santoku.string")
 local tbl = require("santoku.table")
-local stemmer = require("santoku.string.stemmer")
 
 test("string", function ()
 
@@ -78,12 +77,6 @@ test("string", function ()
   test("uquote", function ()
     local s = "\"hello\""
     assert.equals("hello", str.unquote(s))
-  end)
-
-  test("porter stemmer", function ()
-    assert.equals("like", stemmer.porter("likes"))
-    assert.equals("literari", stemmer.porter("literary"))
-    assert.equals("literari", stemmer.porter("literaries"))
   end)
 
 end)

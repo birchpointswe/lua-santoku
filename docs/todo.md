@@ -6,7 +6,6 @@
 
 - finish parallel implementation
 
-- convert stemmer to pure lua
 - str.split/etc should return a generator if the underlying vector isnt needed
 
 - Basic README
