@@ -25,7 +25,6 @@ M.MT = {
 }
 
 M.MT_TABLE = {
-  __name = "santoku_table",
   __index = M
 }
 

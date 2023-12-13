@@ -51,7 +51,6 @@ M.MT = {
 }
 
 M.MT_GEN = {
-  __name = "santoku_gen",
   __index = M,
   __call = function (gen, ...)
     if gen:iscogen() then

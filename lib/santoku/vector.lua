@@ -35,7 +35,6 @@ M.MT = {
 }
 
 M.MT_VECTOR = {
-  __name = "santoku_vector",
   __index = M
 }
 
