@@ -28,6 +28,25 @@ M._move = function (s, ss, se, ds, d)
 	return d
 end
 
+-- Taken from https://github.com/lunarmodules/lua-compat-5.3/blob/a1735f6e6bd17588fcaf98720f0548c4caa23b34/compat53/module.lua#L685
+M._searchpath = function (name, path, sep, rep)
+  sep = (sep or "."):gsub("(%p)", "%%%1")
+  rep = (rep or package.config:sub(1, 1)):gsub("(%%)", "%%%1")
+  local pname = name:gsub(sep, rep):gsub("(%%)", "%%%1")
+  local msg = {}
+  for subpath in path:gmatch("[^;]+") do
+    local fpath = subpath:gsub("%?", pname)
+    local f = io_open(fpath, "r")
+    if f then
+      f:close()
+      return fpath
+    end
+    msg[#msg+1] = "\n\tno file '" .. fpath .. "'"
+  end
+  return nil, table.concat(msg)
+end
+
+M.searchpath = package.searchpath or M._searchpath --luacheck: ignore
 M.pack = table.pack or M._pack -- luacheck: ignore
 M.unpack = unpack or table.unpack -- luacheck: ignore
 M.move = table.move or M._move -- luacheck: ignore

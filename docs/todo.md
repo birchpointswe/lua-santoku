@@ -1,41 +1,22 @@
 # Now
 
+- Documentation site generator with emscripten and santoku-web powered live
+  tests
+- Readline-enhanced repl
+
 - Santoku implementation of inspect allowing literal representation of the value
   for use in toku templates (i.e. for injecting an external_dependencies) table
   into a rockspec
-
-- finish parallel implementation
 
 - str.split/etc should return a generator if the underlying vector isnt needed
 
 - Basic README
 - Documentation
 - Refactor gen, fn, etc to use compat.hasmeta
-- Very basic linux library supporting better popen (exit status, etc) and fork
-
-- templates: a failing "check" call doesn't cause toku template to exit with a
-  failed status
-
-- bundle doesn't work with busybox xxd since it is missing the -n flag, which
-  allows us to specify the name of the variable the compiled lua file is stored
-  in
-
-- for simplicity, chunks in toku templates should not special case returning
-  booleans. instead, anything can be returned, and the first value returned is
-  converted to a string with tostring(...)
-
-- toku template excludes functionality is a bit confusing in that it excludes
-  the file from being templated, but, when invoked via the command line, still
-  copies it. First, this functionality should be the same whether invoked from
-  the command line or from a library call, and second, instead, there should be
-  a way to differentiate between files that should be totally excluded (neither
-  templated nor copied) and files that should not be templated but still copied.
 
 - santoku.lua for binding useful c-api functions for error checking, etc
+
 - Support calling generators in a generic for loop
-- template: allow `<%- ... %>` or similar to indicate that prefix should not be
-  interpreted
-- stack.pop should accept "n"
 
 - Add missing asserts
 
@@ -51,14 +32,6 @@
 
 - expand async: map, filter, etc.
     - What is needed in async, and what is already covered by cogen?
-
-- Separate libraries for optional dependencies
-
-- Allow async tests
-- Test: tags don't always show up correctly when errors occur (e.g what should
-  print "a: b: c" ends up printing just "c")
-
-- Test: show failing line numbers
 
 # Next
 
@@ -92,8 +65,6 @@
 
 - Functional utils for indexed arg get/set/del/map, filter, etc (basically
   immutable versions of vec/gen functions)
-
-- Template nested skip/show blocks
 
 - Add a "package" module to support checking if shell programs are installed and
   gracefully bailing if not. Futher extend to a generic project scripting tool
