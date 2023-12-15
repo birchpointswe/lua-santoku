@@ -36,7 +36,7 @@ M._searchpath = function (name, path, sep, rep)
   local msg = {}
   for subpath in path:gmatch("[^;]+") do
     local fpath = subpath:gsub("%?", pname)
-    local f = io_open(fpath, "r")
+    local f = io.open(fpath, "r")
     if f then
       f:close()
       return fpath
