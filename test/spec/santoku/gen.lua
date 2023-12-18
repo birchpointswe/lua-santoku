@@ -764,4 +764,8 @@ test("santoku.gen", function ()
     assert.equals(10, gen.pack(4, 4, 2):sum())
   end)
 
+  test("sum of nothing gives nil", function ()
+    assert.is_nil(gen.pack():sum())
+  end)
+
 end)

@@ -1,5 +1,7 @@
 # Now
 
+- err.error: always pass level 0 to avoid modifying the message
+
 - Documentation site generator with emscripten and santoku-web powered live
   tests
 - Readline-enhanced repl

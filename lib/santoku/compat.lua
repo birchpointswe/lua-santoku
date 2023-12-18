@@ -28,7 +28,7 @@ M._move = function (s, ss, se, ds, d)
 	return d
 end
 
--- Taken from https://github.com/lunarmodules/lua-compat-5.3/blob/a1735f6e6bd17588fcaf98720f0548c4caa23b34/compat53/module.lua#L685
+-- Taken from https://github.com/lunarmodules/lua-compat-5.3
 M._searchpath = function (name, path, sep, rep)
   sep = (sep or "."):gsub("(%p)", "%%%1")
   rep = (rep or package.config:sub(1, 1)):gsub("(%%)", "%%%1")
