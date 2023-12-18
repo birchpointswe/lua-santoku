@@ -1,6 +1,9 @@
 # Now
 
-- err.error: always pass level 0 to avoid modifying the message
+- Test with profiler: isvec, hasmeta, etc. seem to take a lot of time
+
+- err.error: consider always passing level 0 to avoid modifying the message
+- Consider moving profiler to a separate module
 
 - Documentation site generator with emscripten and santoku-web powered live
   tests
