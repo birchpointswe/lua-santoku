@@ -91,9 +91,9 @@ test("santoku.gen", function ()
 
     test("should detect invalid generators", function ()
 
-      assert.False(gen.isgen(1))
-      assert.False(gen.isgen({}))
-      assert.False(gen.isgen(vec()))
+      assert(not gen.isgen(1))
+      assert(not gen.isgen({}))
+      assert(not gen.isgen(vec()))
 
     end)
 

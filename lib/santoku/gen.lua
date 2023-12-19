@@ -44,6 +44,9 @@ local tup = require("santoku.tuple")
 
 local M = {}
 
+M.GENERATORS = setmetatable({}, { __mode = "kv" })
+M.CO_GENERATORS = setmetatable({}, { __mode = "kv" })
+
 M.MT = {
   __call = function (M, ...)
     return M.gen(...)
@@ -63,18 +66,11 @@ M.MT_GEN = {
 }
 
 M.isgen = function (t)
-  return compat.hasmeta(t, M.MT_GEN)
+  return M.GENERATORS[t]
 end
 
 M.iscogen = function (t)
-  local ok, err = M.isgen(t)
-  if not ok then
-    return ok, err
-  elseif not (compat.istype.thread(t.cor) and compat.istype.table(t.co)) then
-    return false, "not a co-generator: missing co and/or cor fields", t
-  else
-    return true
-  end
+  return M.CO_GENERATORS[t]
 end
 
 -- TODO: Allow the user to provide an error
@@ -88,13 +84,15 @@ M.gen = function (run, ...)
   run = run or compat.noop
   assert(compat.hasmeta.call(run))
   local args = tup(...)
-  return setmetatable({
+  local gen = setmetatable({
     run = function (yield, ...)
       yield = yield or compat.noop
       assert(compat.hasmeta.call(yield))
       return run(yield, args(...))
     end
   }, M.MT_GEN)
+  M.GENERATORS[gen] = true
+  return gen
 end
 
 M.iter = function (genfn, ...)
@@ -455,6 +453,7 @@ M.co = function (gen)
   assert(M.isgen(gen))
   gen.co = co()
   gen.cor = gen.co.create(gen.run)
+  M.CO_GENERATORS[gen] = true
   return gen
 end
 

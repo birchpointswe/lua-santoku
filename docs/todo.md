@@ -1,9 +1,8 @@
 # Now
 
-- Allow manual print of profile report by having santoku.profile return a report
-  function that is by default called via the garbage collector (as it's
-  currently implemented), but also can be called manually
-
+- Implement table equality
+- Consider adding an istbl to detect wrapped tables, consider renaming table to
+  dictionary or something so that istbl is not confusing.
 - Add copyright and MIT license to all libs
 - Remove luassert from all libs (painfully slow in WASM)
 - Remove luacheck from all libs (only needed on host)

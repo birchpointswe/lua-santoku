@@ -28,6 +28,8 @@ local tbl = require("santoku.table")
 
 local M = {}
 
+M.VECTORS = setmetatable({}, { __mode = "kv" })
+
 M.MT = {
   __call = function (M, ...)
     return M.pack(...)
@@ -40,7 +42,7 @@ M.MT_VECTOR = {
 
 -- TODO use inherit
 M.isvec = function (t)
-  return compat.hasmeta(t, M.MT_VECTOR), "argument is not a vector"
+  return M.VECTORS[t]
 end
 
 -- TODO use inherit
@@ -48,6 +50,7 @@ M.wrap = function (t)
   t = t or {}
   assert(type(t) == "table")
   t.n = t.n or #t
+  M.VECTORS[t] = true
   return setmetatable(t, M.MT_VECTOR)
 end
 
