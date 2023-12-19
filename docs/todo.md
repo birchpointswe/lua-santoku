@@ -1,5 +1,15 @@
 # Now
 
+- Allow manual print of profile report by having santoku.profile return a report
+  function that is by default called via the garbage collector (as it's
+  currently implemented), but also can be called manually
+
+- Add copyright and MIT license to all libs
+- Remove luassert from all libs (painfully slow in WASM)
+- Remove luacheck from all libs (only needed on host)
+- Update deps for all libs (santoku, santoku-test, etc)
+- Split callmod, ephemeron, etc into header-only library that is also exposed
+  via santoku.capi
 - Test with profiler: isvec, hasmeta, etc. seem to take a lot of time
 
 - err.error: consider always passing level 0 to avoid modifying the message
