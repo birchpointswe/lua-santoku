@@ -1,5 +1,7 @@
 # Now
 
+- Consider fully embracing duck typing to limit performance impact of asserts,
+  etc
 - Implement table equality
 - Consider adding an istbl to detect wrapped tables, consider renaming table to
   dictionary or something so that istbl is not confusing.

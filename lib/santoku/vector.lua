@@ -58,6 +58,7 @@ M.unwrap = function (t)
   assert(M.isvec(t))
   t.n = nil
   setmetatable(t, nil)
+  M.VECTORS[t] = false
   return t
 end
 
