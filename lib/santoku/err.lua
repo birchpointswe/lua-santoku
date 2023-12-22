@@ -74,7 +74,7 @@ end
 
 -- TODO: Calculate level by nested pwraps
 M.error = function (...)
-  error(table.concat({ ... }, ": "), 2)
+  error(tup.concat(tup.map(tostring, ...)), 0)
 end
 
 M.pwrapper = function (co, ...)
@@ -168,7 +168,7 @@ end
 
 M.check = function (ok, a, ...)
   if not ok then
-    error(a)
+    error(a, 0)
   else
     return a, ...
   end

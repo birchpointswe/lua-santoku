@@ -22,7 +22,6 @@ test("string", function ()
 
   end)
 
-  -- TODO: Test the printf format case (e.g. %d:val)
   test("interp", function ()
 
     test("should interpolate values", function ()
