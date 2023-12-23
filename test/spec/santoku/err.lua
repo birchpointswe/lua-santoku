@@ -7,7 +7,7 @@ test("err", function ()
 
   test("pwrap", function ()
 
-    test("check.exists", function ()
+    test("check:exists", function ()
 
       test("handles functions that return nothing", function ()
 
@@ -15,14 +15,13 @@ test("err", function ()
 
         local a, b, c = err.pwrap(function (check)
 
-          check.err("a", "b").exists(fn())
+          check:tag("a"):exists(fn())
           assert(false, "shouldn't reach here")
 
-        end, function (a, b, c)
+        end, function (tag, result)
 
-          assert(a == "a")
-          assert(b == "b")
-          assert(c == nil)
+          assert(tag == "a")
+          assert(result == nil)
 
         end)
 
@@ -31,6 +30,45 @@ test("err", function ()
         assert(c == nil)
 
       end)
+
+    end)
+
+    test("check:ok", function ()
+
+      local a, b, c = err.pwrap(function (check)
+
+        check:tag("a"):ok(false, "the error")
+        assert(false, "shouldn't reach here")
+
+      end, function (tag, result)
+
+        assert(tag == "a")
+        assert(result == "the error")
+
+      end)
+
+      assert(a == nil)
+      assert(b == nil)
+      assert(c == nil)
+
+    end)
+
+    test("check:ok (recover)", function ()
+
+      local ok, result = err.pwrap(function (check)
+
+        return check:tag("a"):ok(false, "the error")
+
+      end, function (tag, result)
+
+        assert(tag == "a")
+        assert(result == "the error")
+        return true, "b"
+
+      end)
+
+      assert(ok == true)
+      assert(result == "b")
 
     end)
 
