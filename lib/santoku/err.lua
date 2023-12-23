@@ -77,8 +77,8 @@ local IDX = {}
 
 M.MT = {
   __index = IDX,
-  __call = function (wrapper, ...)
-    return wrapper.ok(...)
+  __call = function (o, ...)
+    return o:ok(...)
   end
 }
 

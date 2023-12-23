@@ -7,6 +7,21 @@ test("err", function ()
 
   test("pwrap", function ()
 
+    test("check", function ()
+
+      local ok, err = err.pwrap(function (check)
+        check(false, "hi")
+      end, function (tag, err)
+        assert(tag == nil)
+        assert(err == "hi")
+        return false, err
+      end)
+
+      assert(ok == false)
+      assert(err == "hi")
+
+    end)
+
     test("check:exists", function ()
 
       test("handles functions that return nothing", function ()
