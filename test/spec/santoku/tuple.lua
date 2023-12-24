@@ -91,4 +91,37 @@ test("tuple", function ()
 
   end)
 
+  test("set", function ()
+    local a, b, c = tup.set(2, "x", "a", "b", "c")
+    assert(a == "a")
+    assert(b == "x")
+    assert(c == "c")
+  end)
+
+  test("reduce empty", function ()
+    local a = tup.reduce(function (a, n) return a + n end)
+    assert(a == nil)
+  end)
+
+  test("concat", function ()
+    local a = tup.concat("a", "b", "c")
+    assert(a == "abc")
+  end)
+
+  test("each", function ()
+    local n = 1
+    tup.each(function (x)
+      if n == 1 then
+        assert(x == "a")
+      elseif n == 2 then
+        assert(x == "b")
+      elseif n == 3 then
+        assert(x == "c")
+      else
+        assert(false)
+      end
+      n = n + 1
+    end, "a", "b", "c")
+  end)
+
 end)

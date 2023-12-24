@@ -125,6 +125,23 @@ test("async", function ()
 
   end)
 
+  test("each fails", function ()
+
+    local g = gen.pack(1, 2, 3):co()
+    local final = false
+
+    async.each(g, function (done)
+      done(false, "hello")
+    end, function (ok, err)
+      final = true
+      assert(ok == false)
+      assert(err == "hello")
+    end)
+
+    assert(final == true)
+
+  end)
+
   test("iter", function ()
 
     local idx = 0

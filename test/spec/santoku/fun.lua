@@ -2,6 +2,7 @@ local assert = require("luassert")
 local test = require("santoku.test")
 
 local fun = require("santoku.fun")
+local vec = require("santoku.vector")
 local op = require("santoku.op")
 
 test("fun", function ()
@@ -133,21 +134,6 @@ test("fun", function ()
 
   end)
 
-  -- TODO: Maybe has changed - it now
-  -- conditionally applies a function to the
-  -- 2-Nth argument based on the t/f of the 1st
-  -- arg, like a maybe monad
-  -- test("maybe", function ()
-  --   test("should apply a function if the value is truthy", function ()
-  --     local add1 = function (a) return a + 1 end
-  --     assert.equals(4, fun.maybe(3, add1))
-  --     assert.equals(1, fun.maybe(0, add1))
-  --     assert.is_nil(fun.maybe(nil, add1))
-  --     assert.equals(false, fun.maybe(false, add1))
-  --     assert.equals("b", fun.maybe(false, add1, compat.const("b")))
-  --   end)
-  -- end)
-
   test("choose", function ()
 
     test("should provide a functional if statement", function ()
@@ -164,6 +150,26 @@ test("fun", function ()
 
     end)
 
+  end)
+
+  test("bindl", function ()
+    local fn = fun.bindl(function (a, b) return { a, b } end, 1)
+    local v = fn(2)
+    assert(v[1] == 1)
+    assert(v[2] == 2)
+  end)
+
+  test("bindr", function ()
+    local fn = fun.bindr(function (a, b) return { a, b } end, 1)
+    local v = fn(2)
+    assert(v[1] == 2)
+    assert(v[2] == 1)
+  end)
+
+  test("maybel", function ()
+    local fn = fun.maybel(function (a) return a + 1 end)
+    assert(vec(true, 2):equals(vec(fn(true, 1))))
+    assert(vec(false, 1):equals(vec(fn(false, 1))))
   end)
 
 end)

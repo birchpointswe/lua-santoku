@@ -37,7 +37,7 @@ M.get = function (i, ...)
 end
 
 M.set = function (i, v, ...)
-  return M.tuple(M.take(i - 1, ...), v, M.sel(i + 1, ...))
+  return M.tuple(M.take(i - 1, ...))(v, M.sel(i + 1, ...))
 end
 
 M.append = function (a, ...)
