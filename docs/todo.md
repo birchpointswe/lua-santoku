@@ -1,5 +1,9 @@
 # Now
 
+- move santoku.err to santoku.check, which returns a "check" function
+    - top-level check() acts like err.check
+    - top-level check:wrap(...) acts like err.pwrap
+
 - Consider fully embracing duck typing to limit performance impact of asserts,
   etc
 - Implement table equality
@@ -12,6 +16,11 @@
 - Split callmod, ephemeron, etc into header-only library that is also exposed
   via santoku.capi
 - Test with profiler: isvec, hasmeta, etc. seem to take a lot of time
+
+- When called 3 arguments, string.escape should allow escaping a set of
+  characters with a specific escape character. With called with 2 arguments,
+  string.unescape does the opposite. With a single argument, both functions
+  behave as they do currently, escaping and unescaping per lua string patterns.
 
 - err.error: consider always passing level 0 to avoid modifying the message
 - Consider moving profiler to a separate module

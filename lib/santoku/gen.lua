@@ -566,6 +566,8 @@ M.zip = function (opts, ...)
   end, gens())
 end
 
+-- TODO: Does this need to be a cogen? Can't we just ignore the first N records
+-- during our loop?
 M.slice = function (gen, start, num)
   assert(M.iscogen(gen))
   gen:take((start or 1) - 1):discard()

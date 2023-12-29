@@ -34,7 +34,7 @@ M.bindl = function (fn, ...)
   assert(compat.hasmeta.call(fn))
   local args = vec(...)
   return function (...)
-    return fn(args:append(...):unpack())
+    return fn(vec():extend(args):append(...):unpack())
   end
 end
 
