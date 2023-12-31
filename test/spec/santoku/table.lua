@@ -95,4 +95,12 @@ test("table", function ()
 
   end)
 
+  test("equals", function ()
+
+    assert(tbl.equals({ a = 1, b = 2 }, { b = 2, a = 1 }))
+    assert(not tbl.equals({ a = 2, b = 2 }, { b = 2, a = 1 }))
+    assert(not tbl.equals({ a = 2, b = 2, 1, 2, 3 }, { b = 2, a = 1 }))
+
+  end)
+
 end)

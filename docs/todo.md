@@ -4,6 +4,8 @@
     - top-level check() acts like err.check
     - top-level check:wrap(...) acts like err.pwrap
 
+- Consider including tag, location, etc in err.check/check(...) failures
+
 - Consider fully embracing duck typing to limit performance impact of asserts,
   etc
 - Implement table equality
