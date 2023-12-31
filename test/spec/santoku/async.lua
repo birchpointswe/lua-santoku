@@ -125,6 +125,22 @@ test("async", function ()
 
   end)
 
+  test("each abort on fail", function ()
+    local g = gen.pack(1, 2, 3, 4):co()
+    local cnt = 0
+    async.each(g, function (done, a)
+      cnt = cnt + a
+      if cnt > 3 then
+        done(false, "hi")
+      else
+        done(true)
+      end
+    end, function (ok, err)
+      assert(ok == false and err == "hi")
+      assert(cnt == 6)
+    end)
+  end)
+
   test("iter", function ()
 
     local idx = 0
