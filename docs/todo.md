@@ -4,6 +4,9 @@
     - top-level check() acts like err.check
     - top-level check:wrap(...) acts like err.pwrap
 
+- Add memory/allocation to profiler
+- Add call hierarchy to profiler (step <- unknown <- gen <- etc)
+
 - Consider including tag, location, etc in err.check/check(...) failures
 
 - Consider fully embracing duck typing to limit performance impact of asserts,
