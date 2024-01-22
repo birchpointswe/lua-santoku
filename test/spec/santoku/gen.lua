@@ -768,4 +768,16 @@ test("santoku.gen", function ()
     assert.is_nil(gen.pack():sum())
   end)
 
+  test("range", function ()
+
+    assert.same({ 1, 2, 3, 4, n = 4 }, gen.range(4):vec())
+    assert.same({ -1, -2, -3, -4, n = 4 }, gen.range(-4):vec())
+
+    assert.same({ 3, 4, n = 2 }, gen.range(3, 4):vec())
+    assert.same({ -3, -4, n = 2 }, gen.range(-3, -4):vec())
+
+    assert.same({ 2, 4, 6, n = 3 }, gen.range(2, 6, 2):vec())
+
+  end)
+
 end)

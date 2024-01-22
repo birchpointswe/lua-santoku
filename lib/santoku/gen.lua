@@ -125,6 +125,31 @@ M.iter = function (genfn, ...)
   end
 end
 
+M.range = function (...)
+  local args = tup(...)
+  assert(compat.istype.number((...)))
+  return M.gen(function (yield)
+    if tup.len(args()) >= 2 then
+      local s, e, m = args()
+      m = m or (s < e and 1 or -1)
+      for i = s, e, m do
+        yield(i)
+      end
+    elseif tup.len(args()) == 1 then
+      local e = (args())
+      if e > 0 then
+        for i = 1, e, 1 do
+          yield(i)
+        end
+      elseif e < 0 then
+        for i = -1, e, -1 do
+          yield(i)
+        end
+      end
+    end
+  end)
+end
+
 M.step = function (gen, ...)
   assert(M.iscogen(gen))
   if gen.status == "dead" then
