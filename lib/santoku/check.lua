@@ -66,9 +66,7 @@ M.wrap = function (_, run, ...)
 
   while true do
     local ret = tup(o.co.resume(o.cor, args()))
-    if not ret() then
-      return tup.sel(2, ret())
-    elseif o.co.status(o.cor) == "dead" then
+    if not ret() or o.co.status(o.cor) == "dead" then
       return ret()
     elseif tup.sel(3, ret()) then
       args = tup(tup.sel(4, ret()))
