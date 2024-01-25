@@ -2,7 +2,7 @@
  local test = require("santoku.test")
  local check = require("santoku.check")
 
- test("err", function ()
+ test("check", function ()
 
    test("check(...)", function ()
      local ok, e = pcall(function ()
@@ -123,6 +123,32 @@
 
      assert(ok == true)
      assert(a == "two")
+
+   end)
+
+   test("nested check:wrap() failure", function ()
+
+     local ok, a = check:wrap(function (check)
+       check(check:wrap(function (check)
+         check(false, 1)
+       end))
+     end)
+
+     assert(ok == false)
+     assert(a == 1)
+
+   end)
+
+   test("nested check:wrap() success", function ()
+
+     local ok, a = check:wrap(function (check)
+       return check(check:wrap(function (check)
+         return check(true, 1)
+       end))
+     end)
+
+     assert(ok == true)
+     assert(a == 1)
 
    end)
 
