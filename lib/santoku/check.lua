@@ -56,13 +56,13 @@ subcheck = function (o, fn)
 
 end
 
-M.wrap = function (_, run)
+M.wrap = function (_, run, ...)
 
   local o = {}
   o.co = co()
   o.cor = o.co.create(run)
 
-  local args = tup(subcheck(o))
+  local args = tup(subcheck(o), ...)
 
   while true do
     local ret = tup(o.co.resume(o.cor, args()))
