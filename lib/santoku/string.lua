@@ -6,7 +6,7 @@
 -- that expands inspect to support multiple
 -- inputs and outputs
 
-local err = require("santoku.err")
+local check = require("santoku.check")
 local vec = require("santoku.vector")
 local gen = require("santoku.gen")
 
@@ -202,9 +202,8 @@ end
 --   opts.char = indent char, default ' '
 --   opts.level = indent level, default auto
 --   opts.dir = indent direction, default "in"
-M.indent = function (s, opts) -- luacheck: ignore
-  err.unimplemented("indent")
-end
+-- M.indent = function (s, opts) -- luacheck: ignore
+-- end
 
 -- Trim strings
 --   opts = string pattern for string.sub, defaults to
@@ -223,7 +222,7 @@ M.trim = function (s, opts)
     left = opts.left or left
     right = opts.right or right
   else
-    error("unexpected options argument: " .. type(opts))
+    check:error("Unexpected options argument", type(opts))
   end
   if left ~= false then
     s = s:gsub("^" .. left, "")

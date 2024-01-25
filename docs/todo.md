@@ -6,6 +6,7 @@
 
 - Add memory/allocation to profiler
 - Add call hierarchy to profiler (step <- unknown <- gen <- etc)
+- Can the profiler also track C calls?
 
 - Consider including tag, location, etc in err.check/check(...) failures
 
