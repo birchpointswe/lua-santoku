@@ -123,9 +123,17 @@ local function merge (t, ...)
   return t
 end
 
+local function map (t, fn)
+  for k, v in pairs(t) do
+    t[k] = fn(v)
+  end
+  return t
+end
+
 return {
   get = get,
   update = update,
+  map = map,
   set = set,
   assign = assign,
   equals = equals,

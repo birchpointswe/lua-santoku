@@ -12,7 +12,11 @@ local snumber = base.number
 
 local find = string.find
 local sub = string.sub
+local gsub = string.gsub
 local format = string.format
+local smatch = string.match
+local mhuge = math.huge
+local io_write = io.write
 
 -- TODO: delim: left/right
 -- TODO: support captures
@@ -26,7 +30,7 @@ local function _match (pat, delim, invert)
         ds, de = nil, nil
         return pos, str, s, e
       elseif ds then
-        s, e = ds, de
+        e = de
         ds, de = nil, nil
         return pos, str, pos, e + 1
       end
@@ -46,7 +50,7 @@ local function _match (pat, delim, invert)
         end
       end
     elseif invert and delim == true and ds then
-      s, e = ds, de
+      local s, e = ds, de
       ds, de = nil, nil
       return #str + 1, str, s, e
     end
@@ -118,173 +122,177 @@ local function interp (s, t)
 
 end
 
+local function parse (s, pat)
+  local keys = {}
+  pat = gsub(pat, "%b()#%b()", function (k)
+    local fmt = ihead(imap(sub, match(k, "%b()")))
+    local key = sub(k, #fmt + 2)
+    key = sub(key, 2, #key - 1)
+    apush(keys, key)
+    return fmt
+  end)
+  local vals = { smatch(s, pat) }
+  local ret = {}
+  for i = 1, #keys do
+    ret[keys[i]] = vals[i]
+  end
+  return ret
+end
+
+local function endswith (str, pat)
+  if str ~= nil and smatch(str, pat .. "$") then
+    return true
+  else
+    return false
+  end
+end
+
+local function startswith (str, pat)
+  if str ~= nil and smatch(str, "^" .. pat) then
+    return true
+  else
+    return false
+  end
+end
+
+local function quote (s, q, e)
+  q = q or "\""
+  e = e or "\\"
+  assert(type(s) == "string")
+  assert(type(q) == "string")
+  assert(type(e) == "string")
+  return acat({ q, (gsub(s, q, e .. q)), q })
+end
+
+local function unquote (s, q, e)
+  q = q or "\""
+  e = e or "\\"
+  assert(type(s) == "string")
+  assert(type(q) == "string")
+  assert(type(e) == "string")
+  if startswith(s, q) and endswith(s, q) then
+    local slen = #s
+    local qlen = #q
+    return gsub(sub(s, 1 + qlen, slen - qlen), e .. q, q)
+  else
+    return s
+  end
+end
+
+-- Escape strings for use in sub, gsub, etc
+local function escape (s)
+  return (gsub(s, "[%(%)%.%%+%-%*%?%[%]%^%$]", "%%%1"))
+end
+
+-- Unescape strings for use in sub, gsub, etc
+local function unescape (s)
+  return (gsub(s, "%%([%(%)%.%%+%-%*%?%[%]%^%$])", "%1"))
+end
+
+local function printf (s, ...)
+  return io_write(format(s, ...))
+end
+
+local function printi (s, t)
+  return print(interp(s, t))
+end
+
+-- TODO
+-- Indent or de-dent strings
+--   opts.char = indent char, default ' '
+--   opts.level = indent level, default auto
+--   opts.dir = indent direction, default "in"
+-- local function indent (s, opts) -- luacheck: ignore
+-- end
+
+local function trim (s, left, right)
+  if not left then
+    left = "%s*"
+  end
+  right = right or left
+  if left ~= false then
+    s = gsub(s, "^" .. left, "")
+  end
+  if right ~= false then
+    s = gsub(s, right  .. "$", "")
+  end
+  return s
+end
+
+local function isempty (s)
+  if s == nil or smatch(s, "^%s*$") then
+    return true
+  else
+    return false
+  end
+end
+
+local function stripprefix (str, pfx)
+  if not startswith(str, escape(pfx)) then
+    return str
+  end
+  local pfxlen = #pfx
+  local strlen = #str
+  return sub(str, pfxlen + 1, strlen)
+end
+
+local function compare (a, b)
+  if #a < #b then
+    return true
+  elseif #b < #a then
+    return false
+  else
+    return a < b
+  end
+end
+
+-- TODO: Can this be more performant? Can we
+-- avoid the { ... }
+local function commonprefix (...)
+  local strs = { ... }
+  local shortest, prefix, first = mhuge, ""
+  for _, str in pairs(strs) do
+    if #str < shortest then
+      shortest = #str
+    end
+  end
+  for i = 1, shortest do
+    if strs[1] then
+      first = sub(strs[1], i, i)
+    else
+      return prefix
+    end
+    for j = 2, #strs do
+      if sub(strs[j], i, i) ~= first then
+        return prefix
+      end
+    end
+    prefix = prefix .. first
+  end
+  return prefix
+end
+
 return {
   split = split,
   match = match,
   sub = sub,
+  gsub = gsub,
   find = find,
   format = format,
+  parse = parse,
   number = snumber,
   interp = interp,
+  quote = quote,
+  unquote = unquote,
+  startswith = startswith,
+  endswith = endswith,
+  escape = escape,
+  unescape = unescape,
+  printi = printi,
+  printf = printf,
+  trim = trim,
+  isempty = isempty,
+  stripprefix = stripprefix,
+  compare = compare,
+  commonprefix,
 }
-
--- M.quote = function (s, q, e)
---   q = q or "\""
---   e = e or "\\"
---   assert(type(s) == "string")
---   assert(type(q) == "string")
---   assert(type(e) == "string")
---   return table.concat({ q, (s:gsub(q, e .. q)), q })
--- end
---
--- M.unquote = function (s, q, e)
---   q = q or "\""
---   e = e or "\\"
---   assert(type(s) == "string")
---   assert(type(q) == "string")
---   assert(type(e) == "string")
---   if M.startswith(s, q) and M.endswith(s, q) then
---     local slen = s:len()
---     local qlen = q:len()
---     return (s:sub(1 + qlen, slen - qlen):gsub(e .. q, q))
---   else
---     return s
---   end
--- end
---
--- -- Escape strings for use in sub, gsub, etc
--- M.escape = function (s)
---   return (s:gsub("[%(%)%.%%+%-%*%?%[%]%^%$]", "%%%1"))
--- end
---
--- -- Unescape strings for use in sub, gsub, etc
--- M.unescape = function (s)
---   return (s:gsub("%%([%(%)%.%%+%-%*%?%[%]%^%$])", "%1"))
--- end
---
--- M.printf = function (s, ...)
---   return io.write(s:format(...))
--- end
---
--- M.printi = function (s, t)
---   return print(M.interp(s, t))
--- end
---
---
--- M.parse = function (s, pat)
---   local keys = vec()
---   pat = pat:gsub("%b()#%b()", function (k)
---     local fmt = k:match("%b()")
---     local key = k:sub(#fmt + 2)
---     key = key:sub(2, #key - 1)
---     keys:append(key)
---     return fmt
---   end)
---   local vals = vec.pack(string.match(s, pat))
---   return gen.ivals(keys):co():zip(gen.ivals(vals):co()):tabulate()
--- end
---
--- -- TODO
--- -- Indent or de-dent strings
--- --   opts.char = indent char, default ' '
--- --   opts.level = indent level, default auto
--- --   opts.dir = indent direction, default "in"
--- -- M.indent = function (s, opts) -- luacheck: ignore
--- -- end
---
--- -- Trim strings
--- --   opts = string pattern for string.sub, defaults to
--- --   whitespace
--- --   opts.left = same as opts but for left
--- --   opts.right = same as opts but for right
--- M.trim = function (s, opts)
---   local left = "%s*"
---   local right = "%s*"
---   if opts == nil then -- luacheck: ignore
---     -- do nothing
---   elseif type(opts) == "string" then
---     left = opts
---     right = opts
---   elseif type(opts) == "table" then
---     left = opts.left or left
---     right = opts.right or right
---   else
---     check:error("Unexpected options argument", type(opts))
---   end
---   if left ~= false then
---     s = s:gsub("^" .. left, "")
---   end
---   if right ~= false then
---     s = s:gsub(right  .. "$", "")
---   end
---   return s
--- end
---
--- M.isempty = function (s)
---   if s == nil or s:match("^%s*$") then
---     return true
---   else
---     return false
---   end
--- end
---
--- M.endswith = function (str, pat)
---   if str ~= nil and str:match(pat .. "$") then
---     return true
---   else
---     return false
---   end
--- end
---
--- M.startswith = function (str, pat)
---   if str ~= nil and str:match("^" .. pat) then
---     return true
---   else
---     return false
---   end
--- end
---
--- M.stripprefix = function (str, pfx)
---   if not M.startswith(str, M.escape(pfx)) then
---     return str
---   end
---   local pfxlen = pfx:len()
---   local strlen = str:len()
---   return str:sub(pfxlen + 1, strlen)
--- end
---
--- -- TODO: Can this be more performant? Can we
--- -- avoid the { ... }
--- M.commonprefix = function (...)
---   local strList = { ... }
---   local shortest, prefix, first = math.huge, ""
---   for _, str in pairs(strList) do
---     if str:len() < shortest then shortest = str:len() end
---   end
---   for strPos = 1, shortest do
---     if strList[1] then
---       first = strList[1]:sub(strPos, strPos)
---     else
---       return prefix
---     end
---     for listPos = 2, #strList do
---       if strList[listPos]:sub(strPos, strPos) ~= first then
---         return prefix
---       end
---     end
---     prefix = prefix .. first
---   end
---   return prefix
--- end
---
--- M.compare = function (a, b)
---   if #a < #b then
---     return true
---   elseif #b < #a then
---     return false
---   else
---     return a < b
---   end
--- end
---
--- return M

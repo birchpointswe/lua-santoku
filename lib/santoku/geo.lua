@@ -1,64 +1,78 @@
+-- TODO: Convert to use santoku.matrix
+
 local compat = require("santoku.compat")
 
-local M = {}
+local sqrt = math.sqrt
+local rad = math.rad
+local atan = compat.atan
+local sin = math.sin
+local cos = math.cos
+local deg = math.deg
 
-M.distance = function (one, two)
+local function distance (one, two)
   local a = two.x - one.x
   local b = two.y - one.y
-  return math.sqrt(a^2 + b^2)
+  return sqrt(a^2 + b^2)
 end
 
 -- Generalized perspective projection of 'point'
 -- with P=-1, resulting in stereographic
 -- projection centered on 'origin'
-M.earth_stereo = function (point, origin)
+local function earth_stereo (point, origin)
   local p = -1 -- Stereographic perspective
   local R = 3671 -- Earth's radius in kilometers
-  local lat1, lon1 = math.rad(origin.lat), math.rad(origin.lon)
-  local lat2, lon2 = math.rad(point.lat), math.rad(point.lon)
-  local cosc2 = math.sin(lat1) * math.sin(lat2) + math.cos(lat1) * math.cos(lat2) * math.cos(lon2 - lon1)
+  local lat1, lon1 = rad(origin.lat), rad(origin.lon)
+  local lat2, lon2 = rad(point.lat), rad(point.lon)
+  local cosc2 = sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon2 - lon1)
   local k2 = (p - 1) / (p - cosc2)
   return {
-    x = R * k2 * math.cos(lat2) * math.sin(lon2 - lon1),
-    y = R * k2 * (math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(lon2 - lon1))
+    x = R * k2 * cos(lat2) * sin(lon2 - lon1),
+    y = R * k2 * (cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(lon2 - lon1))
   }
 end
 
 -- In kilometers
-M.earth_distance = function (one, two)
+local function earth_distance (one, two)
   local earth_radius = 6371
-  local d_lat = math.rad(two.lat - one.lat)
-  local d_lon = math.rad(two.lon - one.lon)
-  local lat1 = math.rad(one.lat)
-  local lat2 = math.rad(two.lat)
-  local a = math.sin(d_lat / 2) * math.sin(d_lat / 2) +
-            math.sin(d_lon / 2) * math.sin(d_lon / 2) * math.cos(lat1) * math.cos(lat2)
-  local c = 2 * compat.atan(math.sqrt(a), math.sqrt(1 - a))
+  local d_lat = rad(two.lat - one.lat)
+  local d_lon = rad(two.lon - one.lon)
+  local lat1 = rad(one.lat)
+  local lat2 = rad(two.lat)
+  local a = sin(d_lat / 2) * sin(d_lat / 2) +
+            sin(d_lon / 2) * sin(d_lon / 2) * cos(lat1) * cos(lat2)
+  local c = 2 * compat.atan(sqrt(a), sqrt(1 - a))
   return earth_radius * c
 end
 
-M.rotate = function (point, origin, angle)
-  angle = math.rad(360 - angle)
+local function rotate (point, origin, angle)
+  angle = rad(360 - angle)
   return {
-    x = origin.x + math.cos(angle) * (point.x - origin.x) - math.sin(angle) * (point.y - origin.y),
-    y = origin.y + math.sin(angle) * (point.x - origin.x) + math.cos(angle) * (point.y - origin.y)
+    x = origin.x + cos(angle) * (point.x - origin.x) - sin(angle) * (point.y - origin.y),
+    y = origin.y + sin(angle) * (point.x - origin.x) + cos(angle) * (point.y - origin.y)
   }
 end
 
-M.angle = function (one, two)
+local function angle (one, two)
   if one.x == two.x and one.y == two.y then
     return 0
   end
-  local theta = compat.atan(two.x - one.x, two.y - one.y)
-  return (math.deg(theta) + 360) % 360
+  local theta = atan(two.x - one.x, two.y - one.y)
+  return (deg(theta) + 360) % 360
 end
 
-M.bearing = function (one, two)
+local function bearing (one, two)
   local dLon = two.lon - one.lon
-  local y = math.sin(dLon) * math.cos(two.lat)
-  local x = math.cos(one.lat) * math.sin(two.lat) - math.sin(one.lat)
-          * math.cos(two.lat) * math.cos(dLon)
-  return 360 - (math.deg(compat.atan(y, x)) + 360) % 360
+  local y = sin(dLon) * cos(two.lat)
+  local x = cos(one.lat) * sin(two.lat) - sin(one.lat)
+          * cos(two.lat) * cos(dLon)
+  return 360 - (deg(atan(y, x)) + 360) % 360
 end
 
-return M
+return {
+  distance = distance,
+  earth_stereo = earth_stereo,
+  earth_distance = earth_distance,
+  rotate = rotate,
+  angle = angle,
+  bearing = bearing,
+}

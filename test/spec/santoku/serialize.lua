@@ -1,6 +1,8 @@
-local assert = require("luassert")
 local test = require("santoku.test")
 local serialize = require("santoku.serialize")
+
+local tbl = require("santoku.table")
+local teq = tbl.equals
 
 test("serialize", function ()
 
@@ -14,6 +16,6 @@ test("serialize", function ()
 
   local t1f = loadstring("return " .. serialize(t0)) -- luacheck: ignore
 
-  assert.same(t0, assert(t1f)()) --
+  assert(teq(t0, assert(t1f)())) --
 
 end)

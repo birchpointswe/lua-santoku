@@ -1,46 +1,23 @@
 -- TODO: Basic inheritance logic
--- TODO: Should this be merged into utils?
 -- TODO: Should this be called "meta" or
 -- something related to metatables? Perhaps
 -- "index"?
 
-local M = {}
-
 -- TODO: Like pushindex, except sub-tables in t
 -- get indexes from the corresponding sub-tables
 -- in i
-M.mergeindex = function (t, i) -- luacheck: ignore
-  error("mergeindex: unimplemented")
-end
+-- mergeindex = function (t, i) -- luacheck: ignore
+-- end
 
-M.pushindex = function (t, i)
-  assert(type(t) == "table")
-  assert(t ~= i, "setting a table to its own index")
-  if not i then
-    return t
-  end
-  assert(type(i) == "table")
-  local tindex = M.getindex(t)
-  M.setindex(t, i)
-  if tindex and i ~= tindex then
-    M.pushindex(i, tindex)
-  end
-  return t
-end
-
-M.popindex = function (t)
-  assert(type(t) == "table")
-  local tindex = M.getindex(t)
-  if not tindex then
+local function getindex (t)
+  local tmeta = getmetatable(t)
+  if not tmeta then
     return
-  else
-    local iindex = M.getindex(tindex)
-    M.setindex(t, iindex)
-    return tindex
   end
+  return tmeta.__index
 end
 
-M.setindex = function (t, i)
+local function setindex (t, i)
   assert(type(t) == "table")
   local mt = getmetatable(t)
   if not mt then
@@ -51,18 +28,37 @@ M.setindex = function (t, i)
   return t
 end
 
-M.getindex = function (t)
-  local tmeta = getmetatable(t)
-  if not tmeta then
-    return
+local function pushindex (t, i)
+  assert(type(t) == "table")
+  assert(t ~= i, "setting a table to its own index")
+  if not i then
+    return t
   end
-  return tmeta.__index
+  assert(type(i) == "table")
+  local tindex = getindex(t)
+  setindex(t, i)
+  if tindex and i ~= tindex then
+    pushindex(i, tindex)
+  end
+  return t
 end
 
-M.hasindex = function (t, i)
+local function popindex (t)
+  assert(type(t) == "table")
+  local tindex = getindex(t)
+  if not tindex then
+    return
+  else
+    local iindex = getindex(tindex)
+    setindex(t, iindex)
+    return tindex
+  end
+end
+
+local function hasindex (t, i)
   local tindex
   while true do
-    tindex = M.getindex(t)
+    tindex = getindex(t)
     if not tindex then
       return false
     elseif tindex == i then
@@ -73,4 +69,10 @@ M.hasindex = function (t, i)
   end
 end
 
-return M
+return {
+  pushindex = pushindex,
+  popindex = popindex,
+  getindex = getindex,
+  setindex = setindex,
+  hasindex = hasindex
+}

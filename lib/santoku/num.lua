@@ -1,9 +1,13 @@
-local M = {}
+-- TODO: Migrate to santoku.matrix
 
-M.trunc = function (n, d)
-  local i, f = math.modf(n)
+local modf = math.modf
+
+local function trunc (n, d)
+  local i, f = modf(n)
   d = 10^d
-  return i + math.modf(f * d) / d
+  return i + modf(f * d) / d
 end
 
-return M
+return {
+  trunc = trunc
+}

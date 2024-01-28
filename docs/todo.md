@@ -1,5 +1,13 @@
 # Now
 
+- Template capability to process the entire file and produce output accordingly
+  - for example, writing return <% return exports() %> at the bottom of a file
+    which would look at all of the locally defined functions and automagically
+    produce an export table, or generating imports
+
+- Allow string.match to handle capture groups, then there's no need for the base
+  string.match
+
 - Move compat tools to separate packages
     - santoku.math replicating math with atan, etc
     - santoku.package replicating package with searchpath, etc
