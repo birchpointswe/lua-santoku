@@ -4,7 +4,7 @@ local sys = require("santoku.system")
 local env = {
 
   name = "santoku",
-  version = "0.0.164-1",
+  version = "0.0.165-1",
   variable_prefix = "TK",
   license = "MIT",
   public = true,
@@ -14,17 +14,8 @@ local env = {
   },
 
   test = {
-    hooks = {
-      post_make = function (e)
-        err.check(sys.execute({
-          env = { LUAROCKS_CONFIG = e.luarocks_config }
-        }, "luarocks", "install", "santoku-test", "0.0.7-1"))
-        return true
-      end
-    },
     dependencies = {
-      "luacov >= scm-1",
-      "luassert >= 1.9.0-1",
+      "luacov >= 0.15.0-1"
     }
   },
 

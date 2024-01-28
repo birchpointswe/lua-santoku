@@ -1,6 +1,5 @@
 local test = require("santoku.test")
 local compat = require("santoku.compat")
-local assert = require("luassert")
 
 test("compat", function ()
 
@@ -12,20 +11,6 @@ test("compat", function ()
       assert(2 == b)
       assert(3 == c)
       assert(nil == d)
-    end)
-
-  end)
-
-  test("const", function ()
-
-    test("should a function that returns the arguments", function ()
-      local fn = compat.const(1, 2, 3)
-      for _ = 1, 10 do
-        local a, b, c = fn()
-        assert(1 == a)
-        assert(2 == b)
-        assert(3 == c)
-      end
     end)
 
   end)
@@ -61,8 +46,8 @@ test("compat", function ()
   end)
 
   test("istype", function ()
-    assert.equals(true, compat.istype.string("hello"))
-    assert.equals(true, compat.istype("hello", "string"))
+    assert(true == compat.istype.string("hello"))
+    assert(true == compat.istype("hello", "string"))
   end)
 
 end)

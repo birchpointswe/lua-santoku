@@ -1,20 +1,22 @@
 # Now
 
-- move santoku.err to santoku.check, which returns a "check" function
-    - top-level check() acts like err.check
-    - top-level check:wrap(...) acts like err.pwrap
+- Move compat tools to separate packages
+    - santoku.math replicating math with atan, etc
+    - santoku.package replicating package with searchpath, etc
+
+- Implement capi fns for checkopt, optstring, etc
+
+- Consider santoku.require("santoku.array", "push", "spread", ...) for
+  automatically localizing imports
+
+- Feature pairity: tup, array, table, iter, cont
 
 - Add memory/allocation to profiler
 - Add call hierarchy to profiler (step <- unknown <- gen <- etc)
-- Can the profiler also track C calls?
-
-- Consider including tag, location, etc in err.check/check(...) failures
+- Add C calls to profiler
 
 - Consider fully embracing duck typing to limit performance impact of asserts,
   etc
-- Implement table equality
-- Consider adding an istbl to detect wrapped tables, consider renaming table to
-  dictionary or something so that istbl is not confusing.
 - Add copyright and MIT license to all libs
 - Remove luassert from all libs (painfully slow in WASM)
 - Remove luacheck from all libs (only needed on host)

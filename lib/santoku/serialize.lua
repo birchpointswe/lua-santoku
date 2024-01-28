@@ -1,53 +1,16 @@
 -- NOTE: Adapted from:
 -- https://github.com/luarocks/luarocks/blob/master/src/luarocks/persist.lua
 
-local gen = require("santoku.gen")
-local vec = require("santoku.vector")
+local array = require("santoku.array")
+local acat = array.concat
+local apush = array.push
 
-local M = {}
+local _serialize_table
 
-M._serialize_table_contents = function (out, tbl, level)
-  local sep = "\n"
-  local indentation = "  "
-  local i = 1
-  gen.pairs(tbl):each(function (k, v)
-    out:append(sep)
-    for _ = 1, level do
-      out:append(indentation)
-    end
-    if k == i then
-      i = i + 1
-    else
-      M._serialize_table_key_assignment(out, k, level)
-    end
-    M._serialize_value(out, v, level)
-    sep = ",\n"
-  end)
-  if sep ~= "\n" then
-    out:append("\n")
-    for _ = 1, level - 1 do
-      out:append(indentation)
-    end
-  end
-end
-
-M._serialize_table = function (out, tbl, level)
-  out:append("{")
-  M._serialize_table_contents(out, tbl, level)
-  out:append("}")
-end
-
-M._serialize_table_key_assignment = function (out, k, level)
-  out:append("[")
-  M._serialize_value(out, k, level)
-  out:append("]")
-  out:append(" = ")
-end
-
-M._serialize_value = function (out, v, level)
+local function _serialize_value (out, v, level)
   if type(v) == "table" then
     level = level or 0
-    M._serialize_table(out, v, level + 1)
+    _serialize_table(out, v, level + 1)
   elseif type(v) == "string" then
     if v:match("[\r\n]") then
       local open = "[["
@@ -60,29 +23,70 @@ M._serialize_value = function (out, v, level)
         open = "[" .. eqs .. "["
         close = "]" .. eqs .. "]"
       end
-      out:append(open .. "\n" .. v .. close)
+      apush(out, open .. "\n" .. v .. close)
     else
-      out:append(("%q"):format(v))
+      apush(out, ("%q"):format(v))
     end
   else
-    out:append(tostring(v))
+    apush(out, tostring(v))
   end
 end
 
-M.serialize_table_contents = function (t)
-  local out = vec()
-  M._serialize_table_contents(out, t, 1)
-  return out:concat()
+local function _serialize_table_key_assignment (out, k, level)
+  apush(out, "[")
+  _serialize_value(out, k, level)
+  apush(out, "]")
+  apush(out, " = ")
 end
 
-M.serialize = function (t)
-  local out = vec()
-  M._serialize_value(out, t)
-  return out:concat()
+local function _serialize_table_contents (out, tbl, level)
+  local sep = "\n"
+  local indentation = "  "
+  local i = 1
+  for k, v in pairs(tbl) do
+    apush(out, sep)
+    for _ = 1, level do
+      apush(out, indentation)
+    end
+    if k == i then
+      i = i + 1
+    else
+      _serialize_table_key_assignment(out, k, level)
+    end
+    _serialize_value(out, v, level)
+    sep = ",\n"
+  end
+  if sep ~= "\n" then
+    apush(out, "\n")
+    for _ = 1, level - 1 do
+      apush(out, indentation)
+    end
+  end
 end
 
-return setmetatable(M, {
+_serialize_table = function (out, tbl, level)
+  apush(out, "{")
+  _serialize_table_contents(out, tbl, level)
+  apush(out, "}")
+end
+
+local function serialize_table_contents (t)
+  local out = {}
+  _serialize_table_contents(out, t, 1)
+  return acat(out)
+end
+
+local function serialize (t)
+  local out = {}
+  _serialize_value(out, t)
+  return acat(out)
+end
+
+return setmetatable({
+  serialize = serialize,
+  serialize_table_contents = serialize_table_contents,
+}, {
   __call = function (_, ...)
-    return M.serialize(...)
+    return serialize(...)
   end
 })

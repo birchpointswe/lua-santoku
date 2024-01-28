@@ -70,13 +70,6 @@ M.id = function (...)
   return ...
 end
 
-M.const = function (...)
-  local args = M.pack(...)
-  return function ()
-    return M.unpack(args, 1, args.n)
-  end
-end
-
 M.lt = function (n, v)
   assert(M.hasmeta.lt(n))
   assert(M.hasmeta.lt(v))

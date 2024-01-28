@@ -1,313 +1,290 @@
--- Functions that operate on lua strings
+local iter = require("santoku.iter")
+local imap = iter.map
+local icollect = iter.collect
+local ihead = iter.head
 
--- TODO: Add the pre-curried functions
+local arr = require("santoku.array")
+local acat = arr.concat
+local apush = arr.push
 
--- TODO: We need a str.inspect(...) or similar
--- that expands inspect to support multiple
--- inputs and outputs
+local base = require("santoku.string.base")
+local snumber = base.number
 
-local check = require("santoku.check")
-local vec = require("santoku.vector")
-local gen = require("santoku.gen")
+local find = string.find
+local sub = string.sub
+local format = string.format
 
--- TODO: Consider optionally allowing users to
--- use match, split, etc. lazily via generators
--- or strictly with vectors
-
-local M = {}
-
--- TODO: Figure out a way to do this such that
--- we can still call methods in oop style but
--- the underlying functions receive the string,
--- not the table, as an argument
---
--- M.wrap = function (s)
---   return setmetatable({ s = s }, {
---     __index = M
---   })
--- end
-
--- TODO: need an imatch that just returns
--- indices
-M.match = function (str, pat, n)
-  assert(type(pat) == "string")
-  assert(type(str) == "string")
-  local t = vec()
-  for tok in str:gmatch(pat) do
-    t:append(tok)
-		if n and t.n == n then
-			break
-		end
-  end
-  return t
-end
-
--- Split a string
---   opts.delim: default == false
---   opts.delim == false: throw out delimiters
---   opts.delim == true: keep delimiters as
---     separate tokens
---   opts.delim == "left": keep delimiters
---     concatenated to the left token
---   opts.delim == "right": keep delimiters
---     concatenated to the right token
---
--- TODO: allow splitting specific number of times from left or
--- right
---   opts.times: default == true
---   opts.times == true: as many as possible from left
---   opts.times == false: as many times as possible from right
---   opts.times > 0: number of times, starting from left
---   opts.times < 0: number of times, starting from right
--- TODO: need an isplit that just returns
--- indices
-M.split = function (str, pat, opts)
-  opts = opts or {}
-  pat = pat or "%s+"
-  local delim = opts.delim or false
-  local n = 1
-  local ls = 1
-  local stop = false
-  local ret = vec()
-  while not stop do
-    local s, e = str:find(pat, n)
-    stop = s == nil
-    if stop then
-      s = #str + 1
-    end
-    if delim == true then
-      ret:append(str:sub(n, s - 1))
-      if not stop then
-        ret:append(str:sub(s, e))
+-- TODO: delim: left/right
+-- TODO: support captures
+local function _match (pat, delim, invert)
+  local ds, de
+  return function (str, pos)
+    if str and pos <= #str then
+      local s, e
+      if ds and invert then
+        s, e = ds, de
+        ds, de = nil, nil
+        return pos, str, s, e
+      elseif ds then
+        s, e = ds, de
+        ds, de = nil, nil
+        return pos, str, pos, e + 1
       end
-    elseif delim == "left" then
-      ret:append(str:sub(n, e))
-    elseif delim == "right" then
-      ret:append(str:sub(ls, s - 1))
-    else
-      ret:append(str:sub(n, s - 1))
+      s, e = find(str, pat, pos)
+      if delim == true and not ds then
+        ds, de = s, e
+      end
+      if s ~= nil then
+        if invert then
+          return e + 1, str, pos, s - 1
+        else
+          return e + 1, str, s, e
+        end
+      else
+        if invert then
+          return #str + 1, str, pos, #str
+        end
+      end
+    elseif invert and delim == true and ds then
+      s, e = ds, de
+      ds, de = nil, nil
+      return #str + 1, str, s, e
     end
-    if stop then
-      break
-    else
-      ls = s
-      n = e + 1
-    end
-  end
-  return ret
-end
-
-M.quote = function (s, q, e)
-  q = q or "\""
-  e = e or "\\"
-  assert(type(s) == "string")
-  assert(type(q) == "string")
-  assert(type(e) == "string")
-  return table.concat({ q, (s:gsub(q, e .. q)), q })
-end
-
-M.unquote = function (s, q, e)
-  q = q or "\""
-  e = e or "\\"
-  assert(type(s) == "string")
-  assert(type(q) == "string")
-  assert(type(e) == "string")
-  if M.startswith(s, q) and M.endswith(s, q) then
-    local slen = s:len()
-    local qlen = q:len()
-    return (s:sub(1 + qlen, slen - qlen):gsub(e .. q, q))
-  else
-    return s
   end
 end
 
--- Escape strings for use in sub, gsub, etc
-M.escape = function (s)
-  return (s:gsub("[%(%)%.%%+%-%*%?%[%]%^%$]", "%%%1"))
+local function split (str, pat, delim)
+  return _match(pat, delim, true), str, 1
 end
 
--- Unescape strings for use in sub, gsub, etc
-M.unescape = function (s)
-  return (s:gsub("%%([%(%)%.%%+%-%*%?%[%]%^%$])", "%1"))
-end
-
-M.printf = function (s, ...)
-  return io.write(s:format(...))
-end
-
-M.printi = function (s, t)
-  return print(M.interp(s, t))
+local function match (str, pat, delim)
+  return _match(pat, delim, false), str, 1
 end
 
 -- TODO: Handle escaped %s in the format string
 -- like %%s\n, which should output %s\n
 --
+-- TODO: Improve performance by not taking substrings of the input, just operate
+-- on the indices
+--
 -- Interpolate strings
 --   "Hello %name. %adjective to meet you."
 --   "Name: %name. Age: %d#age"
-M.interp = function (s, t)
+local function interp (s, t)
 
   local fmtpat = "%%[%w.]+"
   local keypat = "^#%b()"
 
-  local segments = M.split(s, fmtpat, { delim = true })
+  local segments = icollect(imap(sub, split(s, fmtpat, true)))
+  local out = {}
 
-  return gen.ipairs(segments):map(function (i, s)
+  for i = 1, #segments do
 
-    if not s:match(fmtpat) then
-      return s
-    end
+    local s = segments[i]
 
-    local format = s
-    local key = i <= segments.n and segments[i + 1]:match(keypat)
+    if not ihead(match(s, fmtpat)) then
 
-    if key then
-      segments[i + 1] = segments[i + 1]:sub(#key + 1)
-      key = key:sub(3, #key - 1)
+      apush(out, s)
+
     else
-      key = format:sub(2)
-      format = nil
-    end
 
-    local nkey = tonumber(key)
-    local result
+      local fmt = s
+      local key = i <= #segments and ihead(match(segments[i + 1], keypat))
 
-    if nkey and not t[key] then
-      result = t[nkey] or ""
-    else
-      result = t[key] or ""
-    end
-
-    return format and string.format(format, result) or result
-
-  end):concat()
-
-end
-
-M.parse = function (s, pat)
-  local keys = vec()
-  pat = pat:gsub("%b()#%b()", function (k)
-    local fmt = k:match("%b()")
-    local key = k:sub(#fmt + 2)
-    key = key:sub(2, #key - 1)
-    keys:append(key)
-    return fmt
-  end)
-  local vals = vec.pack(string.match(s, pat))
-  return gen.ivals(keys):co():zip(gen.ivals(vals):co()):tabulate()
-end
-
--- TODO
--- Indent or de-dent strings
---   opts.char = indent char, default ' '
---   opts.level = indent level, default auto
---   opts.dir = indent direction, default "in"
--- M.indent = function (s, opts) -- luacheck: ignore
--- end
-
--- Trim strings
---   opts = string pattern for string.sub, defaults to
---   whitespace
---   opts.left = same as opts but for left
---   opts.right = same as opts but for right
-M.trim = function (s, opts)
-  local left = "%s*"
-  local right = "%s*"
-  if opts == nil then -- luacheck: ignore
-    -- do nothing
-  elseif type(opts) == "string" then
-    left = opts
-    right = opts
-  elseif type(opts) == "table" then
-    left = opts.left or left
-    right = opts.right or right
-  else
-    check:error("Unexpected options argument", type(opts))
-  end
-  if left ~= false then
-    s = s:gsub("^" .. left, "")
-  end
-  if right ~= false then
-    s = s:gsub(right  .. "$", "")
-  end
-  return s
-end
-
-M.isempty = function (s)
-  if s == nil or s:match("^%s*$") then
-    return true
-  else
-    return false
-  end
-end
-
-M.endswith = function (str, pat)
-  if str ~= nil and str:match(pat .. "$") then
-    return true
-  else
-    return false
-  end
-end
-
-M.startswith = function (str, pat)
-  if str ~= nil and str:match("^" .. pat) then
-    return true
-  else
-    return false
-  end
-end
-
-M.stripprefix = function (str, pfx)
-  if not M.startswith(str, M.escape(pfx)) then
-    return str
-  end
-  local pfxlen = pfx:len()
-  local strlen = str:len()
-  return str:sub(pfxlen + 1, strlen)
-end
-
--- TODO: Can this be more performant? Can we
--- avoid the { ... }
-M.commonprefix = function (...)
-  local strList = { ... }
-  local shortest, prefix, first = math.huge, ""
-  for _, str in pairs(strList) do
-    if str:len() < shortest then shortest = str:len() end
-  end
-  for strPos = 1, shortest do
-    if strList[1] then
-      first = strList[1]:sub(strPos, strPos)
-    else
-      return prefix
-    end
-    for listPos = 2, #strList do
-      if strList[listPos]:sub(strPos, strPos) ~= first then
-        return prefix
+      if key then
+        segments[i + 1] = sub(segments[i + 1], #key + 1)
+        key = sub(key, 3, #key - 1)
+      else
+        key = sub(fmt, 2)
+        fmt = nil
       end
+
+      local nkey = tonumber(key)
+      local result
+
+      if nkey and not t[key] then
+        result = t[nkey] or ""
+      else
+        result = t[key] or ""
+      end
+
+      apush(out, fmt and format(fmt, result) or result)
+
     end
-    prefix = prefix .. first
+
   end
-  return prefix
+
+  return acat(out)
+
 end
 
-M.compare = function (a, b)
-  if #a < #b then
-    return true
-  elseif #b < #a then
-    return false
-  else
-    return a < b
-  end
-end
+return {
+  split = split,
+  match = match,
+  sub = sub,
+  find = find,
+  format = format,
+  number = snumber,
+  interp = interp,
+}
 
-return M
-
--- TODO: see note on M.wrap for why this doesn't
--- work yet
+-- M.quote = function (s, q, e)
+--   q = q or "\""
+--   e = e or "\\"
+--   assert(type(s) == "string")
+--   assert(type(q) == "string")
+--   assert(type(e) == "string")
+--   return table.concat({ q, (s:gsub(q, e .. q)), q })
+-- end
 --
--- return setmetatable({}, {
---   __index = M,
---   __call = function (_, t)
---     return M.wrap(t)
+-- M.unquote = function (s, q, e)
+--   q = q or "\""
+--   e = e or "\\"
+--   assert(type(s) == "string")
+--   assert(type(q) == "string")
+--   assert(type(e) == "string")
+--   if M.startswith(s, q) and M.endswith(s, q) then
+--     local slen = s:len()
+--     local qlen = q:len()
+--     return (s:sub(1 + qlen, slen - qlen):gsub(e .. q, q))
+--   else
+--     return s
 --   end
--- })
+-- end
+--
+-- -- Escape strings for use in sub, gsub, etc
+-- M.escape = function (s)
+--   return (s:gsub("[%(%)%.%%+%-%*%?%[%]%^%$]", "%%%1"))
+-- end
+--
+-- -- Unescape strings for use in sub, gsub, etc
+-- M.unescape = function (s)
+--   return (s:gsub("%%([%(%)%.%%+%-%*%?%[%]%^%$])", "%1"))
+-- end
+--
+-- M.printf = function (s, ...)
+--   return io.write(s:format(...))
+-- end
+--
+-- M.printi = function (s, t)
+--   return print(M.interp(s, t))
+-- end
+--
+--
+-- M.parse = function (s, pat)
+--   local keys = vec()
+--   pat = pat:gsub("%b()#%b()", function (k)
+--     local fmt = k:match("%b()")
+--     local key = k:sub(#fmt + 2)
+--     key = key:sub(2, #key - 1)
+--     keys:append(key)
+--     return fmt
+--   end)
+--   local vals = vec.pack(string.match(s, pat))
+--   return gen.ivals(keys):co():zip(gen.ivals(vals):co()):tabulate()
+-- end
+--
+-- -- TODO
+-- -- Indent or de-dent strings
+-- --   opts.char = indent char, default ' '
+-- --   opts.level = indent level, default auto
+-- --   opts.dir = indent direction, default "in"
+-- -- M.indent = function (s, opts) -- luacheck: ignore
+-- -- end
+--
+-- -- Trim strings
+-- --   opts = string pattern for string.sub, defaults to
+-- --   whitespace
+-- --   opts.left = same as opts but for left
+-- --   opts.right = same as opts but for right
+-- M.trim = function (s, opts)
+--   local left = "%s*"
+--   local right = "%s*"
+--   if opts == nil then -- luacheck: ignore
+--     -- do nothing
+--   elseif type(opts) == "string" then
+--     left = opts
+--     right = opts
+--   elseif type(opts) == "table" then
+--     left = opts.left or left
+--     right = opts.right or right
+--   else
+--     check:error("Unexpected options argument", type(opts))
+--   end
+--   if left ~= false then
+--     s = s:gsub("^" .. left, "")
+--   end
+--   if right ~= false then
+--     s = s:gsub(right  .. "$", "")
+--   end
+--   return s
+-- end
+--
+-- M.isempty = function (s)
+--   if s == nil or s:match("^%s*$") then
+--     return true
+--   else
+--     return false
+--   end
+-- end
+--
+-- M.endswith = function (str, pat)
+--   if str ~= nil and str:match(pat .. "$") then
+--     return true
+--   else
+--     return false
+--   end
+-- end
+--
+-- M.startswith = function (str, pat)
+--   if str ~= nil and str:match("^" .. pat) then
+--     return true
+--   else
+--     return false
+--   end
+-- end
+--
+-- M.stripprefix = function (str, pfx)
+--   if not M.startswith(str, M.escape(pfx)) then
+--     return str
+--   end
+--   local pfxlen = pfx:len()
+--   local strlen = str:len()
+--   return str:sub(pfxlen + 1, strlen)
+-- end
+--
+-- -- TODO: Can this be more performant? Can we
+-- -- avoid the { ... }
+-- M.commonprefix = function (...)
+--   local strList = { ... }
+--   local shortest, prefix, first = math.huge, ""
+--   for _, str in pairs(strList) do
+--     if str:len() < shortest then shortest = str:len() end
+--   end
+--   for strPos = 1, shortest do
+--     if strList[1] then
+--       first = strList[1]:sub(strPos, strPos)
+--     else
+--       return prefix
+--     end
+--     for listPos = 2, #strList do
+--       if strList[listPos]:sub(strPos, strPos) ~= first then
+--         return prefix
+--       end
+--     end
+--     prefix = prefix .. first
+--   end
+--   return prefix
+-- end
+--
+-- M.compare = function (a, b)
+--   if #a < #b then
+--     return true
+--   elseif #b < #a then
+--     return false
+--   else
+--     return a < b
+--   end
+-- end
+--
+-- return M

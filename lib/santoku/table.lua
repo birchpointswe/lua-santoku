@@ -1,56 +1,23 @@
--- Functions that operate on pure lua tables
-
--- TODO: Add the pre-curried functions
-
--- TODO: merge, deep merge, etc, walk a
--- table
---
--- TODO: Clarify where n should be added or
--- omitted: If the library input omits it, omit
--- it except in the case of wrapn, setn, pack,
--- etc.
---
--- Don't use oop style in here, leave that for
--- the API user
-
 local compat = require("santoku.compat")
-local tup = require("santoku.tuple")
+local haspairs = compat.hasmeta.pairs
+local hasindex = compat.hasmeta.index
+local hasnewindex = compat.hasmeta.newindex
 
-local M = {}
+local varg = require("santoku.varg")
+local vtup = varg.tup
+local vget = varg.get
+local vappend = varg.append
+local vlen = varg.len
+local vtake = varg.take
 
-M.MT = {
-  __call = function (M, t)
-    return M.wrap(t)
-  end
-}
-
-M.MT_TABLE = {
-  __index = M
-}
-
--- TODO use inherit
-M.wrap = function (t)
-  t = t or {}
-  return setmetatable(t, M.MT_TABLE)
-end
-
-M.unwrap = function (t)
-  setmetatable(t, nil)
-  return t
-end
-
-M.unwrapped = function (t)
-  return M.assign({}, t)
-end
-
-M.get = function (t, ...)
-  assert(compat.hasmeta.index(t))
-  local m = tup.len(...)
+local function get (t, ...)
+  assert(hasindex(t))
+  local m = vlen(...)
   if m == 0 then
     return t
   else
     for i = 1, m do
-      t = t[tup.get(i, ...)]
+      t = t[vget(i, ...)]
       if t == nil then
         break
       end
@@ -59,27 +26,16 @@ M.get = function (t, ...)
   end
 end
 
-M.update = function (t, ...)
-  local m = tup.len(...)
+local function set (t, ...)
+  local m = vlen(...)
   assert(m > 1, "one or more keys must be provided")
-  local ks = tup(tup.take(m - 1, ...))
-  local fn = tup.get(m, ...)
-  assert(compat.hasmeta.call(fn))
-  local v = M.get(t, ks())
-  M.set(t, ks(fn(v)))
-  return t
-end
-
-M.set = function (t, ...)
-  local m = tup.len(...)
-  assert(m > 1, "one or more keys must be provided")
-  local v = tup.get(m, ...)
+  local v = vget(m, ...)
   m = m - 1
   local t0 = t
   for i = 1, m - 1 do
-    assert(compat.hasmeta.index(t0))
-    assert(compat.hasmeta.newindex(t0))
-    local k = tup.get(i, ...)
+    assert(hasindex(t0))
+    assert(hasnewindex(t0))
+    local k = vget(i, ...)
     if t0 == nil then
       return
     end
@@ -90,17 +46,27 @@ M.set = function (t, ...)
     end
     t0 = t0[k]
   end
-  t0[tup.get(m, ...)] = v
+  t0[vget(m, ...)] = v
   return t
 end
 
-M.assign = function (t, ...)
-  assert(compat.hasmeta.index(t))
-  assert(compat.hasmeta.newindex(t))
-  local m = tup.len(...)
+local function update (t, ...)
+  local m = vlen(...)
+  assert(m > 1, "one or more keys must be provided")
+  local fn = vget(m, ...)
+  return vtup(function (...)
+    local v = get(t, ...)
+    return set(t, vappend((fn(v)), ...))
+  end, vtake(m - 1, ...))
+end
+
+local function assign (t, ...)
+  assert(hasindex(t))
+  assert(hasnewindex(t))
+  local m = vlen(...)
   for i = 1, m do
-    local t0 = tup.get(i, ...)
-    assert(compat.hasmeta.pairs(t0))
+    local t0 = vget(i, ...)
+    assert(haspairs(t0))
     for k, v in pairs(t0) do
       t[k] = v
     end
@@ -108,102 +74,60 @@ M.assign = function (t, ...)
   return t
 end
 
-M.each = function (t, fn, ...)
-  assert(compat.hasmeta.call(fn))
-  assert(compat.hasmeta.index(t))
-  for k, v in pairs(t) do
-    fn(k, v, ...)
+local function equals (a, b)
+  assert(hasindex(a))
+  assert(hasindex(b))
+  if a == b then
+    return true
   end
-end
-
-M.map = function (t, fn, ...)
-  assert(compat.hasmeta.pairs(t))
-  assert(compat.hasmeta.call(fn))
-  assert(compat.hasmeta.index(t))
-  assert(compat.hasmeta.newindex(t))
-  for k, v in pairs(t) do
-    t[k] = fn(v, ...)
+  local ta = type(a)
+  local tb = type(b)
+  if ta ~= tb then
+    return false
   end
-  return t
-end
-
--- TODO: This doesn't check keys that are
--- present in a but not in ts
-M.equals = function (a, ...)
-  assert(compat.hasmeta.index(a))
-  local m = tup.len(...)
-  for i = 1, m do
-    local t0 = tup.get(i, ...)
-    assert(compat.hasmeta.pairs(t0))
-    for k, v in pairs(t0) do
-      if a[k] ~= v then
-        return false
-      end
+  local akeys = {}
+  for ak, av in pairs(a) do
+    local bv = b[ak]
+    local tav = type(av)
+    local tbv = type(bv)
+    if tav ~= tbv then
+      return false
+    elseif tav == "table" and not equals(av, bv) then
+      return false
+    elseif tav ~= "table" and av ~= bv then
+      return false
+    end
+    akeys[ak] = true
+  end
+  for bk in pairs(b) do
+    if not akeys[bk] then
+      return false
     end
   end
   return true
 end
 
-M.merge = function (t, ...)
-  assert(compat.hasmeta.index(t))
-  assert(compat.hasmeta.newindex(t))
-  for i = 1, tup.len(...) do
-    local t0 = tup.get(i, ...)
+local function merge (t, ...)
+  assert(hasindex(t))
+  assert(hasnewindex(t))
+  for i = 1, vlen(...) do
+    local t0 = vget(i, ...)
     for k, v in pairs(t0) do
-      if not compat.hasmeta.pairs(v) or not compat.hasmeta.index(t[k]) then
+      if not haspairs(v) or not hasindex(t[k]) then
         t[k] = v
       else
-        M.merge(t[k], v)
+        merge(t[k], v)
       end
     end
   end
   return t
 end
 
--- TODO: Reduce all of these pack/unpacks
-local paths
-paths = function (t, fn, stop, ...)
-  assert(compat.hasmeta.call(fn))
-  assert(compat.hasmeta.call(stop))
-  assert(compat.hasmeta.pairs(t))
-  for k, v in pairs(t) do
-    if stop(v) then
-      fn(compat.unpackr(compat.pack(k, ...)))
-    else
-      paths(v, fn, stop, k, ...)
-    end
-  end
-end
-
-M.paths = function (t, fn, stop)
-  stop = stop or function (v)
-    -- TODO: should be hasmeta.pairs, right?
-    return not compat.hasmeta.index(v)
-  end
-  assert(compat.hasmeta.call(stop))
-  assert(compat.hasmeta.call(fn))
-  return paths(t, fn, stop)
-end
-
--- TODO: Can we do this without creating a
--- vector of path vectors?
--- TODO: This might be better off called reduce
-M.mergeWith = function (t, spec, ...)
-  for i = 1, tup.len(...) do
-    local t0 = tup.get(i, ...)
-    M.paths(spec, function (...)
-      M.set(t, tup(...)(
-        M.get(spec, ...)(
-          M.get(t, ...),
-          M.get(t0, ...))))
-    end)
-  end
-  return t
-end
-
-M.len = function (t)
-  return compat.hasmeta.index(t) and t.n or
-         compat.hasmeta.len(t) and #t or nil
-end
-
-return setmetatable(M, M.MT)
+return {
+  get = get,
+  update = update,
+  set = set,
+  assign = assign,
+  equals = equals,
+  merge = merge,
+}

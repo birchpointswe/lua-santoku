@@ -17,6 +17,8 @@ local function hook (ev)
   end
 end
 
+local start = os.clock()
+
 debug.sethook(hook, "cr")
 
 local co_create = coroutine.create
@@ -39,10 +41,11 @@ local function report ()
   gen.pairs(total):map(function (fn, time)
     return { fn = fn, time = time, calls = calls[fn] }
   end):vec():sort(function (a, b)
-    return a.time > b.time
+    return a.time < b.time
   end):each(function (d)
     str.printf("%.4f\t%d\t%s\n", d.time, d.calls, d.fn)
   end)
+  str.printf("%.4f\tTotal\n", os.clock() - start)
 end
 
 -- NOTE: this allows report to be called on program exit
