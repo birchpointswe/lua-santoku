@@ -1,16 +1,21 @@
 -- TODO: Cryptography functions
 
-local M = {}
+local _seed = math.randomseed
+local _time = os.time
+local _char = string.char
+local _select = select
+local _concat = table.concat
+local _rand = math.random
 
-M.seed = function (t)
-  t = t or os.time()
-  math.randomseed(t)
+local function seed (t)
+  t = t or _time()
+  _seed(t)
 end
 
-M.str = function (n, ...)
+local function str (n, ...)
   assert(type(n) == "number" and n > 0)
   local l, u
-  if select("#", ...) > 0 then
+  if _select("#", ...) > 0 then
     l, u = ...
   else
     l, u = 32, 127
@@ -20,14 +25,19 @@ M.str = function (n, ...)
   local t = {}
   n = n or 1
   while n > 0 do
-    t[n] = string.char(math.random(l, u))
+    t[n] = _char(_rand(l, u))
     n = n - 1
   end
-  return table.concat(t)
+  return _concat(t)
 end
 
-M.alnum = function (n)
-  return M.str(n, 48, 122)
+local function alnum (n)
+  return str(n, 48, 122)
 end
 
-return M
+return {
+  seed = seed,
+  str = str,
+  num = _rand,
+  alnum = alnum,
+}

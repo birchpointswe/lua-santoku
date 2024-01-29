@@ -24,6 +24,14 @@ local function isequal (a, b)
   end
 end
 
+local function isnotequal (a, b)
+  if a == b then
+    return false, "Values are (incorrectly) primitively equal", a, b
+  else
+    return true
+  end
+end
+
 local function isstring (t)
   local tt = type(t)
   if tt == "string" then
@@ -384,6 +392,7 @@ return {
   istrue = istrue,
   isfalse = isfalse,
   isequal = isequal,
+  isnotequal = isnotequal,
   isprimitive = isprimitive,
   isarray = isarray,
   haspairs = haspairs,

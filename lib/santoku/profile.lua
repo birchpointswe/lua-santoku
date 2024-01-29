@@ -1,6 +1,7 @@
 local co_create = coroutine.create
 
-local capi = require("santoku.capi")
+local lua = require("santoku.lua")
+local userdata = lua.userdata
 
 local arr = require("santoku.array")
 local asort = arr.sort
@@ -60,6 +61,6 @@ local function report ()
 end
 
 -- NOTE: this allows report to be called on program exit
-_G[capi.userdata({ __gc = report })] = true
+_G[userdata({ __gc = report })] = true
 
 return report

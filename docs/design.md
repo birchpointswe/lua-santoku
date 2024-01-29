@@ -23,6 +23,7 @@ include portable C code.
 - string: string utilities (TODO: various)
 - test: basic test framework (TODO: integrate from santoku-test)
 - geo: geospatial utilities (TODO: consider moving to separate lib)
+- random: generate random strings
 
 ## Core-Extension Libraries
 

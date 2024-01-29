@@ -1,7 +1,7 @@
 #include "lua.h"
 #include "lauxlib.h"
 
-int tk_capi_mt_userdata (lua_State *L)
+int tk_lua_mt_userdata (lua_State *L)
 {
   luaL_checktype(L, -1, LUA_TTABLE);
   lua_newuserdata(L, 0);
@@ -10,15 +10,15 @@ int tk_capi_mt_userdata (lua_State *L)
   return 1;
 }
 
-luaL_Reg tk_capi_mt_fns[] =
+luaL_Reg tk_lua_mt_fns[] =
 {
-  { "userdata", tk_capi_mt_userdata },
+  { "userdata", tk_lua_mt_userdata },
   { NULL, NULL }
 };
 
-int luaopen_santoku_capi (lua_State *L)
+int luaopen_santoku_lua_lua (lua_State *L)
 {
   lua_newtable(L); // mt
-  luaL_register(L, NULL, tk_capi_mt_fns); // mt
+  luaL_register(L, NULL, tk_lua_mt_fns); // mt
   return 1;
 }

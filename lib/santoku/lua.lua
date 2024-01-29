@@ -1,3 +1,7 @@
+local _lua = require("santoku.lua.lua")
+local tbl = require("santoku.table")
+local tassign = tbl.assign
+
 local _getupvalue = debug.getupvalue
 local _load = load or loadstring -- luacheck: ignore
 local upvaluejoin = debug.upvaluejoin -- luacheck: ignore
@@ -70,9 +74,9 @@ local function load (code, env)
   end
 end
 
-return {
+return tassign({
   load = load,
   setfenv = setfenv,
   getfenv = getfenv,
   getupvalue = getupvalue,
-}
+}, _lua)
