@@ -1,6 +1,17 @@
+local co_create = coroutine.create
+
 local capi = require("santoku.capi")
-local gen = require("santoku.gen")
+
+local arr = require("santoku.array")
+local asort = arr.sort
+
+local iter = require("santoku.iter")
+local itpairs = iter.tpairs
+local imap = iter.map
+local icollect = iter.collect
+
 local str = require("santoku.string")
+local sprintf = str.printf
 
 local calls, total, this = {}, {}, {}
 
@@ -21,8 +32,6 @@ local start = os.clock()
 
 debug.sethook(hook, "cr")
 
-local co_create = coroutine.create
-
 coroutine.create = function (...) -- luacheck: ignore
   local co = co_create(...)
   debug.sethook(co, hook, "cr")
@@ -38,14 +47,16 @@ coroutine.wrap = function (...) -- luacheck: ignore
 end
 
 local function report ()
-  gen.pairs(total):map(function (fn, time)
+  local stats = asort(icollect(imap(function (fn, time)
     return { fn = fn, time = time, calls = calls[fn] }
-  end):vec():sort(function (a, b)
+  end, itpairs(total))), function (a, b)
     return a.time < b.time
-  end):each(function (d)
-    str.printf("%.4f\t%d\t%s\n", d.time, d.calls, d.fn)
   end)
-  str.printf("%.4f\tTotal\n", os.clock() - start)
+  for i = 1, #stats do
+    local d = stats[i]
+    sprintf("%.4f\t%d\t%s\n", d.time, d.calls, d.fn)
+  end
+  sprintf("%.4f\tTotal\n", os.clock() - start)
 end
 
 -- NOTE: this allows report to be called on program exit

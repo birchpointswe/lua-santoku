@@ -187,7 +187,7 @@ test("trunc", function ()
 end)
 
 test("map", function ()
-  assert(tbl.equals({ 2, 3, 4 }, arr.map({ 1, 2, 3 }, fun.bindl(op.add, 1))))
+  assert(tbl.equals({ 2, 3, 4 }, arr.map({ 1, 2, 3 }, fun.bind(op.add, 1))))
 end)
 
 test("reduce", function ()

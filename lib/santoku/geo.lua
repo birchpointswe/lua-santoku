@@ -1,13 +1,12 @@
 -- TODO: Convert to use santoku.matrix
 
-local compat = require("santoku.compat")
-
-local sqrt = math.sqrt
-local rad = math.rad
-local atan = compat.atan
-local sin = math.sin
-local cos = math.cos
-local deg = math.deg
+local num = require("santoku.num")
+local sqrt = num.sqrt
+local rad = num.rad
+local atan = num.atan
+local sin = num.sin
+local cos = num.cos
+local deg = num.deg
 
 local function distance (one, two)
   local a = two.x - one.x
@@ -40,7 +39,7 @@ local function earth_distance (one, two)
   local lat2 = rad(two.lat)
   local a = sin(d_lat / 2) * sin(d_lat / 2) +
             sin(d_lon / 2) * sin(d_lon / 2) * cos(lat1) * cos(lat2)
-  local c = 2 * compat.atan(sqrt(a), sqrt(1 - a))
+  local c = 2 * atan(sqrt(a), sqrt(1 - a))
   return earth_radius * c
 end
 

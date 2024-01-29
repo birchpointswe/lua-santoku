@@ -1,7 +1,7 @@
-local compat = require("santoku.compat")
-local haspairs = compat.hasmeta.pairs
-local hasindex = compat.hasmeta.index
-local hasnewindex = compat.hasmeta.newindex
+local validate = require("santoku.validate")
+local haspairs = validate.haspairs
+local hasindex = validate.hasindex
+local hasnewindex = validate.hasnewindex
 
 local varg = require("santoku.varg")
 local vtup = varg.tup
@@ -83,7 +83,7 @@ local function equals (a, b)
   local ta = type(a)
   local tb = type(b)
   if ta ~= tb then
-    return false
+    return false, "Values have different types", a, b, ta, tb
   end
   local akeys = {}
   for ak, av in pairs(a) do
@@ -91,17 +91,17 @@ local function equals (a, b)
     local tav = type(av)
     local tbv = type(bv)
     if tav ~= tbv then
-      return false
+      return false, "Properties have different types", ak, tav, tbv
     elseif tav == "table" and not equals(av, bv) then
-      return false
+      return false, "Properties are not equal", ak, av, bv
     elseif tav ~= "table" and av ~= bv then
-      return false
+      return false, "Properties are not equal", ak, av, bv
     end
     akeys[ak] = true
   end
   for bk in pairs(b) do
     if not akeys[bk] then
-      return false
+      return false, "Key not present in first table", bk
     end
   end
   return true

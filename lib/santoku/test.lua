@@ -1,6 +1,6 @@
-local compat = require("santoku.compat")
-local hascall = compat.hasmeta.call
-local isstring = compat.istype.string
+local validate = require("santoku.validate")
+local hascall = validate.hascall
+local isstring = validate.isstring
 
 local arr = require("santoku.array")
 local apush = arr.push
@@ -12,6 +12,9 @@ local vargs = require("santoku.varg")
 local vinterleave = vargs.interleave
 local vsel = vargs.sel
 local vget = vargs.get
+
+local traceback = debug.traceback
+local exit = os.exit
 
 local tags = {}
 
@@ -25,9 +28,10 @@ return function (tag, fn)
     print()
     print(vsel(2, ...))
     print()
-    print(vget(1, ...), debug.traceback())
+    print(vget(1, ...))
+    print(traceback())
     print()
-    os.exit(1)
+    exit(1)
   end)
   apop(tags)
 end

@@ -1,5 +1,5 @@
--- TODO: Probably shouldn't import this
-local compat = require("santoku.compat")
+local validate = require("santoku.validate")
+local hascall = validate.hascall
 
 local M = {}
 
@@ -22,9 +22,9 @@ M.exp = function (a, b) return a ^ b end
 M.len = function (a) return #a end
 M.cat = function (a, b) return a .. b end
 
-M.call = function (f, ...)
-  assert(compat.hasmeta.call(f))
-  return f(...)
+M.call = function (fn, ...)
+  assert(hascall(fn))
+  return fn(...)
 end
 
 return M

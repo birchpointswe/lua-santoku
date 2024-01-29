@@ -4,15 +4,16 @@
   - for example, writing return <% return exports() %> at the bottom of a file
     which would look at all of the locally defined functions and automagically
     produce an export table, or generating imports
+  - syntax sugar for auto-return an serialize <% hello() %> should automatically
+    return the results of calling hello(), serialized. This should only work for
+    single expressions
 
 - Allow string.match to handle capture groups, then there's no need for the base
   string.match
 
-- Move compat tools to separate packages
-    - santoku.math replicating math with atan, etc
-    - santoku.package replicating package with searchpath, etc
-
-- Implement capi fns for checkopt, optstring, etc
+- Consistent argument error messages for c functions and lua a functions
+    - Should c functions use assert(hascall(x))/etc or should lua use checkopt,
+      optstring, etc?
 
 - Consider santoku.require("santoku.array", "push", "spread", ...) for
   automatically localizing imports

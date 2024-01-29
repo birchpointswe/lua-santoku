@@ -1,12 +1,10 @@
-local compat = require("santoku.compat")
-local cunpack = compat.unpack
-local cmove = compat.move
-local cid = compat.id
-local hasindex = compat.hasmeta.index
-local hascall = compat.hasmeta.call
+local validate = require("santoku.validate")
+local hasindex = validate.hasindex
+local hascall = validate.hascall
 
 local tsort = table.sort
 local tcat = table.concat
+local unpack = unpack or table.unpack -- luacheck: ignore
 
 local vargs = require("santoku.varg")
 local vreduce = vargs.reduce
@@ -33,6 +31,19 @@ local function clear (t, ts, te)
   return t
 end
 
+local _move = table.move or -- luacheck: ignore
+  function (s, ss, se, ds, d)
+    d = d or s
+    local inc = 1
+    if ss <= ds then
+      ss, se, inc = se, ss, -1
+    end
+    for i = se, ss, inc do
+      d[ds + i - ss] = s[i]
+    end
+    return d
+  end
+
 local function _copy (d, s, ds, ss, se, ismove)
   assert(hasindex(d))
   assert(hasindex(s))
@@ -44,10 +55,10 @@ local function _copy (d, s, ds, ss, se, ismove)
   assert(type(ds) == "number" and ds > 0)
   assert(type(ss) == "number" and ss > 0 and ss <= #s)
   assert(type(se) == "number" and se > 0 and se <= #s)
-  cmove(s, ss, se, ds, d)
+  _move(s, ss, se, ds, d)
   if ismove then
     local m = #s
-    cmove(s, se + 1, m, ss, s)
+    _move(s, se + 1, m, ss, s)
     clear(s, m - (se - ss))
   end
   return d
@@ -99,13 +110,12 @@ local function remove (t, ts, te)
   assert(type(ts) == "number" and ts >= 0)
   te = te or #t
   assert(type(te) == "number" and te >= 0 and te <= #t)
-  cmove(t, te + 1, #t, ts, t)
+  _move(t, te + 1, #t, ts, t)
   return clear(t, #t - (te - ts))
 end
 
 local function filter (t, fn, ...)
   assert(hasindex(t))
-  fn = fn or cid
   assert(hascall(fn))
   local rems = nil
   local reme = nil
@@ -192,10 +202,14 @@ local function overlay (t, i, ...)
   assert(hasindex(t))
   assert(type(i) == "number" and i > 0)
   local m = vlen(...)
-  for j = 1, m do
-    t[i + j - 1] = vget(j, ...)
+  if m == 0 then
+    return clear(t, i)
+  else
+    for j = 1, m do
+      t[i + j - 1] = vget(j, ...)
+    end
+    return clear(t, i + m + 1)
   end
-  return clear(t, i + m + 1)
 end
 
 local function push (t, ...)
@@ -372,7 +386,7 @@ local function min (t)
 end
 
 local function spread (t)
-  return cunpack(t)
+  return unpack(t)
 end
 
 return {

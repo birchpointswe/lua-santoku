@@ -8,14 +8,27 @@ local vinterleave = varg.interleave
 local vmap = varg.map
 
 local _error = error
+local _assert = assert
+
+local function errfmt (...)
+  return acat({ vinterleave(": ", vmap(tostring, ...)) })
+end
 
 local function error (...)
-  _error(acat({ vinterleave(": ", vmap(tostring, ...)) }))
+  return _error(errfmt(...))
+end
+
+local function assert (ok, ...)
+  if not ok then
+    return _assert(false, errfmt(...))
+  else
+    return ok, ...
+  end
 end
 
 local function check (ok, ...)
   if not ok then
-    _error({ ... })
+    return _error({ ... })
   else
     return ...
   end
@@ -37,6 +50,8 @@ end
 
 return {
   error = error,
+  errfmt = errfmt,
+  assert = assert,
   check = check,
   exists = exists,
   try = try,

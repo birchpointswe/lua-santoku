@@ -1,6 +1,12 @@
-local compat = require("santoku.compat")
-local cnoop = compat.noop
-local hascall = compat.hasmeta.call
+local validate = require("santoku.validate")
+local hascall = validate.hascall
+
+local fun = require("santoku.functional")
+local noop = fun.noop
+
+local arr = require("santoku.array")
+local aoverlay = arr.overlay
+local aspread = arr.spread
 
 local varg = require("santoku.varg")
 local vtup = varg.tup
@@ -19,7 +25,7 @@ end
 local function reduce (acc, v, it, a, i)
   assert(hascall(acc))
   assert(hascall(it))
-  return vtup(_reduce, acc, v, it, a, it(a, i))
+  return _reduce(acc, v, it, a, it(a, i))
 end
 
 local function _collect (a, n)
@@ -34,7 +40,9 @@ end
 
 local function head (it, a, i)
   assert(hascall(it))
-  return vsel(2, it(a, i))
+  if i ~= nil then
+    return vsel(2, it(a, i))
+  end
 end
 
 local function _each (a, ...)
@@ -56,7 +64,7 @@ end
 -- TODO: do we need a closure?
 local function map (fn, it, a, i)
   return function (a, i)
-    return vtup(_map, fn, it(a, i))
+    return _map(fn, it(a, i))
   end, a, i
 end
 
@@ -75,8 +83,103 @@ local function filter (fn, it, a, i)
   assert(hascall(fn))
   assert(hascall(it))
   return function (a, i)
-    return vtup(_filter, fn, it, a, it(a, i))
+    return _filter(fn, it, a, it(a, i))
   end, a, i
+end
+
+-- TODO: can we reduce the number of closures?
+local function flatten (parent_it, parent_a, parent_i)
+  local parent_i0, child_it, child_a, child_i
+  local function _flatten (parent_a, parent_i)
+    if parent_i == nil then
+      return
+    end
+    if child_it == nil then
+      parent_i0, child_it, child_a, child_i = parent_it(parent_a, parent_i)
+      if parent_i0 == nil then
+        return
+      end
+    end
+    return vtup(function (child_i0, ...)
+      if child_i0 == nil then
+        child_it = nil
+        return _flatten(parent_a, parent_i0)
+      else
+        child_i = child_i0
+        return parent_i, ...
+      end
+    end, child_it(child_a, child_i))
+  end
+  return _flatten, parent_a, parent_i
+end
+
+-- TODO: Use coroutine tuples to keep nils?
+-- TODO: Shouldn't the checks for #t == 0 and t[1] == nil be the same? How can
+-- we get the length of a table excluding nils?
+local function _interleave (v, it)
+  local t = {}
+  local interleaving = false
+  return function (a, i)
+    while true do
+      if #t == 0 then
+        aoverlay(t, 1, it(a, i))
+        i = t[1]
+      elseif t[1] == nil then
+        return
+      elseif not interleaving then
+        interleaving = true
+        return aspread(t)
+      else
+        interleaving = false
+        aoverlay(t, 1, it(a, i))
+        return t[1], v
+      end
+    end
+  end
+end
+
+local function _deinterleave (it)
+  local removing = false
+  local function __deinterleave (a, i)
+    if i ~= nil then
+      if not removing then
+        removing = true
+        return it(a, i)
+      else
+        removing = false
+        return __deinterleave(a, it(a, i))
+      end
+    end
+  end
+  return __deinterleave
+end
+
+local function interleave (v, it, a, i)
+  return _interleave(v, it), a, i
+end
+
+local function deinterleave (it, a, i)
+  return _deinterleave(it), a, i
+end
+
+local function single (v)
+  return function (_, i)
+    if i then
+      return false, v
+    end
+  end, nil, true
+end
+
+local function once (fn)
+  return function (_, i)
+    if i then
+      return false, fn()
+    end
+  end, nil, true
+end
+
+local function tail (it, a, i)
+  return it, a, (it(a, i))
 end
 
 local function _key (k)
@@ -142,7 +245,7 @@ end
 local function async (it, a, i)
   return function (each, final)
     assert(hascall(each))
-    final = final or cnoop
+    final = final or noop
     assert(hascall(final))
     return _async(each, final, it, a, it(a, i))
   end
@@ -161,6 +264,9 @@ end
 
 return {
 
+  once = once,
+  single = single,
+
   apairs = apairs,
   akeys = akeys,
   avals = avals,
@@ -171,6 +277,10 @@ return {
 
   map = map,
   filter = filter,
+  flatten = flatten,
+
+  interleave = interleave,
+  deinterleave = deinterleave,
 
   async = async,
   wrap = wrap,
@@ -179,7 +289,8 @@ return {
   reduce = reduce,
   collect = collect,
 
-  head = head
+  head = head,
+  tail = tail,
 
 }
 

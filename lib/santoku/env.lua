@@ -7,6 +7,15 @@ local vlen = varg.len
 local err = require("santoku.error")
 local error = err.error
 
+local gmatch = string.gmatch
+local gsub = string.gsub
+local sub = string.sub
+local config = package.config
+local io_open = io.open
+local io_close = io.close
+local tcat = table.concat
+local os_getenv = os.getenv
+
 local function interpreter (args)
   local arg = arg or {}
   local i_min = -1
@@ -30,7 +39,7 @@ local function interpreter (args)
 end
 
 local function var (name, ...)
-  local val = os.getenv(name)
+  local val = os_getenv(name)
   local n = vlen(...)
   if val then
     return val
@@ -41,7 +50,26 @@ local function var (name, ...)
   end
 end
 
+local searchpath = package.searchpath or -- luacheck: ignore
+  function (name, path, sep, rep)
+    sep = gsub(sep or ".", "(%p)", "%%%1")
+    rep = gsub(rep or sub(config, 1, 1), "(%%)", "%%%1")
+    local pname = gsub(gsub(name, sep, rep), "(%%)", "%%%1")
+    local msg = {}
+    for subpath in gmatch(path, "[^;]+") do
+      local fpath = gsub(subpath, "%?", pname)
+      local f = io_open(fpath, "r")
+      if f then
+        io_close(f)
+        return fpath
+      end
+      msg[#msg+1] = "\n\tno file '" .. fpath .. "'"
+    end
+    return nil, tcat(msg)
+  end
+
 return {
   var = var,
-  interpreter = interpreter
+  interpreter = interpreter,
+  searchpath = searchpath
 }

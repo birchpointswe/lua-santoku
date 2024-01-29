@@ -1,29 +1,26 @@
 # High-Level Design
 
-- Programmer errors throw exceptions
-- Runtime errors return true/false then results or errors
-
 ## Core Library
 
 Any stdlib-like functionality goes here. It must be zero-dependency, but can
 include portable C code.
 
-- functional: functional utilities
 - varg: argument list utilities
 - table: general table utilities
 - array: array-like table utilities
 - iter: iterator utilities
-- co: nested coroutines
-- capi: wrappers around Lua c-api
-- check: coroutine-based error handling and control flow
-- compat: general low-level utilities
+- co: nested coroutines (TODO: coro utils, coro tuple, refactor)
+- num: wrapper around math
+- lua: lua metaprogramming and related c-api wrappers
+- error: error handling
+- validate: validation
 - env: environment utilities
-- meta: metatable utilities
-- profile: performance profiler
+- meta: metatable utilities (TODO: move from inherit)
+- profile: performance profiler (TODO: memory, call stack)
 - coverage: coverage analyzer (TODO)
 - op: wrap operators as functions
 - serialize: convert Lua values to strings
-- string: string utilities
+- string: string utilities (TODO: various)
 - test: basic test framework (TODO: integrate from santoku-test)
 
 ## Core-Extension Libraries
@@ -49,3 +46,8 @@ include portable C code.
 - web: javascript interop for WASM
 - python: python interop
 - sts: semantic textual similarity (TODO: move from tbhss)
+
+## Patterns
+
+- Programmer errors throw exceptions
+- Runtime errors return true/false then results or errors

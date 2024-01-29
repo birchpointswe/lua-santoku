@@ -11,9 +11,8 @@ local grotate = geo.rotate
 -- local gearth_distance = geo.earth_distance
 
 local num = require("santoku.num")
-local ntrunc = num.trunc
-
-local sqrt = math.sqrt
+local trunc = num.trunc
+local sqrt = num.sqrt
 
 test("distance", function ()
   assert(2 == gdistance({ x = 0, y = 0 }, { x = 0, y = 2 }))
@@ -46,11 +45,11 @@ end)
 test("rotate", function ()
   local p
   p = grotate({ x = 0, y = 2 }, { x = 0, y = 0 }, 90)
-  p.x = ntrunc(p.x, 8)
-  p.y = ntrunc(p.y, 8)
+  p.x = trunc(p.x, 8)
+  p.y = trunc(p.y, 8)
   assert(teq({ x = 2, y = 0 }, p))
   p = grotate({ x = 0, y = 2 }, { x = 0, y = 4 }, 90)
-  p.x = ntrunc(p.x, 8)
-  p.y = ntrunc(p.y, 8)
+  p.x = trunc(p.x, 8)
+  p.y = trunc(p.y, 8)
   assert(teq({ x = -2, y = 4 }, p))
 end)
