@@ -1,6 +1,3 @@
-local err = require("santoku.err")
-local sys = require("santoku.system")
-
 local env = {
 
   name = "santoku",
