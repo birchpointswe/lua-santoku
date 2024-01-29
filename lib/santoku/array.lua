@@ -252,22 +252,6 @@ local function reduce (t, acc, ...)
   return val
 end
 
--- TODO: Not so well defined. Should this just be tbl.equals? Should it just
--- compare the array part? What if the array part contains tables, should we
--- compare those with tbl.equals or arr.equals?
--- equals = function (t, ...)
---   assert(hasindex(t))
---   local m = vlen(...)
---   for i = 1, m do
---     local t0 = vget(i, ...)
---     assert(hasindex(t0))
---     if #t0 ~= #t then
---       return false
---     end
---   end
---   return tbl.equals(t, ...)
--- end
-
 -- TODO
 -- zip = function (...)
 --   local start = 1

@@ -22,6 +22,7 @@ include portable C code.
 - serialize: convert Lua values to strings
 - string: string utilities (TODO: various)
 - test: basic test framework (TODO: integrate from santoku-test)
+- geo: geospatial utilities (TODO: consider moving to separate lib)
 
 ## Core-Extension Libraries
 
@@ -34,7 +35,6 @@ include portable C code.
 ## Auxiliary libraries
 
 - cli: cli interface to some of these libraries
-- geo: geospatial utilities (TODO: move to separate lib)
 - geo-pdf: geo-pdf manipulation
 - porter: porter stemmer
 - jpeg: jpeg scaling
