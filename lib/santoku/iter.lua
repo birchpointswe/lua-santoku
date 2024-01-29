@@ -140,18 +140,18 @@ end
 
 local function _deinterleave (it)
   local removing = false
-  local function __deinterleave (a, i)
+  local function helper (a, i)
     if i ~= nil then
       if not removing then
         removing = true
         return it(a, i)
       else
         removing = false
-        return __deinterleave(a, it(a, i))
+        return helper(a, it(a, i))
       end
     end
   end
-  return __deinterleave
+  return helper
 end
 
 local function interleave (v, it, a, i)
@@ -294,9 +294,6 @@ return {
 
 }
 
--- TODO: Add append, extend, etc. functions for
--- basic generators by wrapping
-
 -- M.range = function (...)
 --   local args = tup(...)
 --   assert(compat.istype.number((...)))
@@ -333,17 +330,9 @@ return {
 --   end)
 -- end
 
--- M.paster = function (gen, ...)
---   local args = tup(...)
+-- M.paste = function (gen, v)
 --   return gen:map(function (...)
---     return tup(...)(args())
---   end)
--- end
-
--- M.pastel = function (gen, ...)
---   local args = tup(...)
---   return gen:map(function (...)
---     return args(...)
+--     return v, ...
 --   end)
 -- end
 
@@ -372,7 +361,7 @@ return {
 --   return gen:each()
 -- end
 
--- M.unpack = function (gen)
+-- M.spread = function (gen)
 --   assert(M.isgen(gen))
 --   return gen:tup()()
 -- end
