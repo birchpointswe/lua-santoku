@@ -1,7 +1,7 @@
 # Now
 
 - Deprecate santoku-test
-- Consider throwing all errors instead of returning true/false
+- Benchmark using closures vs tables for iterator state
 
 - Template capability to process the entire file and produce output accordingly
   - for example, writing return <% return exports() %> at the bottom of a file

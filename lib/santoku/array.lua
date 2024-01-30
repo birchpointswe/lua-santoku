@@ -369,11 +369,16 @@ local function min (t)
   return m
 end
 
+local function pack (...)
+  return { ... }
+end
+
 local function spread (t)
   return unpack(t)
 end
 
 return {
+  pack = pack,
   concat = concat,
   insert = insert,
   replicate = replicate,
