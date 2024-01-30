@@ -1,5 +1,6 @@
 local validate = require("santoku.validate")
 local hascall = validate.hascall
+local hasindex = validate.hasindex
 
 local fun = require("santoku.functional")
 local noop = fun.noop
@@ -51,6 +52,7 @@ local function _each (a, ...)
 end
 
 local function each (fn, it, a, i)
+  assert(hascall(fn))
   assert(hascall(it))
   return reduce(_each, fn, it, a, i)
 end
@@ -63,6 +65,8 @@ end
 
 -- TODO: do we need a closure?
 local function map (fn, it, a, i)
+  assert(hascall(fn))
+  assert(hascall(it))
   return function (a, i)
     return _map(fn, it(a, i))
   end, a, i
@@ -89,6 +93,7 @@ end
 
 -- TODO: can we reduce the number of closures?
 local function flatten (parent_it, parent_a, parent_i)
+  assert(hascall(parent_it))
   local parent_i0, child_it, child_a, child_i
   local function _flatten (parent_a, parent_i)
     if parent_i == nil then
@@ -99,6 +104,7 @@ local function flatten (parent_it, parent_a, parent_i)
       if parent_i0 == nil then
         return
       end
+      assert(hascall(child_it))
     end
     return vtup(function (child_i0, ...)
       if child_i0 == nil then
@@ -155,10 +161,12 @@ local function _deinterleave (it)
 end
 
 local function interleave (v, it, a, i)
+  assert(hascall(it))
   return _interleave(v, it), a, i
 end
 
 local function deinterleave (it, a, i)
+  assert(hascall(it))
   return _deinterleave(it), a, i
 end
 
@@ -171,6 +179,7 @@ local function single (v)
 end
 
 local function once (fn)
+  assert(hascall(fn))
   return function (_, i)
     if i then
       return false, fn()
@@ -179,6 +188,7 @@ local function once (fn)
 end
 
 local function tail (it, a, i)
+  assert(hascall(it))
   return it, a, (it(a, i))
 end
 
@@ -205,26 +215,32 @@ local function _tnext (a, k)
 end
 
 local function apairs (t)
+  assert(hasindex(t))
   return _anext, t, 0
 end
 
 local function tpairs (t)
+  assert(hasindex(t))
   return _tnext, t, nil
 end
 
 local function akeys (t)
+  assert(hasindex(t))
   return map(_key, apairs(t))
 end
 
 local function avals (t)
+  assert(hasindex(t))
   return map(_val, apairs(t))
 end
 
 local function tkeys (t)
+  assert(hasindex(t))
   return map(_key, tpairs(t))
 end
 
 local function tvals (t)
+  assert(hasindex(t))
   return map(_val, tpairs(t))
 end
 
@@ -243,6 +259,7 @@ local function _async (each, final, it, a, i, ...)
 end
 
 local function async (it, a, i)
+  assert(hascall(it))
   return function (each, final)
     assert(hascall(each))
     final = final or noop
@@ -252,6 +269,7 @@ local function async (it, a, i)
 end
 
 local function wrap (it, a, i)
+  assert(hascall(it))
   return function ()
     return vtup(function (i0, ...)
       i = i0
