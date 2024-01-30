@@ -1,40 +1,84 @@
 local test = require("santoku.test")
 
-local validate = require("santoku.validate")
-local isfalse = validate.isfalse
-local iseq = validate.isequal
-
 local tbl = require("santoku.table")
 local teq = tbl.equals
 
+local validate = require("santoku.validate")
+local isfalse = validate.isfalse
+local isstring = validate.isstring
+local iseq = validate.isequal
+
 local err = require("santoku.error")
-local try = err.try
-local wrapexists = err.wrapexists
+local _error = error
+local error = err.error
 local assert = err.assert
-local check = err.check
+local pcall = err.pcall
+local xpcall = err.xpcall
+local wrapnil = err.wrapnil
+local wrapok = err.wrapok
 
-test("error(...)", function ()
-  local ok, e = try(function ()
-    check(false, "hi")
-  end)
+test("pcall", function ()
+  assert(teq({ false, 1, 2, 3 }, {
+    pcall(function ()
+      error(1, 2, 3)
+    end)
+  }))
+  assert(teq({ true, "hi" }, {
+    pcall(function ()
+      return "hi"
+    end)
+  }))
+  local ok, msg = pcall(_error, "hi")
   assert(isfalse(ok))
-  assert(iseq(e, "hi"))
+  assert(isstring(msg))
+  assert(iseq(msg, "hi"))
 end)
 
-test("error(...) multi return", function ()
-  local ok, a, b, c = try(function ()
-    check(false, "a", "b", "c")
-  end)
-  assert(isfalse(ok))
-  assert(teq({ "a", "b", "c" }, { a, b, c }))
+test("xpcall", function ()
+  assert(teq({ false }, {
+    xpcall(function ()
+      error(1, 2)
+    end, function (...)
+      assert(teq({ 1, 2 }, { ... }))
+    end)
+  }))
+  assert(teq({ false, "error in error handling" }, {
+    xpcall(function ()
+      _error("hi")
+    end, function (...)
+      assert(teq({ "hi" }, { ... }))
+    end)
+  }))
 end)
 
-test("wrapexists", function ()
-  local fn = function ()
-    return nil, "error", 1
-  end
-  local a, b, c = wrapexists(fn)()
-  assert(isfalse(a))
-  assert(iseq(b, "error"))
-  assert(iseq(c, 1))
+test("wrapnil", function ()
+  assert(teq({ false, "error", 1 }, {
+    pcall(wrapnil(function ()
+      return nil, "error", 1
+    end))
+  }))
+  assert(teq({ true, "value", 1 }, {
+    pcall(wrapnil(function ()
+      return "value", 1
+    end))
+  }))
+end)
+
+test("wrapok", function ()
+  assert(teq({ false, "error", 1 }, {
+    pcall(wrapok(function ()
+      return false, "error", 1
+    end))
+  }))
+  assert(teq({ true, "value", 1 }, {
+    pcall(wrapok(function ()
+      return true, "value", 1
+    end))
+  }))
+end)
+
+test("assert", function ()
+  assert(teq({ false, "hello", 1, 2, 3 }, {
+    pcall(assert, false, "hello", 1, 2, 3)
+  }))
 end)

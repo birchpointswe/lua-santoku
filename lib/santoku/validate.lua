@@ -1,4 +1,5 @@
-local huge = math.huge
+local _huge = math.huge
+local _match = string.match
 
 local function istrue (t)
   if t ~= true then
@@ -125,7 +126,7 @@ local function isarray (t)
     return false, "Value is missing index 1", t
   end
   local max = 1
-  for i = 2, huge do
+  for i = 2, _huge do
     if not t[i] then
       max = i - 1
       break
@@ -375,6 +376,26 @@ local function between (low, high, v)
   end
 end
 
+local function matches (str, pat)
+  assert(isstring(str))
+  assert(isstring(pat))
+  if not _match(str, pat) then
+    return false, "Value doesn't match pattern", str, pat
+  else
+    return true
+  end
+end
+
+local function notmatches (str, pat)
+  assert(isstring(str))
+  assert(isstring(pat))
+  if _match(str, pat) then
+    return false, "Value (incorrectly) matches pattern", str, pat
+  else
+    return true
+  end
+end
+
 return {
   lt = lt,
   gt = gt,
@@ -395,6 +416,8 @@ return {
   isnotequal = isnotequal,
   isprimitive = isprimitive,
   isarray = isarray,
+  matches = matches,
+  notmatches = notmatches,
   haspairs = haspairs,
   hasipairs = hasipairs,
   hasnewindex = hasnewindex,

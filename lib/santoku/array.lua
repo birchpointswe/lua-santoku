@@ -208,7 +208,7 @@ local function overlay (t, i, ...)
     for j = 1, m do
       t[i + j - 1] = vget(j, ...)
     end
-    return clear(t, i + m + 1)
+    return clear(t, i + m)
   end
 end
 

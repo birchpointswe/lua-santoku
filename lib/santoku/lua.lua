@@ -1,9 +1,12 @@
 local _lua = require("santoku.lua.lua")
 local tbl = require("santoku.table")
+local err = require("santoku.error")
+
+local wrapnil = err.wrapnil
 local tassign = tbl.assign
 
 local _getupvalue = debug.getupvalue
-local _load = load or loadstring -- luacheck: ignore
+local _load = wrapnil(load or loadstring) -- luacheck: ignore
 local upvaluejoin = debug.upvaluejoin -- luacheck: ignore
 
 local function getupvalue (fn, name)
@@ -61,17 +64,11 @@ local getfenv = getfenv or -- luacheck: ignore
   end
 
 local function load (code, env)
-  local f, err, cd = _load(code) -- luacheck: ignore
-  if not f then
-    -- TODO: Add better messages
-    return false, err, cd
-  else
-    if env then
-      -- TODO: Can we catch an error here?
-      setfenv(f, env) -- luacheck: ignore
-    end
-    return true, f
+  local fn = _load(code)
+  if env then
+    setfenv(fn, env) -- luacheck: ignore
   end
+  return fn
 end
 
 return tassign({

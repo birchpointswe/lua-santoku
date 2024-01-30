@@ -6,6 +6,9 @@ local ideinterleave = iter.deinterleave
 local iflatten = iter.flatten
 local ionce = iter.once
 
+local validate = require("santoku.validate")
+local isstring = validate.isstring
+
 local arr = require("santoku.array")
 local acat = arr.concat
 local aspread = arr.spread
@@ -98,7 +101,7 @@ local function _match (invert, delim, it, str, i)
   elseif delim == "right" and not invert then
     return iflatten(imap(_mergeidx(true), it, str, i))
   else
-    return assert(false, "Invalid delimiter setting", delim)
+    return error("Invalid delimiter setting", delim)
   end
 end
 
@@ -203,18 +206,18 @@ end
 local function quote (s, q, e)
   q = q or "\""
   e = e or "\\"
-  assert(type(s) == "string")
-  assert(type(q) == "string")
-  assert(type(e) == "string")
+  assert(isstring(s))
+  assert(isstring(q))
+  assert(isstring(e))
   return acat({ q, (gsub(s, q, e .. q)), q })
 end
 
 local function unquote (s, q, e)
   q = q or "\""
   e = e or "\\"
-  assert(type(s) == "string")
-  assert(type(q) == "string")
-  assert(type(e) == "string")
+  assert(isstring(s))
+  assert(isstring(q))
+  assert(isstring(e))
   if startswith(s, q) and endswith(s, q) then
     local slen = #s
     local qlen = #q
