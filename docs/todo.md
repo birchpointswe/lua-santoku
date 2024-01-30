@@ -1,5 +1,8 @@
 # Now
 
+- Deprecate santoku-test
+- Consider throwing all errors instead of returning true/false
+
 - Template capability to process the entire file and produce output accordingly
   - for example, writing return <% return exports() %> at the bottom of a file
     which would look at all of the locally defined functions and automagically
