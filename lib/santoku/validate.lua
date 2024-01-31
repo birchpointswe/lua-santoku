@@ -1,5 +1,6 @@
 local _huge = math.huge
 local _match = string.match
+local select = select
 
 local function istrue (t)
   if t ~= true then
@@ -376,6 +377,14 @@ local function between (low, high, v)
   end
 end
 
+local function hasargs (...)
+  if select("#", ...) == 0 then
+    return false, "No arguments provided"
+  else
+    return true
+  end
+end
+
 local function matches (str, pat)
   assert(isstring(str))
   assert(isstring(pat))
@@ -402,6 +411,7 @@ return {
   le = le,
   ge = ge,
   between = between,
+  hasargs = hasargs,
   isstring = isstring,
   isnumber = isnumber,
   istable = istable,
