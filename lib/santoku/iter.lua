@@ -1,4 +1,6 @@
 local validate = require("santoku.validate")
+local isnumber = validate.isnumber
+local ge = validate.ge
 local hascall = validate.hascall
 local hasindex = validate.hasindex
 
@@ -192,6 +194,41 @@ local function tail (it, a, i)
   return it, a, (it(a, i))
 end
 
+local function _drop (n, it, a, i)
+  if i == nil then
+    return noop
+  elseif n == 0 then
+    return it, a, i
+  else
+    return _drop(n - 1, it, a, it(a, i))
+  end
+end
+
+local function drop (n, it, a, i)
+  assert(isnumber(n))
+  assert(ge(n, 0))
+  assert(hascall(it))
+  return _drop(n, it, a, i)
+end
+
+local function _last (it, a, t)
+  if t[1] ~= nil then
+    return vtup(function (i, ...)
+      if i == nil then
+        return aspread(t, 2)
+      else
+        aoverlay(t, 1, i, ...)
+        return _last(it, a, t)
+      end
+    end, it(a, t[1]))
+  end
+end
+
+local function last (it, a, i)
+  assert(hascall(it))
+  return _last(it, a, { i })
+end
+
 local function _key (k)
   return k
 end
@@ -308,7 +345,9 @@ return {
   collect = collect,
 
   head = head,
+  last = last,
   tail = tail,
+  drop = drop,
 
 }
 

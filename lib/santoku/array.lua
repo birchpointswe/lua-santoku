@@ -373,8 +373,9 @@ local function pack (...)
   return { ... }
 end
 
-local function spread (t)
-  return unpack(t)
+local function spread (t, ...)
+  assert(hasindex(t))
+  return unpack(t, ...)
 end
 
 return {

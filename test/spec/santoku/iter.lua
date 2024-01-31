@@ -39,6 +39,8 @@ local isingle = iter.single
 local ionce = iter.once
 local ideinterleave = iter.deinterleave
 local iinterleave = iter.interleave
+local idrop = iter.drop
+local ilast = iter.last
 
 local tbl = require("santoku.table")
 local teq = tbl.equals
@@ -49,6 +51,7 @@ end)
 
 test("avals", function ()
   assert(teq({ "a", "b", "c", "d" }, icollect(avals({ "a", "b", "c", "d", a = 1, b = 2 }))))
+  assert(teq({}, icollect(avals({}))))
 end)
 
 test("tkeys", function ()
@@ -122,6 +125,21 @@ end)
 test("tail", function ()
   assert(teq({ 2, 3 }, icollect(itail(avals({ 1, 2, 3 })))))
   assert(teq({}, icollect(itail(avals({ 3 })))))
+end)
+
+test("drop", function ()
+  assert(teq({ 1, 2, 3, 4 }, icollect(idrop(0, avals({ 1, 2, 3, 4 })))))
+  assert(teq({ 3, 4 }, icollect(idrop(2, avals({ 1, 2, 3, 4 })))))
+  assert(teq({}, icollect(idrop(4, avals({ 1, 2, 3, 4 })))))
+  assert(teq({}, icollect(idrop(5, avals({ 1, 2, 3, 4 })))))
+  assert(teq({}, icollect(idrop(1, avals({})))))
+  assert(teq({}, icollect(idrop(1, avals({ 3 })))))
+end)
+
+test("last", function ()
+  assert(teq({ 4 }, { ilast(avals({ 1, 2, 3, 4 })) }))
+  assert(teq({ 4 }, { ilast(avals({ 4 })) }))
+  assert(teq({}, { ilast(avals({})) }))
 end)
 
 test("async", function ()
