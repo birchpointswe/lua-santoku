@@ -1,7 +1,6 @@
 # Now
 
 - Deprecate santoku-test
-- Benchmark using closures vs tables for iterator state
 
 - Template capability to process the entire file and produce output accordingly
   - for example, writing return <% return exports() %> at the bottom of a file
@@ -13,6 +12,8 @@
 
 - Allow string.match to handle capture groups, then there's no need for the base
   string.match
+    - Does this even make sense? We don't really need capture groups if we
+      produce indices and allow the user to sub them
 
 - Consistent argument error messages for c functions and lua a functions
     - Should c functions use assert(hascall(x))/etc or should lua use checkopt,

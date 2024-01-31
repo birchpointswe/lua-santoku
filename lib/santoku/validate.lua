@@ -325,55 +325,55 @@ local function hasge (o)
   end
 end
 
-local function lt (n, v)
+local function lt (n, l)
   assert(haslt(n))
-  assert(haslt(v))
-  if v < n then
+  assert(haslt(l))
+  if n < l then
     return true
   else
-    return false, "Value must be less than", v, n
+    return false, "Value not less than limit", n, l
   end
 end
 
-local function gt (n, v)
+local function gt (n, l)
   assert(hasgt(n))
-  assert(hasgt(v))
-  if v > n then
+  assert(hasgt(l))
+  if n > l then
     return true
   else
-    return false, "Value must be greater than", v, n
+    return false, "Value not greater than limit", n, l
   end
 end
 
-local function le (n, v)
+local function le (n, l)
   assert(hasge(n))
-  assert(hasge(v))
-  if v <= n then
+  assert(hasge(l))
+  if n <= l then
     return true
   else
-    return false, "Value must be less than or equal to", v, n
+    return false, "Value not less than or equal to limit", n, l
   end
 end
 
-local function ge (n, v)
+local function ge (n, l)
   assert(hasge(n))
-  assert(hasge(v))
-  if v >= n then
+  assert(hasge(l))
+  if n >= l then
     return true
   else
-    return false, "Value must be greater than or equal to", v, n
+    return false, "Value not greater than or equal to limit", n, l
   end
 end
 
-local function between (low, high, v)
-  assert(hasge(v))
-  assert(hasge(low))
-  assert(hasle(v))
-  assert(hasle(high))
-  if v >= low and v <= high then
+local function between (n, l, h)
+  assert(hasge(n))
+  assert(hasge(l))
+  assert(hasle(n))
+  assert(hasle(h))
+  if n >= l and n <= h then
     return true
   else
-    return false, "Value not in range", v, low, high
+    return false, "Value not in range", n, l, h
   end
 end
 
