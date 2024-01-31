@@ -58,6 +58,15 @@ test("split no matches", function ()
   assert(teq(icollect(imap(ssub, ssplit("a b c", "%d+", "right"))), { "a b c" }))
 end)
 
+test("split/match start/end", function ()
+  assert(teq(icollect(imap(ssub, ssplit("a b c d e", "%s+", false, 3, 7))), { "b", "c", "d" }))
+  assert(teq(icollect(imap(ssub, smatch("a b c d e", "%S+", false, 3, 7))), { "b", "c", "d" }))
+  assert(teq(icollect(imap(ssub, ssplit("a b c d e", "%s+", false, 3, nil))), { "b", "c", "d", "e" }))
+  assert(teq(icollect(imap(ssub, smatch("a b c d e", "%S+", false, 3, nil))), { "b", "c", "d", "e" }))
+  assert(teq(icollect(imap(ssub, ssplit("a b c d e", "%s+", false, nil, 7))), { "a", "b", "c", "d" }))
+  assert(teq(icollect(imap(ssub, smatch("a b c d e", "%S+", false, nil, 7))), { "a", "b", "c", "d" }))
+end)
+
 test("interp", function ()
 
   test("should interpolate values", function ()

@@ -8,6 +8,9 @@ local ionce = iter.once
 
 local validate = require("santoku.validate")
 local isstring = validate.isstring
+local isnumber = validate.isnumber
+local ge = validate.ge
+local le = validate.le
 
 local arr = require("santoku.array")
 local acat = arr.concat
@@ -32,11 +35,11 @@ local io_write = io.write
 
 -- TODO: Support captures
 -- TODO: Consider offset start/end
-local function _separate (pat, nomatch_keep)
+local function _separate (pat, nomatch_keep, e)
   local b, c
   return function (str, a)
     while true do
-      if a <= #str then
+      if a <= e then
         if not b then
           b, c = find(str, pat, a)
           if b and a ~= b then
@@ -88,9 +91,9 @@ end
 local function _match (invert, delim, it, str, i)
   if delim == true then
     return it, str, i
-  elseif delim == nil and invert then
+  elseif not delim and invert then
     return ideinterleave(it, str, i)
-  elseif delim == nil and not invert then
+  elseif not delim and not invert then
     return ideinterleave(it, str, i)
   elseif delim == "left" and invert then
     return iflatten(imap(_mergeidx(false), it, str, i))
@@ -105,12 +108,24 @@ local function _match (invert, delim, it, str, i)
   end
 end
 
-local function split (str, pat, delim)
-  return _match(true, delim, _separate(pat, true), str, 1)
+local function split (str, pat, delim, s, e)
+  s = s or 1
+  e = e or #str
+  assert(isnumber(s))
+  assert(isnumber(e))
+  assert(ge(s, 1))
+  assert(le(e, #str))
+  return _match(true, delim, _separate(pat, true, e), str, s)
 end
 
-local function match (str, pat, delim)
-  return _match(false, delim, _separate(pat, false), str, 1)
+local function match (str, pat, delim, s, e)
+  s = s or 1
+  e = e or #str
+  assert(isnumber(s))
+  assert(isnumber(e))
+  assert(ge(s, 1))
+  assert(le(e, #str))
+  return _match(false, delim, _separate(pat, false, e), str, s)
 end
 
 -- TODO: Handle escaped %s in the format string
