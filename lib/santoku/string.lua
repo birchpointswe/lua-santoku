@@ -1,10 +1,18 @@
+local err = require("santoku.error")
+local error = err.error
+
 local iter = require("santoku.iter")
 local imap = iter.map
 local icollect = iter.collect
 local ihead = iter.head
-local ideinterleave = iter.deinterleave
 local iflatten = iter.flatten
 local ionce = iter.once
+local ifilter = iter.filter
+local isingle = iter.single
+local iappend = iter.append
+
+local varg = require("santoku.varg")
+local vtake = varg.take
 
 local validate = require("santoku.validate")
 local isstring = validate.isstring
@@ -14,8 +22,6 @@ local le = validate.le
 
 local arr = require("santoku.array")
 local acat = arr.concat
-local aspread = arr.spread
-local aoverlay = arr.overlay
 local apush = arr.push
 
 local fun = require("santoku.functional")
@@ -35,76 +41,117 @@ local io_write = io.write
 
 -- TODO: Support captures
 -- TODO: Consider offset start/end
-local function _separate (pat, nomatch_keep, e)
+local function _separate (pat, s, e)
   local b, c
   return function (str, a)
-    while true do
-      if a <= e then
+    if a <= e then
+      if not b then
+        b, c = find(str, pat, a)
         if not b then
-          b, c = find(str, pat, a)
-          if b and a ~= b then
-            return a, str, a, b - 1
-          elseif not b then
-            if a ~= 1 or nomatch_keep then
-              return #str + 1, str, a, #str
-            else
-              return
-            end
-          end
+          return e + 1, str, a, e, "outer"
+        elseif b == s then
+          return a, str, a, a - 1, "outer"
         else
-          a, b = b, nil
-          return c + 1, str, a, c
+          return c, str, a, b - 1, "outer"
         end
       else
-        break
+        a = b
+        b = nil
+        return c + 1, str, a, c, "inner"
       end
+    elseif c then
+      b = c
+      c = nil
+      return a, str, a, b, "outer"
     end
   end
 end
 
-local function _mergeidx (skip)
-  local ds
-  local t = {}
-  local t_spread = bind(aspread, t)
+local _match_drop_tag = bind(vtake, 3)
+
+local function _match_keep (keep)
+  return function (_, _, _, t)
+    return t == keep
+  end
+end
+
+local function _match_clean (keep, fe)
+  local str0, s0, e0
+  local function ret ()
+    return str0, s0, e0
+  end
   return function (str, s, e)
-    if skip then
-      skip = false
-      aoverlay(t, 1, str, s, e)
-      return ionce(t_spread)
-    elseif not ds then
-      if e == #str then
-        aoverlay(t, 1, str, s, e)
-        return ionce(t_spread)
-      else
-        ds = s
-        return noop
+    if not s0 and e < s and keep == "inner" then
+      str0, s0, e0 = str, s, e
+      return noop
+    elseif s0 and e < s and s == fe + 1 and keep == "inner" then
+      str0, s0, e0 = str, s, e
+      return noop
+    else
+      str0, s0, e0 = str, s, e
+      return ionce(ret)
+    end
+  end
+end
+
+local function _match_merge (keep, delim)
+  local str0, s0, e0
+  local function ret ()
+    return str0, s0, e0
+  end
+  return function (str, s, e, tag)
+    if delim == "left" then
+      if keep == "inner" then
+        if str == _match_merge or not e0 or tag == keep then
+          str0, s0, e0 = str, s, e
+          return noop
+        else
+          str0, s0, e0 = str, s0 or s, e
+          return ionce(ret)
+        end
+      elseif keep == "outer" then
+        if str == _match_merge then
+          return ionce(ret)
+        elseif not e0 or tag == keep then
+          str0, s0, e0 = str, s, e
+          return noop
+        else
+          str0, s0, e0 = str, s0 or s, e
+          return ionce(ret)
+        end
+      end
+    elseif delim == "right" then
+      if keep == "outer" then
+        if tag == keep then
+          str0, s0, e0 = str, s0 or s, e
+          return ionce(ret)
+        else
+          str0, s0, e0 = str, s, e
+          return noop
+        end
+      elseif keep == "inner" then
+        if tag == keep then
+          str0, s0, e0 = str, s0 or s, e
+          return ionce(ret)
+        else
+          str0, s0, e0 = str, s, e
+          return noop
+        end
       end
     else
-      s = ds
-      ds = nil
-      aoverlay(t, 1, str, s, e)
-      return ionce(t_spread)
+      error("invalid delimiter", delim)
     end
   end
 end
 
-local function _match (invert, delim, it, str, i)
+local function _match (keep, delim, fe, it, str, i)
   if delim == true then
-    return it, str, i
-  elseif not delim and invert then
-    return ideinterleave(it, str, i)
-  elseif not delim and not invert then
-    return ideinterleave(it, str, i)
-  elseif delim == "left" and invert then
-    return iflatten(imap(_mergeidx(false), it, str, i))
-  elseif delim == "left" and not invert then
-    return iflatten(imap(_mergeidx(false), it, str, i))
-  elseif delim == "right" and invert then
-    return iflatten(imap(_mergeidx(true), it, str, i))
-  elseif delim == "right" and not invert then
-    return iflatten(imap(_mergeidx(true), it, str, i))
+    return iflatten(imap(_match_clean(keep, fe), it, str, i))
+  elseif not delim then
+    return imap(_match_drop_tag, ifilter(_match_keep(keep), it, str, i))
   else
-    return error("Invalid delimiter setting", delim)
+    local it0, a0, i0 = isingle(_match_merge)
+    return iflatten(imap(_match_merge(keep, delim), iappend(it0, a0, i0, it, str, i)))
   end
 end
 
@@ -115,7 +162,7 @@ local function split (str, pat, delim, s, e)
   assert(isnumber(e))
   assert(ge(s, 1))
   assert(le(e, #str))
-  return _match(true, delim, _separate(pat, true, e), str, s)
+  return _match("outer", delim, e, _separate(pat, s, e), str, s)
 end
 
 local function match (str, pat, delim, s, e)
@@ -125,7 +172,7 @@ local function match (str, pat, delim, s, e)
   assert(isnumber(e))
   assert(ge(s, 1))
   assert(le(e, #str))
-  return _match(false, delim, _separate(pat, false, e), str, s)
+  return _match("inner", delim, e, _separate(pat, s, e), str, s)
 end
 
 -- TODO: Handle escaped %s in the format string

@@ -1,4 +1,5 @@
 local test = require("santoku.test")
+local serialize = require("santoku.serialize") -- luacheck: ignore
 
 local err = require("santoku.error")
 local assert = err.assert
@@ -21,7 +22,7 @@ local imap = iter.map
 test("split", function ()
   assert(teq(icollect(imap(ssub, ssplit("this is a test", "%s+"))), { "this", "is", "a", "test" }))
   assert(teq(icollect(imap(ssub, ssplit("a b c", "%s+"))), { "a", "b", "c" }))
-  assert(teq(icollect(imap(ssub, ssplit("a b c   ", "%s+"))), { "a", "b", "c" }))
+  assert(teq(icollect(imap(ssub, ssplit("a b c   ", "%s+"))), { "a", "b", "c", "" }))
   assert(teq(icollect(imap(snumber, ssplit("10 39.5 46.8", "%s+"))), { 10, 39.5, 46.8 }))
 end)
 
@@ -33,7 +34,8 @@ end)
 
 test("match with delim", function ()
   assert(teq(icollect(imap(ssub, smatch("a b c", "%S+", true))), { "a", " ", "b", " ", "c" }))
-  assert(teq(icollect(imap(ssub, smatch("a   b c  ", "%S+", true))), { "a", "   ", "b", " ", "c", "  " }))
+  assert(teq(icollect(imap(ssub, ssplit("a b c", "%s+", true))), { "a", " ", "b", " ", "c" }))
+  assert(teq(icollect(imap(ssub, smatch("a   b c  ", "%s+", true))), { "a", "   ", "b", " ", "c", "  " }))
   assert(teq(icollect(imap(ssub, smatch("a b c", "%S+", "right"))), { "a", " b", " c" }))
   assert(teq(icollect(imap(ssub, smatch("a b c", "%S+", "left"))), { "a ", "b ", "c" }))
 end)
@@ -46,7 +48,7 @@ end)
 
 test("match no matches", function ()
   assert(teq(icollect(imap(ssub, smatch("a b c", "%d+"))), {}))
-  assert(teq(icollect(imap(ssub, smatch("a b c", "%d+", true))), {}))
+  assert(teq(icollect(imap(ssub, smatch("a b c", "%d+", true))), { "a b c" }))
   assert(teq(icollect(imap(ssub, smatch("a b c", "%d+", "left"))), {}))
   assert(teq(icollect(imap(ssub, smatch("a b c", "%d+", "right"))), {}))
 end)
@@ -59,12 +61,17 @@ test("split no matches", function ()
 end)
 
 test("split/match start/end", function ()
-  assert(teq(icollect(imap(ssub, ssplit("a b c d e", "%s+", false, 3, 7))), { "b", "c", "d" }))
-  assert(teq(icollect(imap(ssub, smatch("a b c d e", "%S+", false, 3, 7))), { "b", "c", "d" }))
-  assert(teq(icollect(imap(ssub, ssplit("a b c d e", "%s+", false, 3, nil))), { "b", "c", "d", "e" }))
-  assert(teq(icollect(imap(ssub, smatch("a b c d e", "%S+", false, 3, nil))), { "b", "c", "d", "e" }))
-  assert(teq(icollect(imap(ssub, ssplit("a b c d e", "%s+", false, nil, 7))), { "a", "b", "c", "d" }))
-  assert(teq(icollect(imap(ssub, smatch("a b c d e", "%S+", false, nil, 7))), { "a", "b", "c", "d" }))
+  assert(teq(icollect(imap(ssub, ssplit("a b c d e", "%S+", false, 3, 7))), { "", " ", " ", "" }))
+  assert(teq(icollect(imap(ssub, smatch("a b c d e", "%s+", false, 3, 7))), { " ", " " }))
+  assert(teq(icollect(imap(ssub, ssplit("a b c d e", "%S+", false, 3, nil))), { "", " ", " ", " ", "" }))
+  assert(teq(icollect(imap(ssub, smatch("a b c d e", "%s+", false, 3, nil))), { " ", " ", " " }))
+  assert(teq(icollect(imap(ssub, ssplit("a b c d e", "%S+", false, nil, 7))), { "", " ", " ", " ", "" }))
+  assert(teq(icollect(imap(ssub, smatch("a b c d e", "%s+", false, nil, 7))), { " ", " ", " " }))
+end)
+
+test("split first char", function ()
+  assert(teq(icollect(imap(ssub, ssplit("asdf.tar.gz", "%.", false, 5))), { "", "tar", "gz" }))
+  assert(teq(icollect(imap(ssub, ssplit("asdf.tar.gz", "%.", "right", 5))), { "", ".tar", ".gz" }))
 end)
 
 test("interp", function ()

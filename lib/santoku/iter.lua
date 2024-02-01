@@ -74,6 +74,39 @@ local function map (fn, it, a, i)
   end, a, i
 end
 
+local function _append (it0, a0, i0, it)
+  local done = false
+  local function helper (a, i)
+    if done then
+      return vtup(function (i1, ...)
+        if i1 ~= nil then
+          i0 = i1
+          return i1, ...
+        end
+      end, it0(a0, i0))
+    elseif i ~= nil then
+      return vtup(function (i, ...)
+        if i == nil then
+          done = true
+          return helper()
+        else
+          return i, ...
+        end
+      end, it(a, i))
+    else
+      done = true
+      return helper()
+    end
+  end
+  return helper
+end
+
+local function append (it0, a0, i0, it, a, i)
+  assert(hascall(it0))
+  assert(hascall(it))
+  return _append(it0, a0, i0, it), a, i
+end
+
 local function _filter (fn, it, a, i, ...)
   if i ~= nil then
     if fn(...) then
@@ -333,6 +366,7 @@ return {
   map = map,
   filter = filter,
   flatten = flatten,
+  append = append,
 
   interleave = interleave,
   deinterleave = deinterleave,
