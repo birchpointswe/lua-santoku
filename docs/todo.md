@@ -2,6 +2,7 @@
 
 - intersperse/interleave
 - zip
+- benchmark helpers + integrate toku lib --benchmark
 
 - Remove iterator-like functions from array that rely on iter. In other words,
   iterator-like functions should only exist in array if they have more optimal
