@@ -1,4 +1,4 @@
-local _lua = require("santoku.lua.lua")
+local lua = require("santoku.lua.lua")
 local tbl = require("santoku.table")
 local err = require("santoku.error")
 
@@ -71,9 +71,9 @@ local function load (code, env)
   return fn
 end
 
-return tassign({
+return tassign({}, lua, {
   load = load,
   setfenv = setfenv,
   getfenv = getfenv,
   getupvalue = getupvalue,
-}, _lua)
+})

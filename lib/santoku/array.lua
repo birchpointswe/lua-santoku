@@ -31,15 +31,19 @@ local function clear (t, ts, te)
   return t
 end
 
+-- NOTE: Adapted from:
+-- https://github.com/lunarmodules/lua-compat-5.3
 local _move = table.move or -- luacheck: ignore
   function (s, ss, se, ds, d)
     d = d or s
-    local inc = 1
-    if ss <= ds then
-      ss, se, inc = se, ss, -1
-    end
-    for i = se, ss, inc do
-      d[ds + i - ss] = s[i]
+    if se >= ss then
+      local m, n, o = 0, se - ss, 1
+      if ds > ss then
+        m, n, o = n, m, -1
+      end
+      for i = m, n, o do
+        d[ds + i] = s[ss + i]
+      end
     end
     return d
   end
@@ -251,46 +255,6 @@ local function reduce (t, acc, ...)
   end
   return val
 end
-
--- TODO
--- zip = function (...)
---   local start = 1
---   local opts = (...)
---   if hasindex(opts) then
---     opts = {}
---   else
---     start = 2
---   end
---   assert(hasindex(opts))
---   local mode = opts.mode or "first"
---   assert(mode == "first" or mode == "longest")
---   local ret = {}
---   local m = vlen(...)
---   local i = 1
---   while true do
---     local nxt = {}
---     local nils = 0
---     for j = start, m do
---       local arr = vget(j, ...)
---       if #arr < i then
---         if j == 1 and mode == "first" then
---           return ret
---         end
---         nils = nils + 1
---         nxt = vtup(nxt(nil))
---       else
---         nxt = vtup(nxt(vec[i]))
---       end
---     end
---     if nils == m then
---       break
---     else
---       ret = vtup(ret(nxt))
---     end
---     i = i + 1
---   end
---   return ret()
--- end
 
 local function tabulate (t, ...)
   assert(hasindex(t))

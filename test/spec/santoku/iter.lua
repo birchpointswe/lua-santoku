@@ -1,4 +1,5 @@
 local test = require("santoku.test")
+local serialize = require("santoku.serialize") -- luacheck: ignore
 
 local err = require("santoku.error")
 local assert = err.assert
@@ -13,142 +14,152 @@ local bind = fun.bind
 local noop = fun.noop
 
 local varg = require("santoku.varg")
-local vtup = varg.tup
+local tup = varg.tup
 
 local op = require("santoku.op")
-local oadd = op.add
+local add = op.add
 
 local arr = require("santoku.array")
-local asort = arr.sort
+local sort = arr.sort
+local pack = arr.pack
 
 local iter = require("santoku.iter")
-local akeys = iter.akeys
-local avals = iter.avals
-local tkeys = iter.tkeys
-local tvals = iter.tvals
-local icollect = iter.collect
-local itail = iter.tail
-local ifilter = iter.filter
-local iflatten = iter.flatten
-local ieach = iter.each
-local ireduce = iter.reduce
-local imap = iter.map
-local iasync = iter.async
-local iwrap = iter.wrap
-local isingle = iter.single
-local ionce = iter.once
-local ideinterleave = iter.deinterleave
-local iinterleave = iter.interleave
-local idrop = iter.drop
-local ilast = iter.last
+local pairs = iter.pairs
+local ikeys = iter.ikeys
+local ivals = iter.ivals
+local keys = iter.keys
+local vals = iter.vals
+local map = iter.map
+local collect = iter.collect
+local singleton = iter.singleton
+local once = iter.once
+local flatten = iter.flatten
+local reduce = iter.reduce
+local filter = iter.filter
+local each = iter.each
+local interleave = iter.interleave
+local deinterleave = iter.deinterleave
+local tail = iter.tail
+local drop = iter.drop
+local last = iter.last
+local async = iter.async
+local first = iter.first
+local chain = iter.chain
 
 local tbl = require("santoku.table")
 local teq = tbl.equals
 
-test("akeys", function ()
-  assert(teq({ 1, 2, 3, 4 }, icollect(akeys({ "a", "b", "c", "d", a = 1, b = 2 }))))
+test("ikeys", function ()
+  assert(teq({ 1, 2, 3, 4 }, collect(ikeys({ "a", "b", "c", "d", a = 1, b = 2 }))))
 end)
 
-test("avals", function ()
-  assert(teq({ "a", "b", "c", "d" }, icollect(avals({ "a", "b", "c", "d", a = 1, b = 2 }))))
-  assert(teq({}, icollect(avals({}))))
+test("ivals", function ()
+  assert(teq({ "a", "b", "c", "d" }, collect(ivals({ "a", "b", "c", "d", a = 1, b = 2 }))))
+  assert(teq({}, collect(ivals({}))))
 end)
 
-test("tkeys", function ()
-  assert(teq({ "2", "a", "b" }, asort(icollect(imap(tostring, tkeys({ a = 2, [2] = 4, b = 6 }))))))
+test("keys", function ()
+  assert(teq({ "2", "a", "b" }, sort(collect(map(tostring, keys({ a = 2, [2] = 4, b = 6 }))))))
 end)
 
-test("tvals", function ()
-  assert(teq({ 2, 4, 6 }, asort(icollect(tvals({ a = 2, [2] = 4, b = 6 })))))
+test("vals", function ()
+  assert(teq({ 2, 4, 6 }, sort(collect(vals({ a = 2, [2] = 4, b = 6 })))))
 end)
 
 test("empty", function ()
-  assert(teq({}, icollect(noop)))
+  assert(teq({}, collect(noop)))
 end)
 
 test("single", function ()
-  assert(teq({ "a" }, icollect(isingle("a"))))
+  assert(teq({ "a" }, collect(singleton("a"))))
 end)
 
 test("flatten", function ()
   local input = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 } }
   local expected = { 1, 2, 3, 4, 5, 6, 7, 8 }
-  assert(teq(expected, icollect(iflatten(imap(avals, avals(input))))))
-  assert(teq({ 1, 2, 3, 4 }, icollect(iflatten(imap(isingle, avals({ 1, 2, 3, 4 }))))))
+  assert(teq(expected, collect(flatten(map(ivals, ivals(input))))))
+  assert(teq({ 1, 2, 3, 4 }, collect(flatten(map(singleton, ivals({ 1, 2, 3, 4 }))))))
+end)
+
+test("flatten", function ()
+  local input = { { a = 1 }, { b = 2 }, { c = 3 }, { d = 4 } }
+  local expected = { { "a", 1 }, { "b", 2 }, { "c", 3 }, { "d", 4 } }
+  assert(teq(expected, collect(map(pack, flatten(map(pairs, vals(input)))))))
+  assert(teq({ "a", "b", "c", "d" }, collect(flatten(map(pairs, vals(input))))))
 end)
 
 test("map", function ()
-  assert(teq({ 2, 3, 4, 5 }, icollect(imap(bind(oadd, 1), avals({ 1, 2, 3, 4 })))))
+  assert(teq({ 2, 3, 4, 5 }, collect(map(bind(add, 1), ivals({ 1, 2, 3, 4 })))))
 end)
 
 test("reduce", function ()
-  assert(teq({ 6 }, { ireduce(oadd, 0, avals({ 1, 2, 3 })) }))
+  assert(teq({ 6 }, { reduce(add, 0, ivals({ 1, 2, 3 })) }))
 end)
 
 test("filter", function ()
-  assert(teq({ 2, 4 }, icollect(ifilter(function (a) return a % 2 == 0 end, avals({ 1, 2, 3, 4 })))))
+  assert(teq({ 2, 4 }, collect(filter(function (a) return a % 2 == 0 end, ivals({ 1, 2, 3, 4 })))))
 end)
 
 test("each", function ()
   local called = 0
-  ieach(function (...)
+  each(function (...)
     called = called + 1
     assert(teq({ ... }, { called }))
-  end, avals({ 1, 2, 3, 4 }))
+  end, ivals({ 1, 2, 3, 4 }))
   assert(called == 4)
 end)
 
 test("once", function ()
-  local it, a, i = ionce(function () return 1 end)
-  local i, v = it(a, i)
+  local it = once(function () return 1 end)
+  local i = it()
   assert(notnil(i))
-  assert(eq(v, 1))
-  i = it(a, i)
+  assert(eq(i, 1))
+  i = it()
   assert(isnil(i))
 end)
 
 test("interleave", function ()
-  assert(teq({ 1, "x", 2, "x", 3 }, icollect(iinterleave("x", avals({ 1, 2, 3 })))))
-  assert(teq({ 1, "x", 3, }, icollect(iinterleave("x", avals({ 1, 3 })))))
-  assert(teq({ 1 }, icollect(iinterleave("x", avals({ 1 })))))
+  assert(teq({ 1, "x", 2, "x", 3 }, collect(interleave("x", ivals({ 1, 2, 3 })))))
+  assert(teq({ 1, "x", 3, }, collect(interleave("x", ivals({ 1, 3 })))))
+  assert(teq({ 1 }, collect(interleave("x", ivals({ 1 })))))
 end)
 
 test("deinterleave", function ()
-  assert(teq({ 1, 2, 3 }, icollect(ideinterleave(avals({ 1, "x", 2, "x", 3 })))))
-  assert(teq({ 1, 2 }, icollect(ideinterleave(avals({ 1, "x", 2, "x" })))))
-  assert(teq({ 1, 2 }, icollect(ideinterleave(avals({ 1, "x", 2 })))))
-  assert(teq({ 1 }, icollect(ideinterleave(avals({ 1, "x" })))))
-  assert(teq({ 1 }, icollect(ideinterleave(avals({ 1 })))))
-  assert(teq({}, icollect(ideinterleave(avals({})))))
+  assert(teq({ 1, 2, 3 }, collect(deinterleave(ivals({ 1, "x", 2, "x", 3 })))))
+  assert(teq({ 1, 2 }, collect(deinterleave(ivals({ 1, "x", 2, "x" })))))
+  assert(teq({ 1, 2 }, collect(deinterleave(ivals({ 1, "x", 2 })))))
+  assert(teq({ 1 }, collect(deinterleave(ivals({ 1, "x" })))))
+  assert(teq({ 1 }, collect(deinterleave(ivals({ 1 })))))
+  assert(teq({}, collect(deinterleave(ivals({})))))
 end)
 
 test("tail", function ()
-  assert(teq({ 2, 3 }, icollect(itail(avals({ 1, 2, 3 })))))
-  assert(teq({}, icollect(itail(avals({ 3 })))))
+  assert(teq({ 2, 3 }, collect(tail(ivals({ 1, 2, 3 })))))
+  assert(teq({}, collect(tail(ivals({ 3 })))))
 end)
 
 test("drop", function ()
-  assert(teq({ 1, 2, 3, 4 }, icollect(idrop(0, avals({ 1, 2, 3, 4 })))))
-  assert(teq({ 3, 4 }, icollect(idrop(2, avals({ 1, 2, 3, 4 })))))
-  assert(teq({}, icollect(idrop(4, avals({ 1, 2, 3, 4 })))))
-  assert(teq({}, icollect(idrop(5, avals({ 1, 2, 3, 4 })))))
-  assert(teq({}, icollect(idrop(1, avals({})))))
-  assert(teq({}, icollect(idrop(1, avals({ 3 })))))
+  assert(teq({ 1, 2, 3, 4 }, collect(drop(0, ivals({ 1, 2, 3, 4 })))))
+  assert(teq({ 3, 4 }, collect(drop(2, ivals({ 1, 2, 3, 4 })))))
+  assert(teq({}, collect(drop(4, ivals({ 1, 2, 3, 4 })))))
+  assert(teq({}, collect(drop(5, ivals({ 1, 2, 3, 4 })))))
+  assert(teq({}, collect(drop(1, ivals({})))))
+  assert(teq({}, collect(drop(1, ivals({ 3 })))))
 end)
 
 test("last", function ()
-  assert(teq({ 4 }, { ilast(avals({ 1, 2, 3, 4 })) }))
-  assert(teq({ 4 }, { ilast(avals({ 4 })) }))
-  assert(teq({}, { ilast(avals({})) }))
+  assert(teq({ 4 }, { last(vals({ 1, 2, 3, 4 })) }))
+  assert(teq({ 4 }, { last(vals({ 4 })) }))
+  assert(teq({}, { last(vals({})) }))
 end)
 
 test("async", function ()
-  local async = iasync(avals({ 1, 2, 3, 4 }))
+  local asy = async(ivals({ 1, 2, 3, 4 }))
   local called = 0
   local finished = false
-  vtup(function (...)
+  tup(function (...)
     assert(teq({ ... }, { "hi" }))
-  end, async(function (done, x)
+  end, asy(function (done, x)
     called = called + 1
     assert(teq({ called }, { x }))
     return done(true)
@@ -162,12 +173,12 @@ test("async", function ()
 end)
 
 test("async abort", function ()
-  local async = iasync(avals({ 1, 2, 3, 4 }))
+  local asy = async(ivals({ 1, 2, 3, 4 }))
   local called = 0
   local finished = false
-  vtup(function (...)
+  tup(function (...)
     assert(teq({ ... }, { "exit" }))
-  end, async(function (done, x)
+  end, asy(function (done, x)
     called = called + 1
     assert(teq({ called }, { x }))
     if x > 2 then
@@ -184,9 +195,12 @@ test("async abort", function ()
   assert(finished)
 end)
 
-test("wrap", function ()
-  local wrap = iwrap(avals({ "a", "b", "c", "d" }))
-  assert(teq({ "a", "b", "c", "d" }, { wrap(), wrap(), wrap(), wrap() }))
+test("first", function ()
+  assert(teq({ "a", "a" }, { first(pairs({ a = "a" })) }))
+end)
+
+test("chain", function ()
+  assert(teq({ "a", "a" }, collect(chain(singleton("a"), keys({ a = 1 })))))
 end)
 
 -- test("chunk", function ()
@@ -196,18 +210,6 @@ end)
 --     local a, b = vals()
 --     assert.same(a, { 1, 2, n = 2 })
 --     assert.same(b, { 3, n = 1 })
---   end)
---
--- end)
---
--- test("flatten", function ()
---
---   test("flattens a generator of generators", function ()
---     local v = gen(function (yield)
---       yield(gen.pack(1, 2, 3, 4))
---       yield(gen.pack(5, 6, 7, 8))
---     end):flatten():vec()
---     assert.same(v, vec(1, 2, 3, 4, 5, 6, 7, 8))
 --   end)
 --
 -- end)
@@ -278,43 +280,13 @@ end)
 --   assert.equals(0, gen.pack(1, 10, 2, 3, 0, 4, 5):min())
 -- end)
 --
--- test("empty", function ()
---
---   test("should produce an empty generator", function ()
---
---     local gen = gen.empty()
---
---     local called = false
---
---     gen:each(function ()
---       called = true
---     end)
---
---     assert(not called)
---
---   end)
---
--- end)
---
--- test("paster", function ()
+-- test("paste", function ()
 --
 --   test("should paste values to the right", function ()
 --
 --     local vals = gen.pack(1, 2, 3):paster("num"):vec()
 --
 --     assert.same(vec(vec(1, "num"), vec(2, "num"), vec(3, "num")), vals)
---
---   end)
---
--- end)
---
--- test("pastel", function ()
---
---   test("should paste values to the left", function ()
---
---     local vals = gen.pack(1, 2, 3):pastel("num"):vec()
---
---     assert.same(vec(vec("num", 1), vec("num", 2), vec("num", 3)), vals)
 --
 --   end)
 --
@@ -338,90 +310,16 @@ end)
 --
 -- end)
 --
--- test("tup", function ()
---
---   test("should convert a generator to multiple tuples", function ()
---
---     local vals = gen(function (yield)
---       yield(1, 2)
---       yield(3, 4)
---     end):tup()
---
---     local a, b = vals()
---
---     assert.same({ 1, 2 }, { a() })
---     assert.same({ 3, 4 }, { b() })
---
---   end)
---
--- end)
---
--- test("unpack", function ()
---
---   test("should unpack a generator", function ()
---
---     local gen = gen.pack(1, 2, 3)
---
---     assert.same({ 1, 2, 3 }, { gen:unpack() })
---
---   end)
---
--- end)
---
--- test("last", function ()
---
---   test("should return the last element in a generator", function ()
---
---     local gen = gen.pack(1, 2, 3)
---
---     assert(3, gen:last())
---
---   end)
---
--- end)
---
--- test("step", function ()
---
---   test("should step through a coroutine-generator", function ()
---
---     local gen = gen.pack(1, 2, 3):co()
---
---     assert(gen:step())
---     assert(1 == gen.val())
---     assert(gen:step())
---     assert(2 == gen.val())
---     assert(gen:step())
---     assert(3 == gen.val())
---     assert(not gen:step())
---
---   end)
---
---   test("throw errors that occur in the coroutine", function ()
---
---     local gen = gen(function ()
---       error("err")
---     end):co()
---
---     assert.has.errors(function ()
---       gen:step()
---     end)
---
---   end)
---
+-- test("spread", function ()
+--   local gen = gen.pack(1, 2, 3)
+--   assert.same({ 1, 2, 3 }, { gen:unpack() })
 -- end)
 --
 -- test("take", function ()
---
---   test("should create a new generator that takes from an existing generator", function ()
---
---     local gen0 = gen.pack(1, 2, 3, 4)
---     local gen1 = gen0:co():take(2)
---
---     assert.same(gen1:vec(), vec(1, 2))
---     assert.same(gen0:vec(), vec(3, 4))
---
---   end)
---
+--   local gen0 = gen.pack(1, 2, 3, 4)
+--   local gen1 = gen0:co():take(2)
+--   assert.same(gen1:vec(), vec(1, 2))
+--   assert.same(gen0:vec(), vec(3, 4))
 -- end)
 --
 -- test("zip", function ()
@@ -604,34 +502,11 @@ end)
 --
 -- end)
 --
--- test("interleave", function ()
---
---   test("interleave values into a generator", function ()
---
---     local v = gen.pack(1, 2, 3, 4):interleave("x"):vec()
---
---     assert.same(v, vec(1, "x", 2, "x", 3, "x", 4))
---
---   end)
---
--- end)
---
--- test("nvals", function ()
---
---   local v = vec(1, 2, 3, 4)
---   v:remove(1, 1)
---   assert.same({ 2, 3, 4 }, gen.nvals(v):vec():unwrapped())
---
--- end)
---
 -- test("nvals find first in reverse", function ()
---
 --   local v = vec(true, true, false, true, true, true)
 --   assert.equals(false, gen.nvals(v, -1):co():find(op["not"]))
---
 --   local v = vec(true, true, true, true, true, true)
 --   assert.is_nil(gen.nvals(v, -1):co():find(op["not"]))
---
 -- end)
 --
 -- test("chunk groups values in vectors", function ()
@@ -656,13 +531,9 @@ end)
 -- end)
 --
 -- test("range", function ()
---
 --   assert.same({ 1, 2, 3, 4, n = 4 }, gen.range(4):vec())
 --   assert.same({ -1, -2, -3, -4, n = 4 }, gen.range(-4):vec())
---
 --   assert.same({ 3, 4, n = 2 }, gen.range(3, 4):vec())
 --   assert.same({ -3, -4, n = 2 }, gen.range(-3, -4):vec())
---
 --   assert.same({ 2, 4, 6, n = 3 }, gen.range(2, 6, 2):vec())
---
 -- end)

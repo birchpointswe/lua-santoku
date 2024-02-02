@@ -1,15 +1,16 @@
 local err = require("santoku.error")
 local error = err.error
+local assert = err.assert
 
 local iter = require("santoku.iter")
 local imap = iter.map
 local icollect = iter.collect
-local ihead = iter.head
+local ifirst = iter.first
 local iflatten = iter.flatten
 local ionce = iter.once
 local ifilter = iter.filter
-local isingle = iter.single
-local iappend = iter.append
+local isingleton = iter.singleton
+local ichain = iter.chain
 
 local varg = require("santoku.varg")
 local vtake = varg.take
@@ -41,28 +42,34 @@ local io_write = io.write
 
 -- TODO: Support captures
 -- TODO: Consider offset start/end
-local function _separate (pat, s, e)
+local function _separate (str, pat, s, e)
+  local a = s
   local b, c
-  return function (str, a)
+  return function ()
     if a <= e then
       if not b then
         b, c = find(str, pat, a)
         if not b then
-          return e + 1, str, a, e, "outer"
+          local t = a
+          a = e + 1
+          return str, t, e, "outer"
         elseif b == s then
-          return a, str, a, a - 1, "outer"
+          return str, a, a - 1, "outer"
         else
-          return c, str, a, b - 1, "outer"
+          local t = a
+          a = c
+          return str, t, b - 1, "outer"
         end
       else
-        a = b
+        local t = b
+        a = c + 1
         b = nil
-        return c + 1, str, a, c, "inner"
+        return str, t, c, "inner"
       end
     elseif c then
       b = c
       c = nil
-      return a, str, a, b, "outer"
+      return str, a, b, "outer"
     end
   end
 end
@@ -144,14 +151,13 @@ local function _match_merge (keep, delim)
   end
 end
 
-local function _match (keep, delim, fe, it, str, i)
+local function _match (keep, delim, fe, it)
   if delim == true then
-    return iflatten(imap(_match_clean(keep, fe), it, str, i))
+    return iflatten(imap(_match_clean(keep, fe), it))
   elseif not delim then
-    return imap(_match_drop_tag, ifilter(_match_keep(keep), it, str, i))
+    return imap(_match_drop_tag, ifilter(_match_keep(keep), it))
   else
-    local it0, a0, i0 = isingle(_match_merge)
-    return iflatten(imap(_match_merge(keep, delim), iappend(it0, a0, i0, it, str, i)))
+    return iflatten(imap(_match_merge(keep, delim), ichain(it, isingleton(_match_merge))))
   end
 end
 
@@ -162,7 +168,7 @@ local function split (str, pat, delim, s, e)
   assert(isnumber(e))
   assert(ge(s, 1))
   assert(le(e, #str))
-  return _match("outer", delim, e, _separate(pat, s, e), str, s)
+  return _match("outer", delim, e, _separate(str, pat, s, e))
 end
 
 local function match (str, pat, delim, s, e)
@@ -172,7 +178,7 @@ local function match (str, pat, delim, s, e)
   assert(isnumber(e))
   assert(ge(s, 1))
   assert(le(e, #str))
-  return _match("inner", delim, e, _separate(pat, s, e), str, s)
+  return _match("inner", delim, e, _separate(str, pat, s, e))
 end
 
 -- TODO: Handle escaped %s in the format string
@@ -196,14 +202,14 @@ local function interp (s, t)
 
     local s = segments[i]
 
-    if not ihead(match(s, fmtpat)) then
+    if not ifirst(match(s, fmtpat)) then
 
       apush(out, s)
 
     else
 
       local fmt = s
-      local key = i <= #segments and segments[i + 1] and ihead(match(segments[i + 1], keypat))
+      local key = i <= #segments and segments[i + 1] and ifirst(match(segments[i + 1], keypat))
 
       if key then
         segments[i + 1] = sub(segments[i + 1], #key + 1)
@@ -235,7 +241,7 @@ end
 local function parse (s, pat)
   local keys = {}
   pat = gsub(pat, "%b()#%b()", function (k)
-    local fmt = ihead(imap(sub, match(k, "%b()")))
+    local fmt = ifirst(imap(sub, match(k, "%b()")))
     local key = sub(k, #fmt + 2)
     key = sub(key, 2, #key - 1)
     apush(keys, key)

@@ -8,258 +8,271 @@ local fun = require("santoku.functional")
 local noop = fun.noop
 
 local arr = require("santoku.array")
-local aoverlay = arr.overlay
-local aspread = arr.spread
+local overlay = arr.overlay
+local spread = arr.spread
 
 local varg = require("santoku.varg")
-local vtup = varg.tup
-local vsel = varg.sel
+local tup = varg.tup
 
-local function _reduce (acc, v, it, a, i, ...)
+local _pairs = pairs
+local _ipairs = ipairs
+
+local function wrap (it, a, i)
+  return function ()
+    return tup(function (i0, ...)
+      if i0 ~= nil then
+        i = i0
+        return i, ...
+      end
+    end, it(a, i))
+  end
+end
+
+local function pairs (t)
+  return wrap(_pairs(t))
+end
+
+local function ipairs (t)
+  return wrap(_ipairs(t))
+end
+
+local function _reduce (acc, v, it, i, ...)
   if i == nil then
     return v
   elseif not v then
-    return _reduce(acc, ..., it, a, it(a, i))
+    return _reduce(acc, i, it, it())
   else
-    return _reduce(acc, acc(v, ...), it, a, it(a, i))
+    return _reduce(acc, acc(v, i, ...), it, it())
   end
 end
 
-local function reduce (acc, v, it, a, i)
+local function reduce (acc, v, it)
   assert(hascall(acc))
   assert(hascall(it))
-  return _reduce(acc, v, it, a, it(a, i))
+  return _reduce(acc, v, it, it())
 end
 
-local function _collect (a, n)
-  a[#a + 1] = n
-  return a
-end
-
-local function collect (it, a, i)
+local function collect (it)
   assert(hascall(it))
-  return reduce(_collect, {}, it, a, i)
+  return reduce(function (a, n)
+    a[#a + 1] = n
+    return a
+  end, {}, it)
 end
 
-local function head (it, a, i)
+local function first (it)
   assert(hascall(it))
-  if i ~= nil then
-    return vsel(2, it(a, i))
+  return it()
+end
+
+local function each (fn, it)
+  assert(hascall(fn))
+  assert(hascall(it))
+  local function helper ()
+    return tup(function (...)
+      if ... ~= nil then
+        fn(...)
+        return helper()
+      end
+    end, it())
+  end
+  return helper()
+end
+
+local function map (fn, it)
+  assert(hascall(fn))
+  assert(hascall(it))
+  return function ()
+    return tup(function (...)
+      if ... ~= nil then
+        return fn(...)
+      end
+    end, it())
   end
 end
 
-local function _each (a, ...)
-  a(...)
-  return a
-end
-
-local function each (fn, it, a, i)
-  assert(hascall(fn))
-  assert(hascall(it))
-  return reduce(_each, fn, it, a, i)
-end
-
-local function _map (fn, i, ...)
-  if i ~= nil then
-    return i, fn(...)
-  end
-end
-
--- TODO: do we need a closure?
-local function map (fn, it, a, i)
-  assert(hascall(fn))
-  assert(hascall(it))
-  return function (a, i)
-    return _map(fn, it(a, i))
-  end, a, i
-end
-
-local function _append (it0, a0, i0, it)
-  local done = false
-  local function helper (a, i)
-    if done then
-      return vtup(function (i1, ...)
-        if i1 ~= nil then
-          i0 = i1
-          return i1, ...
-        end
-      end, it0(a0, i0))
-    elseif i ~= nil then
-      return vtup(function (i, ...)
-        if i == nil then
-          done = true
-          return helper()
-        else
-          return i, ...
-        end
-      end, it(a, i))
-    else
-      done = true
-      return helper()
-    end
+local function chain (a, b)
+  assert(hascall(a))
+  assert(hascall(b))
+  local it = a
+  local function helper ()
+    return tup(function (...)
+      if ... ~= nil then
+        return ...
+      elseif it == a then
+        it = b
+        return helper()
+      end
+    end, it())
   end
   return helper
 end
 
-local function append (it0, a0, i0, it, a, i)
-  assert(hascall(it0))
-  assert(hascall(it))
-  return _append(it0, a0, i0, it), a, i
-end
-
-local function _filter (fn, it, a, i, ...)
-  if i ~= nil then
-    if fn(...) then
-      return i, ...
-    else
-      return _filter(fn, it, a, it(a, i))
-    end
-  end
-end
-
 -- TODO: do we need a closure?
-local function filter (fn, it, a, i)
+local function filter (fn, it)
   assert(hascall(fn))
   assert(hascall(it))
-  return function (a, i)
-    return _filter(fn, it, a, it(a, i))
-  end, a, i
+  local function helper ()
+    return tup(function (...)
+      if ... ~= nil then
+        if fn(...) then
+          return ...
+        else
+          return helper()
+        end
+      end
+    end, it())
+  end
+  return helper
 end
 
 -- TODO: can we reduce the number of closures?
-local function flatten (parent_it, parent_a, parent_i)
-  assert(hascall(parent_it))
-  local parent_i0, child_it, child_a, child_i
-  local function _flatten (parent_a, parent_i)
-    if parent_i == nil then
-      return
-    end
-    if child_it == nil then
-      parent_i0, child_it, child_a, child_i = parent_it(parent_a, parent_i)
-      if parent_i0 == nil then
+local function flatten (parent)
+  assert(hascall(parent))
+  local child
+  local function helper ()
+    if child == nil then
+      child = parent()
+      if child == nil then
         return
       end
-      assert(hascall(child_it))
+      assert(hascall(child))
     end
-    return vtup(function (child_i0, ...)
-      if child_i0 == nil then
-        child_it = nil
-        return _flatten(parent_a, parent_i0)
+    return tup(function (...)
+      if ... == nil then
+        child = nil
+        return helper()
       else
-        child_i = child_i0
-        return parent_i, ...
+        return ...
       end
-    end, child_it(child_a, child_i))
+    end, child())
   end
-  return _flatten, parent_a, parent_i
+  return helper
 end
 
--- TODO: Use coroutine tuples to keep nils?
--- TODO: Shouldn't the checks for #t == 0 and t[1] == nil be the same? How can
--- we get the length of a table excluding nils?
-local function _interleave (v, it)
+local function last (it)
+  assert(hascall(it))
   local t = {}
-  local interleaving = false
-  return function (a, i)
-    while true do
-      if #t == 0 then
-        aoverlay(t, 1, it(a, i))
-        i = t[1]
-      elseif t[1] == nil then
-        return
-      elseif not interleaving then
-        interleaving = true
-        return aspread(t)
-      else
-        interleaving = false
-        aoverlay(t, 1, it(a, i))
-        return t[1], v
-      end
-    end
-  end
+  each(function (...)
+    overlay(t, 1, ...)
+  end, it)
+  return spread(t)
 end
 
-local function _deinterleave (it)
-  local removing = false
-  local function helper (a, i)
-    if i ~= nil then
-      if not removing then
-        removing = true
-        return it(a, i)
-      else
-        removing = false
-        return helper(a, it(a, i))
-      end
+local function butlast (it)
+  assert(hascall(it))
+  local t
+  local function helper ()
+    if t == nil then
+      t = { it() }
+      return helper()
+    elseif t[1] ~= nil then
+      return tup(function (...)
+        overlay(t, 1, it())
+        if t[1] ~= nil then
+          return ...
+        end
+      end, spread(t))
     end
   end
   return helper
 end
 
-local function interleave (v, it, a, i)
+-- TODO: This is more of an intersperse. Interleave would be taking multiple
+-- iterators and interleaving their outputs
+local function interleave (v, it)
   assert(hascall(it))
-  return _interleave(v, it), a, i
-end
-
-local function deinterleave (it, a, i)
-  assert(hascall(it))
-  return _deinterleave(it), a, i
-end
-
-local function single (v)
-  return function (_, i)
-    if i then
-      return false, v
+  local interleaving = false
+  return butlast(function ()
+    if interleaving then
+      interleaving = false
+      return v
+    else
+      interleaving = true
+      return tup(function (...)
+        if ... ~= nil then
+          return ...
+        end
+      end, it())
     end
-  end, nil, true
+  end)
+end
+
+local function deinterleave (it)
+  assert(hascall(it))
+  local removing = false
+  local function helper ()
+    return tup(function (...)
+      if ... ~= nil then
+        if removing then
+          removing = false
+          return helper()
+        else
+          removing = true
+          return ...
+        end
+      end
+    end, it())
+  end
+  return helper
+end
+
+local function singleton (v)
+  local done = false
+  return function ()
+    if not done then
+      done = true
+      return v
+    end
+  end
 end
 
 local function once (fn)
   assert(hascall(fn))
-  return function (_, i)
-    if i then
-      return false, fn()
+  local done = false
+  return function ()
+    if not done then
+      done = true
+      return fn()
     end
-  end, nil, true
-end
-
-local function tail (it, a, i)
-  assert(hascall(it))
-  return it, a, (it(a, i))
-end
-
-local function _drop (n, it, a, i)
-  if i == nil then
-    return noop
-  elseif n == 0 then
-    return it, a, i
-  else
-    return _drop(n - 1, it, a, it(a, i))
   end
 end
 
-local function drop (n, it, a, i)
+local function tail (it)
+  assert(hascall(it))
+  if it() ~= nil  then
+    return it
+  else
+    return noop
+  end
+end
+
+local function drop (n, it)
   assert(isnumber(n))
   assert(ge(n, 0))
   assert(hascall(it))
-  return _drop(n, it, a, i)
-end
-
-local function _last (it, a, t)
-  if t[1] ~= nil then
-    return vtup(function (i, ...)
-      if i == nil then
-        return aspread(t, 2)
-      else
-        aoverlay(t, 1, i, ...)
-        return _last(it, a, t)
+  local function helper1 ()
+    return tup(function (...)
+      if ... ~= nil then
+        return ...
       end
-    end, it(a, t[1]))
+    end, it())
   end
-end
-
-local function last (it, a, i)
-  assert(hascall(it))
-  return _last(it, a, { i })
+  local function helper0 ()
+    if n == 0 then
+      return helper1
+    else
+      return tup(function (...)
+        if ... ~= nil then
+          n = n - 1
+          return helper0()
+        else
+          return noop
+        end
+      end, it())
+    end
+  end
+  return helper0()
 end
 
 local function _key (k)
@@ -270,118 +283,82 @@ local function _val (_, v)
   return v
 end
 
-local function _anext (a, i)
-  i = i + 1
-  if a[i] ~= nil then
-    return i, i, a[i]
-  end
+local function keys (t)
+  return map(_key, pairs(t))
 end
 
-local function _tnext (a, k)
-  k = next(a, k)
-  if k ~= nil then
-    return k, k, a[k]
-  end
-end
-
-local function apairs (t)
+local function ikeys (t)
   assert(hasindex(t))
-  return _anext, t, 0
+  return map(_key, ipairs(t))
 end
 
-local function tpairs (t)
+local function vals (t)
   assert(hasindex(t))
-  return _tnext, t, nil
+  return map(_val, pairs(t))
 end
 
-local function akeys (t)
+local function ivals (t)
   assert(hasindex(t))
-  return map(_key, apairs(t))
+  return map(_val, ipairs(t))
 end
 
-local function avals (t)
-  assert(hasindex(t))
-  return map(_val, apairs(t))
-end
-
-local function tkeys (t)
-  assert(hasindex(t))
-  return map(_key, tpairs(t))
-end
-
-local function tvals (t)
-  assert(hasindex(t))
-  return map(_val, tpairs(t))
-end
-
-local function _async (each, final, it, a, i, ...)
-  if i == nil then
-    return final(true, i, ...)
+local function _async (each, final, it, ...)
+  if ... == nil then
+    return final(true, ...)
   else
     return each(function (ok, ...)
       if ok then
-        return _async(each, final, it, a, it(a, i))
+        return _async(each, final, it, it())
       else
         return final(ok, ...)
       end
-    end, i, ...)
+    end, ...)
   end
 end
 
-local function async (it, a, i)
+local function async (it)
   assert(hascall(it))
   return function (each, final)
     assert(hascall(each))
     final = final or noop
     assert(hascall(final))
-    return _async(each, final, it, a, it(a, i))
-  end
-end
-
-local function wrap (it, a, i)
-  assert(hascall(it))
-  return function ()
-    return vtup(function (i0, ...)
-      i = i0
-      if i ~= nil then
-        return ...
-      end
-    end, it(a, i))
+    return _async(each, final, it, it())
   end
 end
 
 return {
 
   once = once,
-  single = single,
+  singleton = singleton,
 
-  apairs = apairs,
-  akeys = akeys,
-  avals = avals,
+  pairs = pairs,
+  keys = keys,
+  vals = vals,
 
-  tpairs = tpairs,
-  tkeys = tkeys,
-  tvals = tvals,
+  ipairs = ipairs,
+  ikeys = ikeys,
+  ivals = ivals,
 
   map = map,
   filter = filter,
   flatten = flatten,
-  append = append,
+  chain = chain,
 
   interleave = interleave,
   deinterleave = deinterleave,
 
   async = async,
-  wrap = wrap,
 
   each = each,
   reduce = reduce,
   collect = collect,
 
-  head = head,
+  first = first,
   last = last,
   tail = tail,
+  butlast = butlast,
   drop = drop,
+  --take = take,
 
 }
 
@@ -512,14 +489,6 @@ return {
 --     s[v] = true
 --     return s
 --   end, {})
--- end
-
--- M.append = function (gen, ...)
---   assert(M.isgen(gen))
---   local args = tup(...)
---   return gen:chain(M.gen(function (yield)
---     yield(args())
---   end))
 -- end
 
 -- M.take = function (gen, n)

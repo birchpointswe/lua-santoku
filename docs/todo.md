@@ -1,5 +1,12 @@
 # Now
 
+- intersperse/interleave
+- zip
+
+- Remove iterator-like functions from array that rely on iter. In other words,
+  iterator-like functions should only exist in array if they have more optimal
+  implementations than just using an iterator from santoku.iter
+
 - Deprecate santoku-test
 
 - Template capability to process the entire file and produce output accordingly

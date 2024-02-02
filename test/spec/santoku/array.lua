@@ -4,45 +4,6 @@ local arr = require("santoku.array")
 local fun = require("santoku.functional")
 local op = require("santoku.op")
 
-test("extend", function ()
-
-  test("should merge array-like tables", function ()
-
-    local expected = { 1, 2, 3, 4 }
-    local one = { 1, 2 }
-    local two = { 3, 4 }
-
-    assert(tbl.equals(expected, arr.extend({}, one, two)))
-
-  end)
-
-  test("should handle non-empty initial tables", function ()
-
-    local expected = { "a", "b", 1, 2, 3, 4 }
-    local one = { 1, 2 }
-    local two = { 3, 4 }
-
-    assert(tbl.equals(expected, arr.extend({ "a", "b" }, one, two)))
-
-  end)
-
-  test("should handle extending by empty tables", function ()
-
-    local expected = { 1, 2 }
-    local one = {}
-    local two = {}
-
-    assert(tbl.equals(expected, arr.extend({ 1, 2 }, one, two)))
-
-  end)
-
-end)
-
-test("push", function ()
-  local expected = { 1, 2, 3 }
-  assert(tbl.equals(expected, arr.push({ 1 }, 2, 3)))
-end)
-
 test("copy", function ()
 
   test("should copy into an array", function ()
@@ -83,6 +44,45 @@ test("copy", function ()
     assert(tbl.equals({ 1, 3, 4, 4 }, arr.copy({ 1, 2, 3, 4 }, 2, 3)))
   end)
 
+end)
+
+test("extend", function ()
+
+  test("should merge array-like tables", function ()
+
+    local expected = { 1, 2, 3, 4 }
+    local one = { 1, 2 }
+    local two = { 3, 4 }
+
+    assert(tbl.equals(expected, arr.extend({}, one, two)))
+
+  end)
+
+  test("should handle non-empty initial tables", function ()
+
+    local expected = { "a", "b", 1, 2, 3, 4 }
+    local one = { 1, 2 }
+    local two = { 3, 4 }
+
+    assert(tbl.equals(expected, arr.extend({ "a", "b" }, one, two)))
+
+  end)
+
+  test("should handle extending by empty tables", function ()
+
+    local expected = { 1, 2 }
+    local one = {}
+    local two = {}
+
+    assert(tbl.equals(expected, arr.extend({ 1, 2 }, one, two)))
+
+  end)
+
+end)
+
+test("push", function ()
+  local expected = { 1, 2, 3 }
+  assert(tbl.equals(expected, arr.push({ 1 }, 2, 3)))
 end)
 
 test("slice", function ()
