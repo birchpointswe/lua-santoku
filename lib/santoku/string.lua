@@ -40,8 +40,6 @@ local smatch = string.match
 local mhuge = math.huge
 local io_write = io.write
 
--- TODO: Support captures
--- TODO: Consider offset start/end
 local function _separate (str, pat, s, e)
   local a = s
   local b, c
@@ -181,15 +179,6 @@ local function match (str, pat, delim, s, e)
   return _match("inner", delim, e, _separate(str, pat, s, e))
 end
 
--- TODO: Handle escaped %s in the format string
--- like %%s\n, which should output %s\n
---
--- TODO: Improve performance by not taking substrings of the input, just operate
--- on the indices
---
--- Interpolate strings
---   "Hello %name. %adjective to meet you."
---   "Name: %name. Age: %d#age"
 local function interp (s, t)
 
   local fmtpat = "%%[%w.]+"
@@ -295,12 +284,10 @@ local function unquote (s, q, e)
   end
 end
 
--- Escape strings for use in sub, gsub, etc
 local function escape (s)
   return (gsub(s, "[%(%)%.%%+%-%*%?%[%]%^%$]", "%%%1"))
 end
 
--- Unescape strings for use in sub, gsub, etc
 local function unescape (s)
   return (gsub(s, "%%([%(%)%.%%+%-%*%?%[%]%^%$])", "%1"))
 end
@@ -312,14 +299,6 @@ end
 local function printi (s, t)
   return print(interp(s, t))
 end
-
--- TODO
--- Indent or de-dent strings
---   opts.char = indent char, default ' '
---   opts.level = indent level, default auto
---   opts.dir = indent direction, default "in"
--- local function indent (s, opts) -- luacheck: ignore
--- end
 
 local function trim (s, left, right)
   if not left then

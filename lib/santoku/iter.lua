@@ -302,6 +302,19 @@ local function ivals (t)
   return map(_val, ipairs(t))
 end
 
+local function find (fn, it)
+  local function helper (...)
+    if ... ~= nil then
+      if fn(...) then
+        return ...
+      else
+        return helper(it())
+      end
+    end
+  end
+  return helper(it())
+end
+
 local function _async (each, final, it, ...)
   if ... == nil then
     return final(true, ...)
@@ -352,6 +365,7 @@ return {
   each = each,
   reduce = reduce,
   collect = collect,
+  find = find,
 
   first = first,
   last = last,

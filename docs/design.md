@@ -1,54 +1,50 @@
 # High-Level Design
 
-## Core Library
+## Core Library: Strictly Portable Lua & C
 
-Any stdlib-like functionality goes here. It must be zero-dependency, but can
-include portable C code.
+- io: wraps functions returning nil to throw errors instead
+- os: same as io, extends getenv, adds interpreter
+- math: merges atan and atan2, adds trunc, adds geospatial utilities
+- coroutine: adds nest() for nested corotines
+- package: adds searchpath
 
-- varg: argument list utilities
-- table: general table utilities
-- array: array-like table utilities
-- iter: iterator utilities
-- co: nested coroutines (TODO: coro utils, coro tuple, refactor)
-- num: wrapper around math
-- lua: lua metaprogramming and related c-api wrappers
-- error: error handling
-- validate: validation
-- env: environment utilities
-- meta: metatable utilities (TODO: move from inherit)
-- profile: performance profiler (TODO: memory, call stack)
-- coverage: coverage analyzer (TODO)
-- op: wrap operators as functions
-- serialize: convert Lua values to strings
-- string: string utilities (TODO: various)
-- test: basic test framework (TODO: integrate from santoku-test)
-- geo: geospatial utilities (TODO: consider moving to separate lib)
-- random: generate random strings
+- table: additional array and dictionary style table APIs
+- string: split, match, iterators, etc
 
-## Core-Extension Libraries
+- iterator: functional iterator APIs
+- functional: functional primitives
+- vararg: variable argument list utilities
+- error: better pcall, error, assert, etc.
+- lua: consolidated metatable, meta-programming, debug, etc utilities
+- op: lua operators as functions
 
-- fs: posix filesystem utilities
-- system: posix process utilities
-- matrix: numerical operations with BLAS
-- template: file templating
-- make: framework similar to posix make
+- test: basic test wrapper
+- validate: various validations that can be passed to assert
+- profile: basic profiler
+- coverage: basic coverage analyzer
+- serialize: serialize values to strings that can be re-loaded
 
-## Auxiliary libraries
+## Companion Libraries: Dependent on POSIX & External Libraries
 
 - cli: cli interface to some of these libraries
-- geo-pdf: geo-pdf manipulation
-- porter: porter stemmer
-- jpeg: jpeg scaling
+- fs: posix filesystem utilities
+- system: posix process utilities
+- template: file templating
+- matrix: numerical operations with BLAS
+- make: framework similar to posix make
+
+- docs: documentation generator
+
 - iconv: charset conversion
 - html: streaming html parser
 - sqlite: sqlite utilities
 - sqlite-migrate: sqlite ddl migration utilities
-- test-runner: test runner
+
 - web: javascript interop for WASM
 - python: python interop
+
+- geo-pdf: geo-pdf manipulation
+- porter: porter stemmer
+- jpeg: jpeg scaling
+- test-runner: test runner
 - sts: semantic textual similarity (TODO: move from tbhss)
-
-## Patterns
-
-- Programmer errors throw exceptions
-- Runtime errors return true/false then results or errors

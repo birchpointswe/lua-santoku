@@ -1,124 +1,68 @@
 # Now
 
-- intersperse/interleave
-- zip
-- benchmark helpers + integrate toku lib --benchmark
+- io, os, math, coroutine, package
 
-- Remove iterator-like functions from array that rely on iter. In other words,
-  iterator-like functions should only exist in array if they have more optimal
-  implementations than just using an iterator from santoku.iter
+- Env
+    - Move env to os
+    - Move searchpath to package
 
-- Deprecate santoku-test
+- Iter
+    - Finish migration
+    - Intersperse/interleave
+    - Zip
 
-- Template capability to process the entire file and produce output accordingly
-  - for example, writing return <% return exports() %> at the bottom of a file
-    which would look at all of the locally defined functions and automagically
-    produce an export table, or generating imports
-  - syntax sugar for auto-return an serialize <% hello() %> should automatically
-    return the results of calling hello(), serialized. This should only work for
-    single expressions
+- Array, Table
+    - Merge into single table library
 
-- Allow string.match to handle capture groups, then there's no need for the base
-  string.match
-    - Does this even make sense? We don't really need capture groups if we
-      produce indices and allow the user to sub them
+- Template
+    - License
 
-- Consistent argument error messages for c functions and lua a functions
-    - Should c functions use assert(hascall(x))/etc or should lua use checkopt,
-      optstring, etc?
+- String
+    - Indentation
+    - Interp: handle escaped %s in the format string
+    - Escape & unescape: Single argument escapes for use with lua patterns,
+      additional arguments allows escaping other characters with escape strings
 
-- Consider santoku.require("santoku.array", "push", "spread", ...) for
-  automatically localizing imports
+- Error
+    - Expose error strings as module properties
+    - Consistent argument error messages between Lua and C (use checkopt,
+      optstring, etc?)
 
-- Feature pairity: tup, array, table, iter, cont
+- Profile
+    - Call hierarchy
+    - C calls
+    - Memory
 
-- Add memory/allocation to profiler
-- Add call hierarchy to profiler (step <- unknown <- gen <- etc)
-- Add C calls to profiler
+- Coverage
+    - Lightweight replacement to Luacov
+    - Integrates with gcc gcda/gcdo files
 
-- Consider fully embracing duck typing to limit performance impact of asserts,
-  etc
-- Add copyright and MIT license to all libs
-- Remove luassert from all libs (painfully slow in WASM)
-- Remove luacheck from all libs (only needed on host)
-- Update deps for all libs (santoku, santoku-test, etc)
-- Split callmod, ephemeron, etc into header-only library that is also exposed
-  via santoku.capi
-- Test with profiler: isvec, hasmeta, etc. seem to take a lot of time
+- Other
+    - Add licensing and copyright
+    - Deprecate santoku-test
+    - Remove luassert
+    - Remove luacheck as dependency (use via toku lib/web test)
+    - Extract common c-helpers in into an includable c file
 
-- When called 3 arguments, string.escape should allow escaping a set of
-  characters with a specific escape character. With called with 2 arguments,
-  string.unescape does the opposite. With a single argument, both functions
-  behave as they do currently, escaping and unescaping per lua string patterns.
+# Consider
 
-- err.error: consider always passing level 0 to avoid modifying the message
-- Consider moving profiler to a separate module
+- Lua
+    - Utility to clear most basic library global methods (pairs, ipairs,
+      setfenv, etc))
+    - Require/import utility to automatically localize functions without having
+      to write require("a") a.x = x, a.y = y, a million times
 
-- Documentation site generator with emscripten and santoku-web powered live
-  tests
-- Readline-enhanced repl
+- Validate
+    - Table schema validation
 
-- Santoku implementation of inspect allowing literal representation of the value
-  for use in toku templates (i.e. for injecting an external_dependencies) table
-  into a rockspec
+- System
+    - Utility to check for required installed programs
 
-- str.split/etc should return a generator if the underlying vector isnt needed
+- Repl
+    - Better lua REPL
 
-- Basic README
-- Documentation
-- Refactor gen, fn, etc to use compat.hasmeta
+- Benchmark
+    - New lib with simple benchmark helpers
 
-- santoku.lua for binding useful c-api functions for error checking, etc
-
-- Support calling generators in a generic for loop
-
-- Add missing asserts
-
-- Consider making async a submodule of gen, so gen.ivals():async():each(...) is
-  possible
-
-- Figure out the boundaries of gen, tuple, fun, async and vec.
-  - fun: higher-order functions and functional helpers
-  - async: implements async control flow with cogens and pcall
-  - tuple: direct manipulation of varargs
-  - gen: generators
-  - vec: direct manipulation of vectors
-
-- expand async: map, filter, etc.
-    - What is needed in async, and what is already covered by cogen?
-
-# Next
-
-- 100% test coverage
-- Complete inline TODOs
-
-# Eventually
-
-- Benchmark gen, tuple, vec
-
-- Ensure we're using tail calls (return fn(...))
-
-- Write a true generic PDF parser
-
-- Table validation library
-
-- Pwrap
-    - Refactor and move to "check" module that exports a function with the
-      following arguments:
-        - Arg 1: function wrapping a body of code to execute that is passed a
-          "maybe" function that when passed "true, ...", returns "..." and when
-          passed "false, ..." calls the handler function
-        - Arg 2: the handler function that causes the outer "check" to return
-          "false, ..." by returns "false, ..." or causes the inner "maybe" to
-          return "..." by returning "true, ..."
-    - Any error thrown inside the body function causes "check" to return "false,
-      ..."
-
-- Create an assert module/function that stringifies the remaining arguments with
-  ":" before passing to assert
-
-- Functional utils for indexed arg get/set/del/map, filter, etc (basically
-  immutable versions of vec/gen functions)
-
-- Add a "package" module to support checking if shell programs are installed and
-  gracefully bailing if not. Futher extend to a generic project scripting tool
+- Template
+    - Allow injecting strings without "return"

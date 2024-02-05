@@ -6,7 +6,7 @@ local wrapnil = err.wrapnil
 local tassign = tbl.assign
 
 local _getupvalue = debug.getupvalue
-local _load = wrapnil(load or loadstring) -- luacheck: ignore
+local _loadstring = wrapnil(loadstring) -- luacheck: ignore
 local upvaluejoin = debug.upvaluejoin -- luacheck: ignore
 
 local function getupvalue (fn, name)
@@ -63,8 +63,8 @@ local getfenv = getfenv or -- luacheck: ignore
     end
   end
 
-local function load (code, env)
-  local fn = _load(code)
+local function loadstring (code, env)
+  local fn = _loadstring(code)
   if env then
     setfenv(fn, env) -- luacheck: ignore
   end
@@ -72,7 +72,7 @@ local function load (code, env)
 end
 
 return tassign({}, lua, {
-  load = load,
+  loadstring = loadstring,
   setfenv = setfenv,
   getfenv = getfenv,
   getupvalue = getupvalue,
