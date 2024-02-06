@@ -7,6 +7,8 @@
     - Move searchpath to package
 
 - Iter
+    - Iterator as first argument to functions
+    - iter.extend for extending interator into table
     - Finish migration
     - Intersperse/interleave
     - Zip
@@ -22,11 +24,6 @@
     - Interp: handle escaped %s in the format string
     - Escape & unescape: Single argument escapes for use with lua patterns,
       additional arguments allows escaping other characters with escape strings
-
-- Error
-    - Expose error strings as module properties
-    - Consistent argument error messages between Lua and C (use checkopt,
-      optstring, etc?)
 
 - Profile
     - Call hierarchy
@@ -45,6 +42,11 @@
     - Extract common c-helpers in into an includable c file
 
 # Consider
+
+- Error
+    - Expose error strings as module properties
+    - Consistent argument error messages between Lua and C (use checkopt,
+      optstring, etc?)
 
 - Lua
     - Utility to clear most basic library global methods (pairs, ipairs,

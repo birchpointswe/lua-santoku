@@ -198,7 +198,7 @@ local function interp (s, t)
     else
 
       local fmt = s
-      local key = i <= #segments and segments[i + 1] and ifirst(match(segments[i + 1], keypat))
+      local key = i <= #segments and segments[i + 1] and smatch(segments[i + 1], keypat)
 
       if key then
         segments[i + 1] = sub(segments[i + 1], #key + 1)

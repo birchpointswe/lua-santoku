@@ -125,3 +125,7 @@ test("uquote", function ()
   local s = "\"hello\""
   assert("hello" == str.unquote(s))
 end)
+
+test("interp multiple", function ()
+  assert(teq({ "hello world" }, { str.interp("%s#(greet) %s#(target)", { greet = "hello", target = "world" }) }))
+end)
