@@ -25,6 +25,7 @@ local pack = arr.pack
 
 local iter = require("santoku.iter")
 local pairs = iter.pairs
+local paste = iter.paste
 local ikeys = iter.ikeys
 local ivals = iter.ivals
 local keys = iter.keys
@@ -201,6 +202,10 @@ end)
 
 test("chain", function ()
   assert(teq({ "a", "a" }, collect(chain(singleton("a"), keys({ a = 1 })))))
+end)
+
+test("paste", function ()
+  assert(teq({ { "a", 1 }, { "a", 2 } }, collect(map(pack, paste("a", ivals({ 1, 2 }))))))
 end)
 
 -- test("chunk", function ()
