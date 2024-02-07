@@ -81,8 +81,8 @@ test("extend", function ()
 end)
 
 test("push", function ()
-  local expected = { 1, 2, 3 }
-  assert(tbl.equals(expected, arr.push({ 1 }, 2, 3)))
+  local expected = { { 1, 2, 3 } }
+  assert(tbl.equals(expected, { arr.push({ 1 }, 2, 3) }))
 end)
 
 test("slice", function ()
