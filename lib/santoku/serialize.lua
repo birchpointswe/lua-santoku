@@ -7,26 +7,17 @@ local apush = array.push
 
 local _serialize_table
 
+local string_subs = { ["\n"] = "\\n", ["\r"] = "\\r" }
+
 local function _serialize_value (out, v, level)
   if type(v) == "table" then
     level = level or 0
     _serialize_table(out, v, level + 1)
   elseif type(v) == "string" then
     if v:match("[\r\n]") then
-      local open = "[["
-      local close = "]]"
-      local equals = 0
-      local v_with_bracket = v .. "]"
-      while v_with_bracket:find(close, 1, true) do
-        equals = equals + 1
-        local eqs = ("="):rep(equals)
-        open = "[" .. eqs .. "["
-        close = "]" .. eqs .. "]"
-      end
-      apush(out, open .. "\n" .. v .. close)
-    else
-      apush(out, ("%q"):format(v))
+      v = v:gsub("[\r\n]", string_subs)
     end
+    apush(out, ("%q"):format(v))
   else
     apush(out, tostring(v))
   end
