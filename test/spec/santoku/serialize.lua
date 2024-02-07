@@ -27,5 +27,6 @@ test("serialize", function ()
 end)
 
 test("newlines", function ()
-  assert(eq("{\n  [\"a\"] = \"hello\\\\nworld\"\n}", serialize({ a = "hello\nworld" })))
+  assert(eq('{\n  ["a"] = "hello\\nworld"\n}', serialize({ a = [[hello
+world]] })))
 end)

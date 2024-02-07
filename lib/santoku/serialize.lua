@@ -4,20 +4,18 @@
 local array = require("santoku.array")
 local acat = array.concat
 local apush = array.push
+local gsub = string.gsub
 
 local _serialize_table
 
-local string_subs = { ["\n"] = "\\n", ["\r"] = "\\r" }
+local string_subs = { ["\n"] = "\\n", ["\r"] = "\\r", ["\""] = "\\\"" }
 
 local function _serialize_value (out, v, level)
   if type(v) == "table" then
     level = level or 0
     _serialize_table(out, v, level + 1)
   elseif type(v) == "string" then
-    if v:match("[\r\n]") then
-      v = v:gsub("[\r\n]", string_subs)
-    end
-    apush(out, ("%q"):format(v))
+    apush(out, acat({ "\"", gsub(v, "[\"\r\n]", string_subs), "\"" }))
   else
     apush(out, tostring(v))
   end
