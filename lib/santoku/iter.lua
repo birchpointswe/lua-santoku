@@ -258,6 +258,18 @@ local function tail (it)
   end
 end
 
+local function take (n, it)
+  assert(isnumber(n))
+  assert(ge(n, 0))
+  assert(hascall(it))
+  return function ()
+    if n ~= 0 then
+      n = n - 1
+      return it()
+    end
+  end
+end
+
 local function drop (n, it)
   assert(isnumber(n))
   assert(ge(n, 0))
@@ -384,7 +396,7 @@ return {
   tail = tail,
   butlast = butlast,
   drop = drop,
-  --take = take,
+  take = take,
 
 }
 

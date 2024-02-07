@@ -42,6 +42,7 @@ local interleave = iter.interleave
 local deinterleave = iter.deinterleave
 local tail = iter.tail
 local drop = iter.drop
+local take = iter.take
 local last = iter.last
 local async = iter.async
 local first = iter.first
@@ -206,6 +207,10 @@ end)
 
 test("paste", function ()
   assert(teq({ { "a", 1 }, { "a", 2 } }, collect(map(pack, paste("a", ivals({ 1, 2 }))))))
+end)
+
+test("take", function ()
+  assert(teq({ 1, 2, 3 }, collect(take(3, ivals({ 1, 2, 3, 4, 5 })))))
 end)
 
 -- test("chunk", function ()
