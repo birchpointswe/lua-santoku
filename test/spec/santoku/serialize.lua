@@ -1,5 +1,11 @@
 local test = require("santoku.test")
-local serialize = require("santoku.serialize")
+local serialize = require("santoku.serialize") -- luacheck: ignore
+
+local err = require("santoku.error")
+local assert = err.assert
+
+local validate = require("santoku.validate")
+local eq = validate.isequal
 
 local tbl = require("santoku.table")
 local teq = tbl.equals
@@ -18,4 +24,8 @@ test("serialize", function ()
 
   assert(teq(t0, assert(t1f)())) --
 
+end)
+
+test("newlines", function ()
+  assert(eq("{\n  [\"a\"] = \"hello\\\\nworld\"\n}", serialize({ a = "hello\nworld" })))
 end)
