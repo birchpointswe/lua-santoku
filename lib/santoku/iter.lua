@@ -270,6 +270,14 @@ local function take (n, it)
   end
 end
 
+local function tabulate (it)
+  assert(hascall(it))
+  return reduce(function (a, k, v)
+    a[k] = v
+    return a
+  end, {}, it)
+end
+
 local function drop (n, it)
   assert(isnumber(n))
   assert(ge(n, 0))
@@ -380,6 +388,7 @@ return {
   flatten = flatten,
   chain = chain,
   paste = paste,
+  tabulate = tabulate,
 
   interleave = interleave,
   deinterleave = deinterleave,

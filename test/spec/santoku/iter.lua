@@ -21,6 +21,7 @@ local add = op.add
 
 local arr = require("santoku.array")
 local sort = arr.sort
+local spread = arr.spread
 local pack = arr.pack
 
 local iter = require("santoku.iter")
@@ -47,6 +48,7 @@ local last = iter.last
 local async = iter.async
 local first = iter.first
 local chain = iter.chain
+local tabulate = iter.tabulate
 
 local tbl = require("santoku.table")
 local teq = tbl.equals
@@ -211,6 +213,10 @@ end)
 
 test("take", function ()
   assert(teq({ 1, 2, 3 }, collect(take(3, ivals({ 1, 2, 3, 4, 5 })))))
+end)
+
+test("tabulate", function ()
+  assert(teq({ a = 1, b = 2 }, tabulate(map(spread, ivals({ { "a", 1 }, { "b", 2 } })))))
 end)
 
 -- test("chunk", function ()
