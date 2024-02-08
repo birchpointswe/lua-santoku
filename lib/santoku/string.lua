@@ -12,9 +12,6 @@ local ifilter = iter.filter
 local isingleton = iter.singleton
 local ichain = iter.chain
 
-local varg = require("santoku.varg")
-local vtake = varg.take
-
 local validate = require("santoku.validate")
 local isstring = validate.isstring
 local isnumber = validate.isnumber
@@ -26,7 +23,6 @@ local acat = arr.concat
 local apush = arr.push
 
 local fun = require("santoku.functional")
-local bind = fun.bind
 local noop = fun.noop
 
 local base = require("santoku.string.base")
@@ -72,7 +68,9 @@ local function _separate (str, pat, s, e)
   end
 end
 
-local _match_drop_tag = bind(vtake, 3)
+local _match_drop_tag = function (str, s, e)
+  return str, s, e
+end
 
 local function _match_keep (keep)
   return function (_, _, _, t)

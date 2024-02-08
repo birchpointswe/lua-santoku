@@ -6,6 +6,7 @@ local userdata = lua.userdata
 
 local arr = require("santoku.array")
 local asort = arr.sort
+local aoverlay = arr.overlay
 
 local iter = require("santoku.iter")
 local itpairs = iter.pairs
@@ -22,10 +23,11 @@ local sethook = debug.sethook
 local concat = table.concat
 local clock = os.clock
 
+local namet = {}
+
 local function hook (ev)
   local i = getinfo(2, "Sln")
-  if i.what ~= 'Lua' then return end
-  local fn = concat({ i.name or "(unknown)", i.short_src .. ":" .. i.linedefined }, " ")
+  local fn = concat(aoverlay(namet, 1, i.name or "(unknown)", i.short_src, i.linedefined), " ")
   if ev == 'call' then
     this[fn] = clock()
   elseif this[fn] then

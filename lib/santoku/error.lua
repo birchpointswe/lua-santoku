@@ -15,6 +15,7 @@ local _error = error
 local _pcall = pcall
 local _xpcall = xpcall
 
+local pcall_stack = 0
 local current_error_mt = {
   __tostring = function (o)
     return acat({ vinterleave(": ", vmap(tostring, aspread(o))) })
@@ -25,7 +26,11 @@ local current_error = setmetatable({}, current_error_mt)
 
 local function error (...)
   aoverlay(current_error, 1, ...)
-  return _error(current_error)
+  if pcall_stack == 0 then
+    return _error(tostring(current_error))
+  else
+    return _error(current_error)
+  end
 end
 
 local function assert (ok, ...)
@@ -37,6 +42,7 @@ local function assert (ok, ...)
 end
 
 local function pcall_helper (ok, ...)
+  pcall_stack = pcall_stack - 1
   if ok then
     return ok, ...
   elseif getmetatable(...) == current_error_mt then
@@ -48,6 +54,7 @@ end
 
 local function xpcall_helper (handler)
   return function (...)
+    pcall_stack = pcall_stack - 1
     if getmetatable((...)) == current_error_mt then
       return handler(aspread((...)))
     else
@@ -58,11 +65,13 @@ end
 
 local function pcall (fn, ...)
   assert(hascall(fn))
+  pcall_stack = pcall_stack + 1
   return vtup(pcall_helper, _pcall(fn, ...))
 end
 
 local function xpcall (fn, handler)
   assert(hascall(fn))
+  pcall_stack = pcall_stack + 1
   return _xpcall(fn, xpcall_helper(handler))
 end
 
