@@ -7,7 +7,7 @@ local arr = require("santoku.array")
 local asort = arr.sort
 
 local iter = require("santoku.iter")
-local itpairs = iter.tpairs
+local itpairs = iter.pairs
 local imap = iter.map
 local icollect = iter.collect
 
