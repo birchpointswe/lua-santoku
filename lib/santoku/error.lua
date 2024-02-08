@@ -96,6 +96,22 @@ local function wrapnil (fn)
   end
 end
 
+local function checknil (v, ...)
+  if v == nil then
+    return error(...)
+  else
+    return v, ...
+  end
+end
+
+local function checkok (ok, ...)
+  if not ok then
+    return error(...)
+  else
+    return ...
+  end
+end
+
 return {
   error = error,
   assert = assert,
@@ -103,4 +119,6 @@ return {
   xpcall = xpcall,
   wrapok = wrapok,
   wrapnil = wrapnil,
+  checkok = checkok,
+  checknil = checknil,
 }
