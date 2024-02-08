@@ -1,4 +1,5 @@
 local co_create = coroutine.create
+local co_resume = coroutine.resume
 
 local lua = require("santoku.lua")
 local userdata = lua.userdata
@@ -16,34 +17,39 @@ local sprintf = str.printf
 
 local calls, total, this = {}, {}, {}
 
+local getinfo = debug.getinfo
+local sethook = debug.sethook
+local concat = table.concat
+local clock = os.clock
+
 local function hook (ev)
-  local i = debug.getinfo(2, "Sln")
+  local i = getinfo(2, "Sln")
   if i.what ~= 'Lua' then return end
-  local fn = table.concat({ i.name or "(unknown)", i.short_src .. ":" .. i.linedefined }, " ")
+  local fn = concat({ i.name or "(unknown)", i.short_src .. ":" .. i.linedefined }, " ")
   if ev == 'call' then
-    this[fn] = os.clock()
+    this[fn] = clock()
   elseif this[fn] then
-    local time = os.clock() - this[fn]
+    local time = clock() - this[fn]
     total[fn] = (total[fn] or 0) + time
     calls[fn] = (calls[fn] or 0) + 1
   end
 end
 
-local start = os.clock()
+local start = clock()
 
-debug.sethook(hook, "cr")
+sethook(hook, "cr")
 
 coroutine.create = function (...) -- luacheck: ignore
   local co = co_create(...)
-  debug.sethook(co, hook, "cr")
+  sethook(co, hook, "cr")
   return co
 end
 
 coroutine.wrap = function (...) -- luacheck: ignore
   local co = co_create(...)
-  debug.sethook(co, hook, "cr")
+  sethook(co, hook, "cr")
   return function (...)
-    return coroutine.resume(co, ...)
+    return co_resume(co, ...)
   end
 end
 
@@ -57,7 +63,7 @@ local function report ()
     local d = stats[i]
     sprintf("%.4f\t%d\t%s\n", d.time, d.calls, d.fn)
   end
-  sprintf("%.4f\tTotal\n", os.clock() - start)
+  sprintf("%.4f\tTotal\n", clock() - start)
 end
 
 -- NOTE: this allows report to be called on program exit
