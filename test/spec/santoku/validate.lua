@@ -34,3 +34,10 @@ end)
 test("isstring", function ()
   assert(true == validate.isstring("hello"))
 end)
+
+
+test("isfile", function ()
+  assert(validate.istrue(validate.isfile(io.stdout)))
+  assert(validate.isfalse(validate.isfile("hi")))
+  assert(validate.isfalse(validate.isfile({})))
+end)

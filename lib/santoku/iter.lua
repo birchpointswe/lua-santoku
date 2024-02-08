@@ -8,6 +8,7 @@ local fun = require("santoku.functional")
 local noop = fun.noop
 
 local arr = require("santoku.array")
+local clear = arr.clear
 local overlay = arr.overlay
 local spread = arr.spread
 
@@ -52,12 +53,17 @@ local function reduce (acc, v, it)
   return _reduce(acc, v, it, it())
 end
 
-local function collect (it)
+local function collect (it, t, i)
+  t = t or {}
   assert(hascall(it))
-  return reduce(function (a, n)
-    a[#a + 1] = n
+  assert(hasindex(t))
+  i = i or #t + 1
+  assert(isnumber(i))
+  return clear(reduce(function (a, n)
+    a[i] = n
+    i = i + 1
     return a
-  end, {}, it)
+  end, t, it), i)
 end
 
 local function first (it)

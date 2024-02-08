@@ -219,6 +219,11 @@ test("tabulate", function ()
   assert(teq({ a = 1, b = 2 }, tabulate(map(spread, ivals({ { "a", 1 }, { "b", 2 } })))))
 end)
 
+test("collect into table", function ()
+  assert(teq({ 1, 2, 3, 4 }, collect(ivals({ 3, 4 }), { 1, 2 })))
+  assert(teq({ 3, 4 }, collect(ivals({ 3, 4 }), { 1, 2 }, 1)))
+end)
+
 -- test("chunk", function ()
 --
 --   test("takes n items from a generator", function ()

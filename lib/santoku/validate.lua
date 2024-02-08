@@ -2,6 +2,17 @@ local _huge = math.huge
 local _match = string.match
 local select = select
 
+local capi = require("santoku.validate.capi")
+local MT_FILEHANDLE = capi.MT_FILEHANDLE
+
+local function isfile (t)
+  if getmetatable(t) ~= MT_FILEHANDLE then
+    return false, "Value is not a file", t
+  else
+    return true
+  end
+end
+
 local function istrue (t)
   if t ~= true then
     return false, "Value is not true", t
@@ -412,6 +423,7 @@ return {
   ge = ge,
   between = between,
   hasargs = hasargs,
+  isfile = isfile,
   isstring = isstring,
   isnumber = isnumber,
   istable = istable,
