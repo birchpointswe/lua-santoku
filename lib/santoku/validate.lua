@@ -5,6 +5,14 @@ local select = select
 local capi = require("santoku.validate.capi")
 local MT_FILEHANDLE = capi.MT_FILEHANDLE
 
+local function hasmetatable (t, mt)
+  if getmetatable(t) ~= mt then
+    return false, "Value doesn't have the expected metatable", t, mt and mt._name or mt
+  else
+    return true
+  end
+end
+
 local function isfile (t)
   if getmetatable(t) ~= MT_FILEHANDLE then
     return false, "Value is not a file", t
@@ -461,4 +469,5 @@ return {
   hasle = hasle,
   hasgt = hasgt,
   hasge = hasge,
+  hasmetatable = hasmetatable,
 }
