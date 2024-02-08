@@ -11,7 +11,25 @@ test("assign", function ()
     local one = { a = 1 }
     local two = { b = { 2, 3 } }
 
-    assert(tbl.equals(expected, tbl.assign({}, one, two)))
+    local c = {}
+    tbl.assign(c, one)
+    tbl.assign(c, two)
+
+    assert(tbl.equals(expected, c))
+
+  end)
+
+  test("should allow non-overwrites", function ()
+
+    local expected = { a = 1, b = { 2, 3 } }
+    local one = { a = 1 }
+    local two = { a = 2, b = { 2, 3 } }
+
+    local c = {}
+    tbl.assign(c, one, false)
+    tbl.assign(c, two, false)
+
+    assert(tbl.equals(expected, c))
 
   end)
 

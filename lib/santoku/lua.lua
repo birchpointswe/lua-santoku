@@ -71,9 +71,9 @@ local function loadstring (code, env)
   return fn
 end
 
-return tassign({}, lua, {
+return tassign({
   loadstring = loadstring,
   setfenv = setfenv,
   getfenv = getfenv,
   getupvalue = getupvalue,
-})
+}, lua, false)

@@ -1,5 +1,5 @@
 local validate = require("santoku.validate")
-local haspairs = validate.haspairs
+local isboolean = validate.isboolean
 local hasindex = validate.hasindex
 local hasnewindex = validate.hasnewindex
 
@@ -60,14 +60,13 @@ local function update (t, ...)
   end, vtake(m - 1, ...))
 end
 
-local function assign (t, ...)
+local function assign (t, t0, overwrite)
+  overwrite = overwrite == nil and true or overwrite
   assert(hasindex(t))
-  assert(hasnewindex(t))
-  local m = vlen(...)
-  for i = 1, m do
-    local t0 = vget(i, ...)
-    assert(haspairs(t0))
-    for k, v in pairs(t0) do
+  assert(hasnewindex(t0))
+  assert(isboolean(overwrite))
+  for k, v in pairs(t0) do
+    if t[k] == nil or overwrite then
       t[k] = v
     end
   end
@@ -113,7 +112,7 @@ local function merge (t, ...)
   for i = 1, vlen(...) do
     local t0 = vget(i, ...)
     for k, v in pairs(t0) do
-      if not haspairs(v) or not hasindex(t[k]) then
+      if not hasindex(v) or not hasindex(t[k]) then
         t[k] = v
       else
         merge(t[k], v)

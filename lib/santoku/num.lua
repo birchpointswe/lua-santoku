@@ -23,7 +23,7 @@ local function atan (...)
   end
 end
 
-return tassign({}, math, {
+return tassign({
   trunc = trunc,
   atan = atan,
-})
+}, math, false)
