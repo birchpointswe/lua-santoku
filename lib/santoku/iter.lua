@@ -7,6 +7,9 @@ local hasindex = validate.hasindex
 local fun = require("santoku.functional")
 local noop = fun.noop
 
+local op = require("santoku.op")
+local add = op.add
+
 local arr = require("santoku.array")
 local clear = arr.clear
 local overlay = arr.overlay
@@ -296,6 +299,11 @@ local function tabulate (it)
   end, {}, it)
 end
 
+local function sum (it)
+  assert(hascall(it))
+  return reduce(add, 0, it)
+end
+
 local function drop (n, it)
   assert(isnumber(n))
   assert(ge(n, 0))
@@ -407,6 +415,7 @@ return {
   chain = chain,
   paste = paste,
   tabulate = tabulate,
+  sum = sum,
 
   interleave = interleave,
   deinterleave = deinterleave,
@@ -525,22 +534,8 @@ return {
 --   end, ...)
 -- end
 
--- M.sum = function (gen)
---   assert(M.isgen(gen))
---   return gen:reduce(op.add)
--- end
-
 -- M.concat = function (gen, delim)
 --   return gen:vec():concat(delim)
--- end
-
--- M.last = function (gen)
---   assert(M.isgen(gen))
---   local last = tup()
---   gen:each(function (...)
---     last = tup(...)
---   end)
---   return last()
 -- end
 
 -- M.set = function (gen)
@@ -549,28 +544,6 @@ return {
 --     s[v] = true
 --     return s
 --   end, {})
--- end
-
--- M.take = function (gen, n)
---   assert(M.iscogen(gen))
---   assert(compat.istype.number(n))
---   assert(compat.ge(0, n))
---   return M.gen(function (yield)
---     while n > 0 and gen:step() do
---       n = n - 1
---       yield(gen.val())
---     end
---   end)
--- end
-
--- M.find = function (gen, fn, ...)
---   assert(M.iscogen(gen))
---   fn = fn or compat.id
---   while gen:step() do
---     if fn(gen.val(...)) then
---       return gen.val()
---     end
---   end
 -- end
 
 -- M.includes = function (gen, v)
@@ -583,35 +556,6 @@ return {
 -- M.group = function (gen, n)
 -- 	assert(M.isgen(gen))
 -- 	return gen:chunk(n):map(compat.unpack)
--- end
-
--- M.tabulate = function (gen, opts, ...)
---   if M.iscogen(gen) then
---     local keys, nkeys
---     if compat.istype.table(opts) then
---       keys, nkeys = tup(...), tup.len(...)
---     else
---       keys, nkeys = tup(opts, ...), 1 + tup.len(...)
---       opts = {}
---     end
---     local rest = opts.rest
---     local ret = tbl()
---     local idx = 0
---     while idx < nkeys and gen:step() do
---       idx = idx + 1
---       ret[select(idx, keys())] = gen.val()
---     end
---     if rest then
---       ret[rest] = gen:vec()
---     end
---     return ret
---   else
---     assert(M.isgen(gen))
---     return gen:reduce(function (a, k, v)
---       a[k] = v
---       return a
---     end, {})
---   end
 -- end
 
 -- M.slice = function (gen, start, num)
