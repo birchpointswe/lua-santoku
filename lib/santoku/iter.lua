@@ -108,6 +108,18 @@ local function paste (val, it)
   end
 end
 
+local function zip (a, b)
+  assert(hascall(a))
+  assert(hascall(b))
+  return function ()
+    return tup(function (...)
+      if ... ~= nil then
+        return ...
+      end
+    end, a(), b())
+  end
+end
+
 local function chain (a, b)
   assert(hascall(a))
   assert(hascall(b))
@@ -405,6 +417,7 @@ return {
   reduce = reduce,
   collect = collect,
   find = find,
+  zip = zip,
 
   first = first,
   last = last,

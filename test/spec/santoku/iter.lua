@@ -27,6 +27,7 @@ local pack = arr.pack
 local iter = require("santoku.iter")
 local pairs = iter.pairs
 local paste = iter.paste
+local zip = iter.zip
 local ikeys = iter.ikeys
 local ivals = iter.ivals
 local keys = iter.keys
@@ -222,6 +223,10 @@ end)
 test("collect into table", function ()
   assert(teq({ 1, 2, 3, 4 }, collect(ivals({ 3, 4 }), { 1, 2 })))
   assert(teq({ 3, 4 }, collect(ivals({ 3, 4 }), { 1, 2 }, 1)))
+end)
+
+test("zip", function ()
+  assert(teq({ { 1, 3 }, { 2, 4 } }, collect(map(pack, zip(ivals({ 1, 2 }), ivals({ 3, 4 }))))))
 end)
 
 -- test("chunk", function ()
