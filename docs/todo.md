@@ -43,6 +43,9 @@
 
 # Consider
 
+- General
+    - Use static to hide c functions instead of long names
+
 - Error
     - Expose error strings as module properties
     - Consistent argument error messages between Lua and C (use checkopt,
