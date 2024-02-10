@@ -27,8 +27,8 @@
 
 - Profile
     - Call hierarchy
-    - C calls
     - Memory
+    - Garbage
 
 - Coverage
     - Lightweight replacement to Luacov

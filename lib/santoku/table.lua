@@ -123,6 +123,8 @@ local function merge (t, ...)
 end
 
 local function map (t, fn)
+  assert(hasindex(t))
+  assert(hascall(fn))
   for k, v in pairs(t) do
     t[k] = fn(v)
   end
