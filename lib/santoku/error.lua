@@ -27,9 +27,9 @@ local current_error = setmetatable({}, current_error_mt)
 local function error (...)
   aoverlay(current_error, 1, ...)
   if pcall_stack == 0 then
-    return _error(tostring(current_error))
+    return _error(tostring(current_error), 2)
   else
-    return _error(current_error)
+    return _error(current_error, 2)
   end
 end
 

@@ -1,5 +1,6 @@
 local validate = require("santoku.validate")
 local isboolean = validate.isboolean
+local hascall = validate.hascall
 local hasindex = validate.hasindex
 local hasnewindex = validate.hasnewindex
 
