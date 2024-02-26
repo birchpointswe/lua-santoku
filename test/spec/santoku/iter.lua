@@ -31,6 +31,7 @@ local zip = iter.zip
 local ikeys = iter.ikeys
 local ivals = iter.ivals
 local sum = iter.sum
+local count = iter.count
 local keys = iter.keys
 local vals = iter.vals
 local map = iter.map
@@ -232,6 +233,10 @@ end)
 
 test("sum", function ()
   assert(teq({ 10 }, { sum(ivals({ 1, 2, 3, 4 })) }))
+end)
+
+test("count", function ()
+  assert(teq({ 4 }, { count(ivals({ 1, 2, 3, 4 })) }))
 end)
 
 -- test("chunk", function ()

@@ -304,6 +304,12 @@ local function sum (it)
   return reduce(add, 0, it)
 end
 
+local function count (it)
+  return reduce(function (a)
+    return a + 1
+  end, 0, it)
+end
+
 local function drop (n, it)
   assert(isnumber(n))
   assert(ge(n, 0))
@@ -416,6 +422,7 @@ return {
   paste = paste,
   tabulate = tabulate,
   sum = sum,
+  count = count,
 
   interleave = interleave,
   deinterleave = deinterleave,
