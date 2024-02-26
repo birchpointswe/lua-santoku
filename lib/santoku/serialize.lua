@@ -31,19 +31,30 @@ end
 local function _serialize_table_contents (out, tbl, level)
   local sep = "\n"
   local indentation = "  "
-  local i = 1
-  for k, v in pairs(tbl) do
+  local maxi = nil
+  for i = 1, #tbl do
+    local v = tbl[i]
+    if v == nil then
+      break
+    end
+    maxi = i
     apush(out, sep)
     for _ = 1, level do
       apush(out, indentation)
     end
-    if k == i then
-      i = i + 1
-    else
-      _serialize_table_key_assignment(out, k, level)
-    end
     _serialize_value(out, v, level)
     sep = ",\n"
+  end
+  for k, v in pairs(tbl) do
+    if not (type(k) == "number" and maxi and k >= 1 and k <= maxi) then
+      apush(out, sep)
+      for _ = 1, level do
+        apush(out, indentation)
+      end
+      _serialize_table_key_assignment(out, k, level)
+      _serialize_value(out, v, level)
+      sep = ",\n"
+    end
   end
   if sep ~= "\n" then
     apush(out, "\n")
