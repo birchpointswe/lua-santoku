@@ -1,3 +1,4 @@
+local serialize = require("santoku.serialize") -- luacheck: ignore
 local test = require("santoku.test")
 local tbl = require("santoku.table")
 local arr = require("santoku.array")
@@ -229,4 +230,12 @@ end)
 
 test("spread", function ()
   assert(tbl.equals({ 1, 2, 3 }, { arr.spread({ 1, 2, 3 }) }))
+end)
+
+test("shuffle", function ()
+  local a = { 1, 2, 3, 4 }
+  local b = { 1, 2, 3, 4 }
+  assert(tbl.equals(a, b))
+  arr.shuffle(a, b)
+  assert(tbl.equals(a, b))
 end)

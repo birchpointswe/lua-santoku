@@ -342,6 +342,18 @@ local function spread (t, ...)
   return unpack(t, ...)
 end
 
+local function shuffle (...)
+  local m = vlen(...)
+  local first = ...
+	for i = #first, 2, -1 do
+		local j = math.random(i)
+    for k = 1, m do
+      local t = vget(k, ...)
+      t[i], t[j] = t[j], t[i]
+    end
+	end
+end
+
 return {
   pack = pack,
   concat = concat,
@@ -368,6 +380,7 @@ return {
   includes = includes,
   reverse = reverse,
   spread = spread,
+  shuffle = shuffle,
   sum = sum,
   mean = mean,
   max = max,
