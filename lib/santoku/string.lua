@@ -2,6 +2,9 @@ local err = require("santoku.error")
 local error = err.error
 local assert = err.assert
 
+local tbl = require("santoku.table")
+local tassign = tbl.assign
+
 local iter = require("santoku.iter")
 local imap = iter.map
 local icollect = iter.collect
@@ -26,7 +29,6 @@ local fun = require("santoku.functional")
 local noop = fun.noop
 
 local base = require("santoku.string.base")
-local snumber = base.number
 
 local find = string.find
 local sub = string.sub
@@ -365,7 +367,7 @@ local function commonprefix (...)
   return prefix
 end
 
-return {
+return tassign({
   split = split,
   match = match,
   sub = sub,
@@ -373,7 +375,6 @@ return {
   find = find,
   format = format,
   parse = parse,
-  number = snumber,
   interp = interp,
   quote = quote,
   unquote = unquote,
@@ -388,4 +389,4 @@ return {
   stripprefix = stripprefix,
   compare = compare,
   commonprefix,
-}
+}, base, false)
