@@ -108,3 +108,8 @@ end)
 test("update", function ()
   assert(tbl.equals({ a = 2 }, tbl.update({ a = 1 }, "a", fun.bind(op.add, 1))))
 end)
+
+test("clear", function ()
+  local t = { 1, 2, a = 1, b = 2 }
+  assert(tbl.equals({}, tbl.clear(t)))
+end)

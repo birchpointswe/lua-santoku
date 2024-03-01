@@ -132,6 +132,15 @@ local function map (t, fn)
   return t
 end
 
+-- TODO: Faster in c?
+local function clear (t)
+  assert(hasindex(t))
+  for k in pairs(t) do
+    t[k] = nil
+  end
+  return t
+end
+
 return {
   get = get,
   update = update,
@@ -140,4 +149,5 @@ return {
   assign = assign,
   equals = equals,
   merge = merge,
+  clear = clear,
 }
