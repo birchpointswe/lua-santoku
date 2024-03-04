@@ -31,6 +31,10 @@ local zip = iter.zip
 local ikeys = iter.ikeys
 local ivals = iter.ivals
 local sum = iter.sum
+local min = iter.min
+local max = iter.max
+local mean = iter.mean
+local set = iter.set
 local count = iter.count
 local keys = iter.keys
 local vals = iter.vals
@@ -237,6 +241,22 @@ end)
 
 test("count", function ()
   assert(teq({ 4 }, { count(ivals({ 1, 2, 3, 4 })) }))
+end)
+
+test("min", function ()
+  assert(teq({ 2 }, { min(ivals({ 12, 2, 9, 4 })) }))
+end)
+
+test("max", function ()
+  assert(teq({ 12 }, { max(ivals({ 12, 2, 9, 4 })) }))
+end)
+
+test("mean", function ()
+  assert(teq({ 6.75 }, { mean(ivals({ 12, 2, 9, 4 })) }))
+end)
+
+test("set", function ()
+  assert(teq({ a = true, b = true }, set(ivals({ "a", "b" }))))
 end)
 
 -- test("chunk", function ()

@@ -305,9 +305,51 @@ local function sum (it)
 end
 
 local function count (it)
+  assert(hascall(it))
   return reduce(function (a)
     return a + 1
   end, 0, it)
+end
+
+local function min (it)
+  assert(hascall(it))
+  return reduce(function (a, b)
+    if not a or b < a then
+      return b
+    else
+      return a
+    end
+  end, nil, it)
+end
+
+local function set (it, t)
+  t = t or {}
+  assert(hascall(it))
+  assert(hasindex(t))
+  return reduce(function (a, n)
+    a[n] = true
+    return a
+  end, t, it)
+end
+
+local function max (it)
+  assert(hascall(it))
+  return reduce(function (a, b)
+    if not a or b > a then
+      return b
+    else
+      return a
+    end
+  end, nil, it)
+end
+
+local function mean (it)
+  assert(hascall(it))
+  local c = 0
+  return reduce(function (a, b)
+    c = c + 1
+    return a + b
+  end, 0, it) / c
 end
 
 local function drop (n, it)
@@ -423,6 +465,10 @@ return {
   tabulate = tabulate,
   sum = sum,
   count = count,
+  min = min,
+  max = max,
+  mean = mean,
+  set = set,
 
   interleave = interleave,
   deinterleave = deinterleave,
@@ -519,38 +565,8 @@ return {
 --   end, true)
 -- end
 
--- M.max = function (gen, ...)
---   assert(M.isgen(gen))
---   return gen:reduce(function(a, b)
---     if a > b then
---       return a
---     else
---       return b
---     end
---   end, ...)
--- end
-
--- M.min = function (gen, ...)
---   assert(M.isgen(gen))
---   return gen:reduce(function(a, b)
---     if a < b then
---       return a
---     else
---       return b
---     end
---   end, ...)
--- end
-
 -- M.concat = function (gen, delim)
 --   return gen:vec():concat(delim)
--- end
-
--- M.set = function (gen)
---   assert(M.isgen(gen))
---   return gen:reduce(function (s, v)
---     s[v] = true
---     return s
---   end, {})
 -- end
 
 -- M.includes = function (gen, v)
