@@ -9,8 +9,8 @@ local teq = tbl.equals
 local tmap = tbl.map
 
 local str = require("santoku.string")
-local ssplit = str.split
-local smatch = str.match
+local ssplit = str.splits
+local smatch = str.matches
 local ssub = str.sub
 local snumber = str.number
 local sinterp = str.interp

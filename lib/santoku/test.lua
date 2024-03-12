@@ -1,6 +1,6 @@
-local validate = require("santoku.validate")
-local hascall = validate.hascall
-local isstring = validate.isstring
+-- local validate = require("santoku.validate")
+-- local hascall = validate.hascall
+-- local isstring = validate.isstring
 
 local arr = require("santoku.array")
 local apush = arr.push
@@ -19,8 +19,8 @@ local exit = os.exit
 local tags = {}
 
 return function (tag, fn)
-  assert(hascall(fn))
-  assert(isstring(tag))
+  -- assert(hascall(fn))
+  -- assert(isstring(tag))
   apush(tags, tag)
   xpcall(fn, function (...)
     print()

@@ -3,7 +3,7 @@ local tbl = require("santoku.table")
 local err = require("santoku.error")
 
 local wrapnil = err.wrapnil
-local tassign = tbl.assign
+local tmerge = tbl.merge
 
 local _getupvalue = debug.getupvalue
 local _loadstring = wrapnil(loadstring) -- luacheck: ignore
@@ -71,9 +71,9 @@ local function loadstring (code, env)
   return fn
 end
 
-return tassign({
+return tmerge({
   loadstring = loadstring,
   setfenv = setfenv,
   getfenv = getfenv,
   getupvalue = getupvalue,
-}, lua, false)
+}, lua)

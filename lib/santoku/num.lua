@@ -2,7 +2,7 @@ local varg = require("santoku.varg")
 local vlen = varg.len
 
 local tbl = require("santoku.table")
-local tassign = tbl.assign
+local tmerge = tbl.merge
 
 local modf = math.modf
 local _atan = math.atan
@@ -23,7 +23,7 @@ local function atan (...)
   end
 end
 
-return tassign({
+return tmerge({
   trunc = trunc,
   atan = atan,
-}, math, false)
+}, math)

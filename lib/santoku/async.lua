@@ -1,11 +1,11 @@
 -- TODO: Should these use pcalls?
 -- TODO: asserts
 
-local err = require("santoku.error")
-local assert = err.assert
+-- local err = require("santoku.error")
+-- local assert = err.assert
 
-local validate = require("santoku.validate")
-local hascall = validate.hascall
+-- local validate = require("santoku.validate")
+-- local hascall = validate.hascall
 
 local varg = require("santoku.varg")
 local tup = varg.tup
@@ -48,8 +48,8 @@ M._each = function (g, it, done)
 end
 
 M.each = function (g, it, done)
-  assert(hascall(g))
-  assert(hascall(it))
+  -- assert(hascall(g))
+  -- assert(hascall(it))
   return M._each(g, it, done)
 end
 

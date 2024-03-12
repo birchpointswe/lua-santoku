@@ -1,9 +1,9 @@
 local err = require("santoku.error")
 local error = err.error
-local assert = err.assert
+-- local assert = err.assert
 
 local tbl = require("santoku.table")
-local tassign = tbl.assign
+local tmerge = tbl.merge
 
 local iter = require("santoku.iter")
 local imap = iter.map
@@ -15,11 +15,11 @@ local ifilter = iter.filter
 local isingleton = iter.singleton
 local ichain = iter.chain
 
-local validate = require("santoku.validate")
-local isstring = validate.isstring
-local isnumber = validate.isnumber
-local ge = validate.ge
-local le = validate.le
+-- local validate = require("santoku.validate")
+-- local isstring = validate.isstring
+-- local isnumber = validate.isnumber
+-- local ge = validate.ge
+-- local le = validate.le
 
 local arr = require("santoku.array")
 local acat = arr.concat
@@ -159,23 +159,23 @@ local function _match (keep, delim, fe, it)
   end
 end
 
-local function split (str, pat, delim, s, e)
+local function splits (str, pat, delim, s, e)
   s = s or 1
   e = e or #str
-  assert(isnumber(s))
-  assert(isnumber(e))
-  assert(ge(s, 1))
-  assert(le(e, #str))
+  -- assert(isnumber(s))
+  -- assert(isnumber(e))
+  -- assert(ge(s, 1))
+  -- assert(le(e, #str))
   return _match("outer", delim, e, _separate(str, pat, s, e))
 end
 
-local function match (str, pat, delim, s, e)
+local function matches (str, pat, delim, s, e)
   s = s or 1
   e = e or #str
-  assert(isnumber(s))
-  assert(isnumber(e))
-  assert(ge(s, 1))
-  assert(le(e, #str))
+  -- assert(isnumber(s))
+  -- assert(isnumber(e))
+  -- assert(ge(s, 1))
+  -- assert(le(e, #str))
   return _match("inner", delim, e, _separate(str, pat, s, e))
 end
 
@@ -184,14 +184,14 @@ local function interp (s, t)
   local fmtpat = "%%[%w.]+"
   local keypat = "^#%b()"
 
-  local segments = icollect(imap(sub, split(s, fmtpat, true)))
+  local segments = icollect(imap(sub, splits(s, fmtpat, true)))
   local out = {}
 
   for i = 1, #segments do
 
     local s = segments[i]
 
-    if not ifirst(match(s, fmtpat)) then
+    if not ifirst(matches(s, fmtpat)) then
 
       apush(out, s)
 
@@ -230,7 +230,7 @@ end
 local function parse (s, pat)
   local keys = {}
   pat = gsub(pat, "%b()#%b()", function (k)
-    local fmt = ifirst(imap(sub, match(k, "%b()")))
+    local fmt = ifirst(imap(sub, matches(k, "%b()")))
     local key = sub(k, #fmt + 2)
     key = sub(key, 2, #key - 1)
     apush(keys, key)
@@ -263,18 +263,18 @@ end
 local function quote (s, q, e)
   q = q or "\""
   e = e or "\\"
-  assert(isstring(s))
-  assert(isstring(q))
-  assert(isstring(e))
+  -- assert(isstring(s))
+  -- assert(isstring(q))
+  -- assert(isstring(e))
   return acat({ q, (gsub(s, q, e .. q)), q })
 end
 
 local function unquote (s, q, e)
   q = q or "\""
   e = e or "\\"
-  assert(isstring(s))
-  assert(isstring(q))
-  assert(isstring(e))
+  -- assert(isstring(s))
+  -- assert(isstring(q))
+  -- assert(isstring(e))
   if startswith(s, q) and endswith(s, q) then
     local slen = #s
     local qlen = #q
@@ -367,9 +367,23 @@ local function commonprefix (...)
   return prefix
 end
 
-return tassign({
-  split = split,
-  match = match,
+local function _count (text, pat, s, n)
+  local s, e = find(text, pat, s)
+  if not s then
+    return n
+  else
+    return _count(text, pat, e + 1, n + 1)
+  end
+end
+
+local function count (text, pat, s)
+  return _count(text, pat, s or 1, 0)
+end
+
+return tmerge({
+  splits = splits,
+  matches = matches,
+  count = count,
   sub = sub,
   gsub = gsub,
   find = find,
@@ -389,4 +403,4 @@ return tassign({
   stripprefix = stripprefix,
   compare = compare,
   commonprefix,
-}, base, false)
+}, base, string)

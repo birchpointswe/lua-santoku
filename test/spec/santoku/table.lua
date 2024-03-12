@@ -26,8 +26,8 @@ test("assign", function ()
     local two = { a = 2, b = { 2, 3 } }
 
     local c = {}
-    tbl.assign(c, one, false)
-    tbl.assign(c, two, false)
+    tbl.assign(c, one)
+    tbl.assign(c, two)
 
     assert(tbl.equals(expected, c))
 
@@ -77,21 +77,11 @@ test("merge", function ()
     local t3 = { e = { 1, 2, 3 } }
     local t4 = { e = { 4, 5, 6, 7, 8, 9 } }
 
-    assert(tbl.equals(tbl.merge({}, t1, t2, t3, t4), {
+    assert(tbl.equals(tbl.merge({}, t4, t3, t2, t1), {
       a = 2,
       b = { c = 2, d = 4 },
       e = { 4, 5, 6, 7, 8, 9 }
     }))
-
-  end)
-
-  test("should use prefer values from later files", function ()
-
-    local expected = { a = 2 }
-    local one = { a = 1 }
-    local two = { a = 2 }
-
-    assert(tbl.equals(expected, tbl.merge({ a = 0 }, one, two)))
 
   end)
 
