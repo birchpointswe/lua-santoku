@@ -23,3 +23,9 @@ test("alnum", function ()
     assert(b >= 48 and b <= 122)
   end
 end)
+
+test("fast", function ()
+  -- TODO: how to test this?
+  rand.fast_normal(0, 100)
+  rand.fast_random()
+end)

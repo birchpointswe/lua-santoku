@@ -1,3 +1,8 @@
+local fast = require("santoku.random.fast")
+
+local tbl = require("santoku.table")
+local merge = tbl.merge
+
 local _seed = math.randomseed
 local _time = os.time
 local _char = string.char
@@ -47,10 +52,10 @@ local function norm ()
 end
 
 
-return {
+return merge({
   seed = seed,
   str = str,
   num = _rand,
   norm = norm,
   alnum = alnum,
-}
+}, fast)
