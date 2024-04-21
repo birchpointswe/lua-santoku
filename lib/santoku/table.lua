@@ -140,7 +140,7 @@ local function clear (t)
   return t
 end
 
-return {
+return merge({
   get = get,
   update = update,
   map = map,
@@ -149,4 +149,4 @@ return {
   equals = equals,
   merge = merge,
   clear = clear,
-}
+}, table)
