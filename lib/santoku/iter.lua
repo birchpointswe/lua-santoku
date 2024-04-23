@@ -291,12 +291,24 @@ local function take (n, it)
   end
 end
 
+-- TODO: tabulate should support passing keys as additional arguments, such that
+-- it.tabulate(it.ivals(1, 2, 3), "a", "b", "c") yields { a = 1, b = 2, c = 3 }
 local function tabulate (it)
   -- assert(hascall(it))
   return reduce(function (a, k, v)
     a[k] = v
     return a
   end, {}, it)
+end
+
+local function set (it, t)
+  t = t or {}
+  -- assert(hascall(it))
+  -- assert(hasindex(t))
+  return reduce(function (a, n)
+    a[n] = true
+    return a
+  end, t, it)
 end
 
 local function sum (it)
@@ -320,16 +332,6 @@ local function min (it)
       return a
     end
   end, nil, it)
-end
-
-local function set (it, t)
-  t = t or {}
-  -- assert(hascall(it))
-  -- assert(hasindex(t))
-  return reduce(function (a, n)
-    a[n] = true
-    return a
-  end, t, it)
 end
 
 local function max (it)
