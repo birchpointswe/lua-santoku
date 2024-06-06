@@ -10,6 +10,12 @@ static inline void tk_lua_callmod (lua_State *L, int nargs, int nret, const char
   lua_call(L, nargs, nret); // results
 }
 
+static inline int tk_lua_absindex (lua_State *L, int i) {
+  if (i < 0 && i > LUA_REGISTRYINDEX)
+    i += lua_gettop(L) + 1;
+  return i;
+}
+
 static inline FILE *tk_lua_fopen (lua_State *L, const char *fp, const char *flag)
 {
   FILE *fh = fopen(fp, flag);
