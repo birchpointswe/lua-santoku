@@ -61,6 +61,7 @@ local function update (t, ...)
   end, vtake(m - 1, ...))
 end
 
+-- TODO: Handle merging of sequences by appending
 local function merge (t, ...)
   -- assert(hasindex(t))
   -- assert(hasnewindex(t))

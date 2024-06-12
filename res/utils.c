@@ -81,3 +81,60 @@ static inline void tk_lua_deref (lua_State *L, int r)
 {
   lua_rawgeti(L, LUA_REGISTRYINDEX, r);
 }
+
+static inline unsigned int tk_lua_checkunsigned (lua_State *L, int i)
+{
+  lua_Integer l = luaL_checkinteger(L, i);
+  if (l < 0)
+    luaL_error(L, "value can't be negative");
+  if (l > UINT_MAX)
+    luaL_error(L, "value is too large");
+  return (unsigned int) l;
+}
+
+static inline unsigned int tk_lua_optunsigned (lua_State *L, int i, unsigned int def)
+{
+  if (lua_type(L, i) < 1)
+    return def;
+  return tk_lua_checkunsigned(L, i);
+}
+
+static inline double tk_lua_checkposdouble (lua_State *L, int i)
+{
+  lua_Number l = luaL_checknumber(L, i);
+  if (l < 0)
+    luaL_error(L, "value can't be negative");
+  return (double) l;
+}
+
+static inline double tk_lua_optposdouble (lua_State *L, int i, double def)
+{
+  if (lua_type(L, i) < 1)
+    return def;
+  lua_Number l = luaL_checknumber(L, i);
+  if (l < 0)
+    luaL_error(L, "value can't be negative");
+  return (double) l;
+}
+
+static inline bool tk_lua_checkboolean (lua_State *L, int i)
+{
+  if (lua_type(L, i) == LUA_TNIL)
+    return false;
+  luaL_checktype(L, i, LUA_TBOOLEAN);
+  return lua_toboolean(L, i);
+}
+
+static inline void tk_lua_register (lua_State *L, luaL_Reg *regs, int nup)
+{
+  while (true) {
+    if ((*regs).name == NULL)
+      break;
+    for (int i = 0; i < nup; i ++)
+      lua_pushvalue(L, -nup); // t upsa upsb
+    lua_pushcclosure(L, (*regs).func, nup); // t upsa fn
+    lua_setfield(L, -nup - 2, (*regs).name); // t
+    regs ++;
+  }
+  lua_pop(L, nup);
+}
