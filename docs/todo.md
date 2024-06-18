@@ -12,12 +12,10 @@
     - Finish migration
     - Intersperse/interleave
     - Zip
-
-- Array, Table
-    - Merge into single table library
+    - Add close/cancel concept, auto-close on error
 
 - Template
-    - License
+    - Parse with tree-sitter
 
 - String
     - Indentation
