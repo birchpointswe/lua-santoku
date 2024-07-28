@@ -40,6 +40,7 @@ local keys = iter.keys
 local vals = iter.vals
 local map = iter.map
 local collect = iter.collect
+local range = iter.range
 local singleton = iter.singleton
 local once = iter.once
 local flatten = iter.flatten
@@ -257,6 +258,12 @@ end)
 
 test("set", function ()
   assert(teq({ a = true, b = true }, set(ivals({ "a", "b" }))))
+end)
+
+test("range", function ()
+  assert(teq({ 1, 2, 3, 4 }, collect(range(4))))
+  assert(teq({ -1, -2, -3, -4 }, collect(range(-4))))
+  assert(teq({ 2, 4, 6 }, collect(range(2, 6, 2))))
 end)
 
 -- test("chunk", function ()

@@ -7,6 +7,9 @@
 local fun = require("santoku.functional")
 local noop = fun.noop
 
+local err = require("santoku.error")
+local error = err.error
+
 local op = require("santoku.op")
 local add = op.add
 
@@ -446,6 +449,37 @@ local function async (it)
   end
 end
 
+local function range (...)
+  local s, e, m
+  if select("#", ...) == 1 then
+    e = ...
+    if e == 0 then
+      error("end must be non-zero", e)
+    end
+    s = e < 0 and -1 or 1
+    m = s
+  else
+    s, e, m = ...
+    s = s or 1
+    e = e or math.huge
+    m = m or 1
+    if s < e and m <= 0 then
+      error("invalid range params: start < end but m <= 0", s, e, m)
+    elseif s > e and m >= 0 then
+      error("invalid range params: start > end but m >= 0", s, e, m)
+    end
+  end
+  local i = s
+  return function ()
+    if (s < e and i > e) or (s > e and i < e) then
+      return
+    end
+    local r = i
+    i = i + m
+    return r
+  end
+end
+
 return {
 
   once = once,
@@ -490,32 +524,9 @@ return {
   drop = drop,
   take = take,
 
-}
+  range = range,
 
--- M.range = function (...)
---   local args = tup(...)
---   assert(compat.istype.number((...)))
---   return M.gen(function (yield)
---     if tup.len(args()) >= 2 then
---       local s, e, m = args()
---       m = m or (s < e and 1 or -1)
---       for i = s, e, m do
---         yield(i)
---       end
---     elseif tup.len(args()) == 1 then
---       local e = (args())
---       if e > 0 then
---         for i = 1, e, 1 do
---           yield(i)
---         end
---       elseif e < 0 then
---         for i = -1, e, -1 do
---           yield(i)
---         end
---       end
---     end
---   end)
--- end
+}
 
 -- M.index = function (gen)
 --   assert(M.isgen(gen))
