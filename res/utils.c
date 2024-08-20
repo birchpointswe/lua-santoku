@@ -107,6 +107,14 @@ static inline double tk_lua_checkposdouble (lua_State *L, int i)
   return (double) l;
 }
 
+static inline lua_Integer tk_lua_checkposinteger (lua_State *L, int i)
+{
+  lua_Integer l = luaL_checkinteger(L, i);
+  if (l < 0)
+    luaL_error(L, "value can't be negative");
+  return l;
+}
+
 static inline double tk_lua_optposdouble (lua_State *L, int i, double def)
 {
   if (lua_type(L, i) < 1)

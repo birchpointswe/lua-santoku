@@ -480,6 +480,18 @@ local function range (...)
   end
 end
 
+local function _spread (it, n)
+  if n then
+    return n, _spread(it, it())
+  else
+    return n
+  end
+end
+
+local function spread (it)
+  return _spread(it, it())
+end
+
 return {
 
   once = once,
@@ -525,6 +537,7 @@ return {
   take = take,
 
   range = range,
+  spread = spread,
 
 }
 
