@@ -3,6 +3,9 @@ local test = require("santoku.test")
 local tbl = require("santoku.table")
 local teq = tbl.equals
 
+local fun = require("santoku.functional")
+local fconst = fun.const
+
 local op = require("santoku.op")
 local oadd = op.add
 
@@ -21,6 +24,7 @@ local vfilter = varg.filter
 local vreverse = varg.reverse
 local veach = varg.each
 local vmap = varg.map
+local vcall = varg.call
 
 test("basic", function ()
   assert(teq({ 1, 2, 3 }, {
@@ -103,4 +107,8 @@ end)
 
 test("reverse", function ()
   assert(teq({ 3, 2, 1}, { vreverse(1, 2, 3) }))
+end)
+
+test("call", function ()
+  assert(teq({ 1, 2, 3 }, { vcall(fconst(1), fconst(2), fconst(3)) }))
 end)

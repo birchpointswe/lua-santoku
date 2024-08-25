@@ -65,6 +65,12 @@ end
 
 local function noop () end
 
+local function const (x)
+  return function ()
+    return x
+  end
+end
+
 return {
   id = id,
   bind = bind,
@@ -74,4 +80,5 @@ return {
   sel = sel,
   take = take,
   choose = choose,
+  const = const,
 }

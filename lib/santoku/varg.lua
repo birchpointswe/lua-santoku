@@ -126,6 +126,12 @@ local function reverse (...)
   return _reverse(len(...), ...)
 end
 
+local function call (...)
+  return map(function (f)
+    return f()
+  end, ...)
+end
+
 return setmetatable({
   tup = tup,
   len = len,
@@ -142,6 +148,7 @@ return setmetatable({
   reverse = reverse,
   each = each,
   map = map,
+  call = call,
 }, {
   __call = function (_, ...)
     return tup(...)
