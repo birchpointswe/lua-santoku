@@ -22,7 +22,6 @@ local varg = require("santoku.varg")
 local tup = varg.tup
 
 local _pairs = pairs
-local _ipairs = ipairs
 
 local function wrap (it, a, i)
   return function ()
@@ -37,10 +36,6 @@ end
 
 local function pairs (t)
   return wrap(_pairs(t))
-end
-
-local function ipairs (t)
-  return wrap(_ipairs(t))
 end
 
 local function _reduce (acc, v, it, i, ...)
@@ -397,19 +392,9 @@ local function keys (t)
   return map(_key, pairs(t))
 end
 
-local function ikeys (t)
-  -- assert(hasindex(t))
-  return map(_key, ipairs(t))
-end
-
 local function vals (t)
   -- assert(hasindex(t))
   return map(_val, pairs(t))
-end
-
-local function ivals (t)
-  -- assert(hasindex(t))
-  return map(_val, ipairs(t))
 end
 
 local function find (fn, it)
@@ -453,9 +438,6 @@ local function range (...)
   local s, e, m
   if select("#", ...) == 1 then
     e = ...
-    if e == 0 then
-      error("end must be non-zero", e)
-    end
     s = e < 0 and -1 or 1
     m = s
   else
@@ -478,6 +460,22 @@ local function range (...)
     i = i + m
     return r
   end
+end
+
+local function ipairs (t)
+  return map(function (i)
+    return i, t[i]
+  end, range(#t))
+end
+
+local function ikeys (t)
+  -- assert(hasindex(t))
+  return map(_key, ipairs(t))
+end
+
+local function ivals (t)
+  -- assert(hasindex(t))
+  return map(_val, ipairs(t))
 end
 
 local function _spread (it, n)
