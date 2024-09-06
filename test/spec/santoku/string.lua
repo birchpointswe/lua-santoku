@@ -101,6 +101,10 @@ test("interp", function ()
     assert("1.0" == sinterp("%.1f#(number)", { number = 1 }))
   end)
 
+  test("should support long names", function ()
+    assert("1" == sinterp("%(num_to_display)", { num_to_display = 1 }))
+  end)
+
 end)
 
 test("parse", function ()

@@ -1,6 +1,5 @@
 local err = require("santoku.error")
 local error = err.error
--- local assert = err.assert
 
 local tbl = require("santoku.table")
 local tmerge = tbl.merge
@@ -14,12 +13,6 @@ local ionce = iter.once
 local ifilter = iter.filter
 local isingleton = iter.singleton
 local ichain = iter.chain
-
--- local validate = require("santoku.validate")
--- local isstring = validate.isstring
--- local isnumber = validate.isnumber
--- local ge = validate.ge
--- local le = validate.le
 
 local arr = require("santoku.array")
 local acat = arr.concat
@@ -162,26 +155,19 @@ end
 local function splits (str, pat, delim, s, e)
   s = s or 1
   e = e or #str
-  -- assert(isnumber(s))
-  -- assert(isnumber(e))
-  -- assert(ge(s, 1))
-  -- assert(le(e, #str))
   return _match("outer", delim, e, _separate(str, pat, s, e))
 end
 
 local function matches (str, pat, delim, s, e)
   s = s or 1
   e = e or #str
-  -- assert(isnumber(s))
-  -- assert(isnumber(e))
-  -- assert(ge(s, 1))
-  -- assert(le(e, #str))
   return _match("inner", delim, e, _separate(str, pat, s, e))
 end
 
 local function interp (s, t)
 
   local fmtpat = "%%[%w.]+"
+  local fmtpat_long = "%%%b()"
   local keypat = "^#%b()"
 
   local segments = icollect(imap(sub, splits(s, fmtpat, true)))
@@ -191,7 +177,7 @@ local function interp (s, t)
 
     local s = segments[i]
 
-    if not ifirst(matches(s, fmtpat)) then
+    if not (ifirst(matches(s, fmtpat)) or ifirst(matches(s, fmtpat_long))) then
 
       apush(out, s)
 
@@ -203,6 +189,9 @@ local function interp (s, t)
       if key then
         segments[i + 1] = sub(segments[i + 1], #key + 1)
         key = sub(key, 3, #key - 1)
+      elseif smatch(fmt, fmtpat_long) then
+        key = sub(fmt, 3, #fmt - 1)
+        fmt = nil
       else
         key = sub(fmt, 2)
         fmt = nil
@@ -263,18 +252,12 @@ end
 local function quote (s, q, e)
   q = q or "\""
   e = e or "\\"
-  -- assert(isstring(s))
-  -- assert(isstring(q))
-  -- assert(isstring(e))
   return acat({ q, (gsub(s, q, e .. q)), q })
 end
 
 local function unquote (s, q, e)
   q = q or "\""
   e = e or "\\"
-  -- assert(isstring(s))
-  -- assert(isstring(q))
-  -- assert(isstring(e))
   if startswith(s, q) and endswith(s, q) then
     local slen = #s
     local qlen = #q
