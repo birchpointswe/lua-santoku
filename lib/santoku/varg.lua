@@ -1,22 +1,22 @@
 -- local validate = require("santoku.validate")
 -- local hascall = validate.hascall
 
-local select = select
+local sel = select
 
 local function len (...)
-  return select("#", ...)
+  return sel("#", ...)
 end
 
 local function take (i, ...)
   if i == 0 then
     return
   else
-    return (...), take(i - 1, select(2, ...))
+    return (...), take(i - 1, sel(2, ...))
   end
 end
 
 local function get (i, ...)
-  return (select(i, ...))
+  return (sel(i, ...))
 end
 
 local function set (i, v, n, ...)
@@ -39,7 +39,7 @@ local function _interleave (x, n, ...)
   if n < 2 then
     return ...
   else
-    return ..., x, _interleave(x, n - 1, select(2, ...))
+    return ..., x, _interleave(x, n - 1, sel(2, ...))
   end
 end
 
@@ -53,7 +53,7 @@ local function _reduce (fn, n, a, ...)
   elseif n == 1 then
     return a
   else
-    return _reduce(fn, n - 1, fn(a, (...)), select(2, ...))
+    return _reduce(fn, n - 1, fn(a, (...)), sel(2, ...))
   end
 end
 
@@ -81,9 +81,9 @@ local function filter (fn, ...)
   if n == 0 then
     return
   elseif fn((...)) then
-    return ..., filter(fn, select(2, ...))
+    return ..., filter(fn, sel(2, ...))
   else
-    return filter(fn, select(2, ...))
+    return filter(fn, sel(2, ...))
   end
 end
 
@@ -91,7 +91,7 @@ local function each (fn, ...)
   -- assert(hascall(fn))
   if len(...) > 0 then
     fn((...))
-    each(fn, select(2, ...))
+    each(fn, sel(2, ...))
   end
 end
 
@@ -100,7 +100,7 @@ local function map (fn, ...)
   if len(...) == 0 then
     return
   else
-    return fn((select(1, ...))), map(fn, select(2, ...))
+    return fn((sel(1, ...))), map(fn, sel(2, ...))
   end
 end
 
@@ -132,13 +132,23 @@ local function call (...)
   end, ...)
 end
 
+local function includes (v, ...)
+  for i = 1, len(...) do
+    if v == sel(i, ...) then
+      return true
+    end
+  end
+  return false
+end
+
 return setmetatable({
   tup = tup,
   len = len,
-  sel = select,
+  sel = sel,
   take = take,
   get = get,
   set = set,
+  includes = includes,
   append = append,
   extend = extend,
   interleave = interleave,
