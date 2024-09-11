@@ -22,15 +22,12 @@ local function seed (t)
 end
 
 local function str (n, ...)
-  -- assert(type(n) == "number" and n > 0)
   local l, u
   if _select("#", ...) > 0 then
     l, u = ...
   else
     l, u = 32, 127
   end
-  -- assert(type(l) == "number" and l >= 0)
-  -- assert(type(u) == "number" and u >= l)
   local t = {}
   n = n or 1
   while n > 0 do

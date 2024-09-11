@@ -1,6 +1,3 @@
--- local validate = require("santoku.validate")
--- local hascall = validate.hascall
-
 local arr = require("santoku.array")
 local acat = arr.concat
 local aoverlay = arr.overlay
@@ -64,13 +61,11 @@ local function xpcall_helper (handler)
 end
 
 local function pcall (fn, ...)
-  -- assert(hascall(fn))
   pcall_stack = pcall_stack + 1
   return vtup(pcall_helper, _pcall(fn, ...))
 end
 
 local function xpcall (fn, handler)
-  -- assert(hascall(fn))
   pcall_stack = pcall_stack + 1
   return _xpcall(fn, xpcall_helper(handler))
 end
@@ -84,7 +79,6 @@ local function _wrapok (v, ...)
 end
 
 local function wrapok (fn)
-  -- assert(hascall(fn))
   return function (...)
     return vtup(_wrapok, fn(...))
   end
@@ -99,7 +93,6 @@ local function _wrapnil (v, ...)
 end
 
 local function wrapnil (fn)
-  -- assert(hascall(fn))
   return function (...)
     return vtup(_wrapnil, fn(...))
   end

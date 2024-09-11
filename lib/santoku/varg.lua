@@ -1,6 +1,3 @@
--- local validate = require("santoku.validate")
--- local hascall = validate.hascall
-
 local sel = select
 
 local function len (...)
@@ -76,7 +73,6 @@ local function tabulate (...)
 end
 
 local function filter (fn, ...)
-  -- assert(hascall(fn))
   local n = len(...)
   if n == 0 then
     return
@@ -88,7 +84,6 @@ local function filter (fn, ...)
 end
 
 local function each (fn, ...)
-  -- assert(hascall(fn))
   if len(...) > 0 then
     fn((...))
     each(fn, sel(2, ...))
@@ -96,7 +91,6 @@ local function each (fn, ...)
 end
 
 local function map (fn, ...)
-  -- assert(hascall(fn))
   if len(...) == 0 then
     return
   else

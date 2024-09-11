@@ -1,12 +1,3 @@
--- TODO: Should these use pcalls?
--- TODO: asserts
-
--- local err = require("santoku.error")
--- local assert = err.assert
-
--- local validate = require("santoku.validate")
--- local hascall = validate.hascall
-
 local varg = require("santoku.varg")
 local tup = varg.tup
 
@@ -25,7 +16,7 @@ end
 -- TODO: This should be generalizable. Some kind
 -- of tup.reducek or tup.cont that reduces over
 -- a list of arguments and allows for early
--- exit. tup.reduce_until? Something in gen?
+-- exit. tup.reduce_until? Something in iter?
 M.pipe = function (...)
   local fns = { ... }
   return M._pipe(1, fns, true)
@@ -48,8 +39,6 @@ M._each = function (g, it, done)
 end
 
 M.each = function (g, it, done)
-  -- assert(hascall(g))
-  -- assert(hascall(it))
   return M._each(g, it, done)
 end
 

@@ -1,6 +1,3 @@
--- local validate = require("santoku.validate")
--- local hascall = validate.hascall
-
 local M = {}
 
 M.eq = function (a, b) return a == b end
@@ -23,7 +20,6 @@ M.len = function (a) return #a end
 M.cat = function (a, b) return a .. b end
 
 M.call = function (fn, ...)
-  -- assert(hascall(fn))
   return fn(...)
 end
 

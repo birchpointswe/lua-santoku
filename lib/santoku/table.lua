@@ -1,9 +1,3 @@
--- local validate = require("santoku.validate")
--- local isboolean = validate.isboolean
--- local hascall = validate.hascall
--- local hasindex = validate.hasindex
--- local hasnewindex = validate.hasnewindex
-
 local varg = require("santoku.varg")
 local vtup = varg.tup
 local vget = varg.get
@@ -12,7 +6,6 @@ local vlen = varg.len
 local vtake = varg.take
 
 local function get (t, ...)
-  -- assert(hasindex(t))
   local m = vlen(...)
   if m == 0 then
     return t
@@ -29,13 +22,10 @@ end
 
 local function set (t, ...)
   local m = vlen(...)
-  -- assert(m > 1, "one or more keys must be provided")
   local v = vget(m, ...)
   m = m - 1
   local t0 = t
   for i = 1, m - 1 do
-    -- assert(hasindex(t0))
-    -- assert(hasnewindex(t0))
     local k = vget(i, ...)
     if t0 == nil then
       return
@@ -53,7 +43,6 @@ end
 
 local function update (t, ...)
   local m = vlen(...)
-  -- assert(m > 1, "one or more keys must be provided")
   local fn = vget(m, ...)
   return vtup(function (...)
     local v = get(t, ...)
@@ -63,8 +52,6 @@ end
 
 -- TODO: Handle merging of sequences by appending
 local function merge (t, ...)
-  -- assert(hasindex(t))
-  -- assert(hasnewindex(t))
   for i = 1, vlen(...) do
     local t0 = vget(i, ...)
     for k, v in pairs(t0) do
@@ -91,8 +78,6 @@ local function assign (t, ...)
 end
 
 local function equals (a, b)
-  -- assert(hasindex(a))
-  -- assert(hasindex(b))
   if a == b then
     return true
   end
@@ -124,8 +109,6 @@ local function equals (a, b)
 end
 
 local function map (t, fn)
-  -- assert(hasindex(t))
-  -- assert(hascall(fn))
   for k, v in pairs(t) do
     t[k] = fn(v)
   end
@@ -134,7 +117,6 @@ end
 
 -- TODO: Faster in c?
 local function clear (t)
-  -- assert(hasindex(t))
   for k in pairs(t) do
     t[k] = nil
   end

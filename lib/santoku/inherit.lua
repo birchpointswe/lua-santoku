@@ -3,10 +3,9 @@
 -- something related to metatables? Perhaps
 -- "index"?
 
--- TODO: Like pushindex, except sub-tables in t
--- get indexes from the corresponding sub-tables
--- in i
--- mergeindex = function (t, i) -- luacheck: ignore
+-- TODO: Like pushindex, except sub-tables in t get indexes from the
+-- corresponding sub-tables in i
+-- mergeindex = function (t, i)
 -- end
 
 local function getindex (t)
@@ -18,7 +17,6 @@ local function getindex (t)
 end
 
 local function setindex (t, i)
-  -- assert(type(t) == "table")
   local mt = getmetatable(t)
   if not mt then
     mt = {}
@@ -29,12 +27,9 @@ local function setindex (t, i)
 end
 
 local function pushindex (t, i)
-  -- assert(type(t) == "table")
-  -- assert(t ~= i, "setting a table to its own index")
   if not i then
     return t
   end
-  -- assert(type(i) == "table")
   local tindex = getindex(t)
   setindex(t, i)
   if tindex and i ~= tindex then
@@ -44,7 +39,6 @@ local function pushindex (t, i)
 end
 
 local function popindex (t)
-  -- assert(type(t) == "table")
   local tindex = getindex(t)
   if not tindex then
     return
