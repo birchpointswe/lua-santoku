@@ -1,6 +1,5 @@
 local arr = require("santoku.array")
 local acat = arr.concat
-local aoverlay = arr.overlay
 local aspread = arr.spread
 
 local varg = require("santoku.varg")
@@ -13,20 +12,18 @@ local _pcall = pcall
 local _xpcall = xpcall
 
 local pcall_stack = 0
-local current_error_mt = {
+local mt = {
   __tostring = function (o)
     return acat({ vinterleave(": ", vmap(tostring, aspread(o))) })
   end
 }
 
-local current_error = setmetatable({}, current_error_mt)
-
 local function error (...)
-  aoverlay(current_error, 1, ...)
+  local e = setmetatable({ ... }, mt)
   if pcall_stack == 0 then
-    return _error(tostring(current_error), 2)
+    return _error(tostring(e), 2)
   else
-    return _error(current_error, 2)
+    return _error(e, 2)
   end
 end
 
@@ -42,7 +39,7 @@ local function pcall_helper (ok, ...)
   pcall_stack = pcall_stack - 1
   if ok then
     return ok, ...
-  elseif getmetatable(...) == current_error_mt then
+  elseif getmetatable(...) == mt then
     return ok, aspread((...))
   else
     return ok, ...
@@ -52,7 +49,7 @@ end
 local function xpcall_helper (handler)
   return function (...)
     pcall_stack = pcall_stack - 1
-    if getmetatable((...)) == current_error_mt then
+    if getmetatable((...)) == mt then
       return handler(aspread((...)))
     else
       return handler(...)
