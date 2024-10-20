@@ -10,6 +10,28 @@ static inline void tk_lua_callmod (lua_State *L, int nargs, int nret, const char
   lua_call(L, nargs, nret); // results
 }
 
+static inline int tk_lua_errno (lua_State *L, int err)
+{
+  lua_pushstring(L, strerror(errno));
+  lua_pushinteger(L, err);
+  tk_lua_callmod(L, 2, 0, "santoku.error", "error");
+  return 0;
+}
+
+static inline int tk_lua_error (lua_State *L, const char *err)
+{
+  lua_pushstring(L, err);
+  tk_lua_callmod(L, 1, 0, "santoku.error", "error");
+  return 0;
+}
+
+static inline int tk_lua_errmalloc (lua_State *L)
+{
+  lua_pushstring(L, "Error in malloc");
+  tk_lua_callmod(L, 1, 0, "santoku.error", "error");
+  return 0;
+}
+
 static inline int tk_lua_absindex (lua_State *L, int i) {
   if (i < 0 && i > LUA_REGISTRYINDEX)
     i += lua_gettop(L) + 1;
