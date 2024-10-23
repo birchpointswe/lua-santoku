@@ -27,6 +27,7 @@ local find = string.find
 local sub = string.sub
 local gsub = string.gsub
 local format = string.format
+local reverse = string.reverse
 local smatch = string.match
 local mhuge = math.huge
 local io_write = io.write
@@ -363,6 +364,18 @@ local function count (text, pat, s)
   return _count(text, pat, s or 1, 0)
 end
 
+local function format_number (n)
+  if type(n) ~= "number" then
+    return
+  end
+  local sign, num, dec = smatch(tostring(n), "([-]?)(%d+)([.]?%d*)")
+  num = reverse(num)
+  num = gsub(num, "(%d%d%d)", "%1,")
+  num = reverse(num)
+  num = gsub(num, "^,", "")
+  return sign .. num .. dec
+end
+
 return tmerge({
   splits = splits,
   matches = matches,
@@ -386,4 +399,5 @@ return tmerge({
   stripprefix = stripprefix,
   compare = compare,
   commonprefix,
+  format_number = format_number,
 }, base, string)

@@ -195,3 +195,11 @@ test("to/from_url", function ()
   assert(eq("A simple test with   spaces",
     str.from_url(str.to_url("A simple test with   spaces")))) -- URL encoding spaces
 end)
+
+test("format_number", function ()
+  assert(eq(str.format_number(12345678), "12,345,678"))
+  assert(eq(str.format_number(-12345678), "-12,345,678"))
+  assert(eq(str.format_number(-678), "-678"))
+  assert(eq(str.format_number(-1678), "-1,678"))
+  assert(eq(str.format_number(78), "78"))
+end)
