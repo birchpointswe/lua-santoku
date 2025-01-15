@@ -1,4 +1,6 @@
 local varg = require("santoku.varg")
+local arr = require("santoku.array")
+local fun = require("santoku.functional")
 local tup = varg.tup
 
 local M = {}
@@ -70,6 +72,86 @@ end
 
 M.loop = function (loop0, final)
   return M._loop(loop0, final)
+end
+
+local run_process
+run_process = function (hs, each, done, asy, i, ...)
+  local h = hs[i]
+  if not h then
+    return done(...)
+  elseif not asy[h] then
+    -- Note: intentionally not passing results to other
+    -- handlers when not async
+    h(...)
+    return each(function (...)
+      return run_process(hs, each, done, asy, i + 1, ...)
+    end, ...)
+  else
+    return h(function (...) --
+      return each(function (...)
+        return run_process(hs, each, done, asy, i + 1, ...)
+      end, ...)
+    end, ...)
+  end
+end
+
+M.id = function (k, ...)
+  return k(...)
+end
+
+M.events = function ()
+  local idx = {}
+  local hs = {}
+  local asy = {}
+  return {
+
+    handlers = hs,
+    index = idx,
+    async = asy,
+
+    -- TODO: Allow caller to pass an "order" argument, which is used to sort
+    -- handlers. Handlers are sorted such that those with lower "orders" are
+    -- called first, and those with the same order are called in the order in
+    -- which they were registered.
+    on = function (ev, handler, async)
+      if ev and handler then
+        local hs0 = hs[ev] or {}
+        hs[ev] = hs0
+        hs0[#hs0 + 1] = handler
+        idx[handler] = #hs0
+        asy[handler] = async
+      end
+    end,
+
+    off = function (ev, handler)
+      if ev and handler then
+        local hs0 = hs[ev]
+        if not hs0 then
+          return
+        end
+        local i = idx[handler]
+        if i then
+          return
+        end
+        arr.remove(hs0, i, i)
+        idx[handler] = nil
+        asy[handler] = nil
+      end
+    end,
+
+    emit = function (ev, ...)
+      local hs0 = ev and hs[ev] or {}
+      return run_process(hs0, M.id, fun.noop, asy, 1, ...)
+    end,
+
+    process = function (ev, each, done, ...)
+      local hs0 = ev and hs[ev] or {}
+      each = each or M.id
+      done = done or fun.noop
+      return run_process(hs0, each, done, asy, 1, ...)
+    end
+
+  }
 end
 
 return M
