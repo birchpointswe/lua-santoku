@@ -130,7 +130,7 @@ M.events = function ()
           return
         end
         local i = idx[handler]
-        if i then
+        if not i then
           return
         end
         arr.remove(hs0, i, i)
