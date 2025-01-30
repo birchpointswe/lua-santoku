@@ -1,7 +1,6 @@
--- TODO
-
 local bench = require("santoku.bench")
 local rand = require("santoku.random")
+local asy = require("santoku.async")
 
 local data = {}
 for i = 1, 100000 do
@@ -25,7 +24,7 @@ bench("it.ivals", function ()
 end)
 
 bench("asy.ivals", function ()
-  return asy.ivals(function (k, v, t)
+  return asy.ivals(data, function (k, t, i, v)
     if v == nil then
       return k(nil, t)
     else
