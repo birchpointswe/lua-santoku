@@ -110,13 +110,13 @@ M.events = function ()
     handlers = hs,
     index = idx,
     async = asy,
-    all = all_events_tag,
 
     -- TODO: Allow caller to pass an "order" argument, which is used to sort
     -- handlers. Handlers are sorted such that those with lower "orders" are
     -- called first, and those with the same order are called in the order in
     -- which they were registered.
     on = function (ev, handler, async)
+      ev = ev == nil and all_events_tag or ev
       if ev and handler then
         local hs0 = hs[ev] or {}
         hs[ev] = hs0
@@ -143,15 +143,14 @@ M.events = function ()
     end,
 
     emit = function (ev, ...)
-      local hs0 = hs[all_events_tag] or {}
-      local hs1 = ev and hs[ev] or {}
-      if hs0 == hs1 then
-        return run_process(hs0, M.id, fun.noop, asy, 1, ev, ...)
-      else
-        return run_process(hs0, M.id, function (_, ...)
-          return run_process(hs1, M.id, fun.noop, asy, 1, ...)
-        end, asy, 1, ev, ...)
+      if not ev then
+        return
       end
+      local hs0 = ev and hs[ev] or {}
+      local hs1 = hs[all_events_tag] or {}
+      return run_process(hs0, M.id, function (...)
+        return run_process(hs1, M.id, fun.noop, asy, 1, ev, ...)
+      end, asy, 1, ...)
     end,
 
     process = function (ev, each, done, ...)
