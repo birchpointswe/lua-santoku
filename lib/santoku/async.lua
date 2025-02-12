@@ -99,6 +99,23 @@ M.id = function (k, ...)
   return k(...)
 end
 
+local _ipairs
+_ipairs = function (k, t, ud)
+  local helper
+  helper = function (fn, i, ud)
+    i = i + 1
+    local v = t[i]
+    if v == nil then
+      return ud
+    else
+      return fn(helper, k, i, v, ud)
+    end
+  end
+  return helper(k, 0, ud)
+end
+
+M.ipairs = _ipairs
+
 M.events = function ()
   local idx = {}
   local hs = {}
