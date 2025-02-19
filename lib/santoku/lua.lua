@@ -71,7 +71,17 @@ local function loadstring (code, env)
   return fn
 end
 
+local utc_offset = (function ()
+  local ts = os.time()
+  local utc_date = os.date('!*t', ts)
+  local utc_time = os.time(utc_date)
+  local local_date = os.date('*t', ts)
+  local local_time = os.time(local_date)
+  return local_time - utc_time
+end)()
+
 return tmerge({
+  utc_offset = utc_offset,
   loadstring = loadstring,
   setfenv = setfenv,
   getfenv = getfenv,
