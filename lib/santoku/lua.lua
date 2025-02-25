@@ -85,7 +85,7 @@ local function utc_today ()
   d.hour = 0
   d.min = 0
   d.sec = 0
-  return os.time(d) + lua.utc_offset()
+  return os.time(d) + utc_offset()
 end
 
 return tmerge({
