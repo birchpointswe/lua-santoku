@@ -384,11 +384,13 @@ local function to_query_stringify (v)
   end
 end
 
-local function to_query (params)
+local function to_query (params, out)
   if not params then
     return
   end
-  local out = { "?" }
+  local should_concat = out == nil
+  local out = out or {}
+  arr.push(out, "?")
   for k, v in pairs(params) do
     local k = to_query_stringify(k)
     local v = to_query_stringify(v)
@@ -397,7 +399,7 @@ local function to_query (params)
     end
   end
   out[#out] = nil
-  return arr.concat(out)
+  return should_concat and arr.concat(out) or out
 end
 
 local function from_query_parse (v)
