@@ -1,9 +1,9 @@
 local serialize = require("santoku.serialize") -- luacheck: ignore
+local date = require("santoku.date") -- luacheck: ignore
 local test = require("santoku.test")
 -- local err = require("santoku.error")
 -- local str = require("santoku.string")
 -- local tbl = require("santoku.table")
--- local date = require("santoku.date")
 
 test("date", function ()
   -- print("day", serialize({date.utc_trunc(date.utc_date(), "day")}))
@@ -20,3 +20,6 @@ test("local", function ()
   -- local dl = date.utc_local(s)
   -- print(str.interp("%year-%month-%day %hour:%min:%sec", dl))
 end)
+
+-- local t = date.utc_time()
+-- print(date.utc_format(t, "%c", false), date.utc_format(t, "%c", true))

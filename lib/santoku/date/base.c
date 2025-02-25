@@ -59,21 +59,34 @@ static inline bool tk_lua_streq (lua_State *L, int i, char *str)
   return r == 1;
 }
 
+static inline unsigned int tk_lua_checkunsigned (lua_State *L, int i)
+{
+  lua_Integer l = luaL_checkinteger(L, i);
+  if (l < 0)
+    luaL_error(L, "value can't be negative");
+  if (l > UINT_MAX)
+    luaL_error(L, "value is too large");
+  return (unsigned int) l;
+}
+
+static inline unsigned int tk_lua_optunsigned (lua_State *L, int i, unsigned int def)
+{
+  if (lua_type(L, i) < 1)
+    return def;
+  return tk_lua_checkunsigned(L, i);
+}
+
 static int utc_date (lua_State *L)
 {
   time_t t;
-
   if (lua_gettop(L) == 0) {
     t = time(NULL);
   } else {
     t = luaL_checkinteger(L, 1);
   }
-
   struct tm *info = gmtime(&t);
-
   if (info == NULL)
     return tk_lua_errno(L, errno);
-
   lua_newtable(L);
   lua_pushinteger(L, info->tm_year + 1900);
   lua_setfield(L, -2, "year");
@@ -93,9 +106,23 @@ static int utc_date (lua_State *L)
   lua_setfield(L, -2, "sec");
   lua_pushboolean(L, info->tm_isdst > 0);
   lua_setfield(L, -2, "isdst");
-
   return 1;
+}
 
+static int utc_format (lua_State *L)
+{
+  lua_settop(L, 4);
+  time_t t = luaL_checkinteger(L, 1);
+  const char *fmt = luaL_checkstring(L, 2);
+  bool local = lua_toboolean(L, 3);
+  unsigned bufsize = tk_lua_optunsigned(L, 4, 1024);
+  struct tm *info = local ? localtime(&t) : gmtime(&t);
+  if (info == NULL)
+    return tk_lua_errno(L, errno);
+  char time[bufsize];
+  size_t s = strftime(time, bufsize, fmt, info);
+  lua_pushlstring(L, time, s);
+  return 1;
 }
 
 static int utc_trunc (lua_State *L)
@@ -106,7 +133,6 @@ static int utc_trunc (lua_State *L)
     utc_date(L);
     lua_pushstring(L, str);
   }
-
   luaL_checktype(L, 1, LUA_TTABLE);
   luaL_checktype(L, 2, LUA_TSTRING);
   struct tm info = {
@@ -118,7 +144,6 @@ static int utc_trunc (lua_State *L)
     .tm_sec = tk_lua_checkfieldinteger(L, 1, "sec"),
     .tm_isdst = tk_lua_checkfieldboolean(L, 1, "isdst") ? 1 : 0
   };
-
   if (tk_lua_streq(L, 2, "min")) {
     info.tm_sec = 0;
   } else if (tk_lua_streq(L, 2, "hour")) {
@@ -140,10 +165,8 @@ static int utc_trunc (lua_State *L)
     info.tm_mday = 0;
     info.tm_mon = 1;
   }
-
   time_t t = timegm(&info);
   struct tm *info0 = gmtime(&t);
-
   lua_pushinteger(L, info0->tm_year + 1900);
   lua_setfield(L, 1, "year");
   lua_pushinteger(L, info0->tm_mon + 1);
@@ -162,21 +185,17 @@ static int utc_trunc (lua_State *L)
   lua_setfield(L, 1, "sec");
   lua_pushboolean(L, info0->tm_isdst > 0);
   lua_setfield(L, 1, "isdst");
-
   lua_pushinteger(L, t);
   lua_pushvalue(L, 1);
-
   return 2;
 }
 
 static int utc_shift (lua_State *L)
 {
   lua_settop(L, 3);
-
   luaL_checktype(L, 1, LUA_TTABLE);
   lua_Integer n = luaL_checkinteger(L, 2);
   luaL_checktype(L, 3, LUA_TSTRING);
-
   struct tm info = {
     .tm_year = tk_lua_checkfieldinteger(L, 1, "year") - 1900,
     .tm_mon = tk_lua_checkfieldinteger(L, 1, "month") - 1,
@@ -186,7 +205,6 @@ static int utc_shift (lua_State *L)
     .tm_sec = tk_lua_checkfieldinteger(L, 1, "sec"),
     .tm_isdst = tk_lua_checkfieldboolean(L, 1, "isdst") ? 1 : 0
   };
-
   if (tk_lua_streq(L, 3, "sec")) {
     info.tm_sec += n;
   } else if (tk_lua_streq(L, 3, "min")) {
@@ -202,10 +220,8 @@ static int utc_shift (lua_State *L)
   } else if (tk_lua_streq(L, 3, "dst")) {
     info.tm_isdst = n > 0 ? 1 : 0;
   }
-
   time_t t = timegm(&info);
   struct tm *info0 = gmtime(&t);
-
   lua_pushinteger(L, info0->tm_year + 1900);
   lua_setfield(L, 1, "year");
   lua_pushinteger(L, info0->tm_mon + 1);
@@ -224,28 +240,22 @@ static int utc_shift (lua_State *L)
   lua_setfield(L, 1, "sec");
   lua_pushboolean(L, info0->tm_isdst > 0);
   lua_setfield(L, 1, "isdst");
-
   lua_pushinteger(L, t);
   lua_pushvalue(L, 1);
-
   return 2;
 }
 
 static int utc_local (lua_State *L)
 {
   time_t t;
-
   if (lua_gettop(L) == 0) {
     t = time(NULL);
   } else {
     t = luaL_checkinteger(L, 1);
   }
-
   struct tm *info = localtime(&t);
-
   if (info == NULL)
     return tk_lua_errno(L, errno);
-
   lua_newtable(L);
   lua_pushinteger(L, info->tm_year + 1900);
   lua_setfield(L, -2, "year");
@@ -261,22 +271,17 @@ static int utc_local (lua_State *L)
   lua_setfield(L, -2, "sec");
   lua_pushboolean(L, info->tm_isdst > 0);
   lua_setfield(L, -2, "isdst");
-
   return 1;
-
 }
 
 static int utc_time (lua_State *L)
 {
   lua_settop(L, 1);
-
   if (lua_type(L, 1) == LUA_TNIL) {
     lua_pushinteger(L, time(NULL));
     return 1;
   }
-
   luaL_checktype(L, 1, LUA_TTABLE);
-
   struct tm info = {
     .tm_year = tk_lua_checkfieldinteger(L, 1, "year") - 1900,
     .tm_mon = tk_lua_checkfieldinteger(L, 1, "month") - 1,
@@ -286,14 +291,10 @@ static int utc_time (lua_State *L)
     .tm_sec = tk_lua_checkfieldinteger(L, 1, "sec"),
     .tm_isdst = tk_lua_checkfieldboolean(L, 1, "isdst") ? 1 : 0
   };
-
   time_t t = timegm(&info);
-
   if (t == (time_t)(-1))
     return tk_lua_errno(L, errno);
-
   lua_pushinteger(L, t);
-
   return 1;
 }
 
@@ -302,8 +303,9 @@ static luaL_Reg fns[] =
   { "utc_shift", utc_shift },
   { "utc_trunc", utc_trunc },
   { "utc_date", utc_date },
-  { "utc_local", utc_local },
   { "utc_time", utc_time },
+  { "utc_local", utc_local },
+  { "utc_format", utc_format },
   { NULL, NULL }
 };
 
