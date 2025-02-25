@@ -59,13 +59,56 @@ static inline bool tk_lua_streq (lua_State *L, int i, char *str)
   return r == 1;
 }
 
+static int utc_date (lua_State *L)
+{
+  time_t t;
+
+  if (lua_gettop(L) == 0) {
+    t = time(NULL);
+  } else {
+    t = luaL_checkinteger(L, 1);
+  }
+
+  struct tm *info = gmtime(&t);
+
+  if (info == NULL)
+    return tk_lua_errno(L, errno);
+
+  lua_newtable(L);
+  lua_pushinteger(L, info->tm_year + 1900);
+  lua_setfield(L, -2, "year");
+  lua_pushinteger(L, info->tm_mon + 1);
+  lua_setfield(L, -2, "month");
+  lua_pushinteger(L, info->tm_mday);
+  lua_setfield(L, -2, "day");
+  lua_pushinteger(L, info->tm_wday + 1);
+  lua_setfield(L, -2, "wday");
+  lua_pushinteger(L, info->tm_yday + 1);
+  lua_setfield(L, -2, "yday");
+  lua_pushinteger(L, info->tm_hour);
+  lua_setfield(L, -2, "hour");
+  lua_pushinteger(L, info->tm_min);
+  lua_setfield(L, -2, "min");
+  lua_pushinteger(L, info->tm_sec);
+  lua_setfield(L, -2, "sec");
+  lua_pushboolean(L, info->tm_isdst > 0);
+  lua_setfield(L, -2, "isdst");
+
+  return 1;
+
+}
+
 static int utc_trunc (lua_State *L)
 {
-  lua_settop(L, 2);
+  if (lua_gettop(L) == 1) {
+    const char *str = luaL_checkstring(L, 1);
+    lua_settop(L, 0);
+    utc_date(L);
+    lua_pushstring(L, str);
+  }
 
   luaL_checktype(L, 1, LUA_TTABLE);
   luaL_checktype(L, 2, LUA_TSTRING);
-
   struct tm info = {
     .tm_year = tk_lua_checkfieldinteger(L, 1, "year") - 1900,
     .tm_mon = tk_lua_checkfieldinteger(L, 1, "month") - 1,
@@ -186,45 +229,6 @@ static int utc_shift (lua_State *L)
   lua_pushvalue(L, 1);
 
   return 2;
-}
-
-static int utc_date (lua_State *L)
-{
-  time_t t;
-
-  if (lua_gettop(L) == 0) {
-    t = time(NULL);
-  } else {
-    t = luaL_checkinteger(L, 1);
-  }
-
-  struct tm *info = gmtime(&t);
-
-  if (info == NULL)
-    return tk_lua_errno(L, errno);
-
-  lua_newtable(L);
-  lua_pushinteger(L, info->tm_year + 1900);
-  lua_setfield(L, -2, "year");
-  lua_pushinteger(L, info->tm_mon + 1);
-  lua_setfield(L, -2, "month");
-  lua_pushinteger(L, info->tm_mday);
-  lua_setfield(L, -2, "day");
-  lua_pushinteger(L, info->tm_wday + 1);
-  lua_setfield(L, -2, "wday");
-  lua_pushinteger(L, info->tm_yday + 1);
-  lua_setfield(L, -2, "yday");
-  lua_pushinteger(L, info->tm_hour);
-  lua_setfield(L, -2, "hour");
-  lua_pushinteger(L, info->tm_min);
-  lua_setfield(L, -2, "min");
-  lua_pushinteger(L, info->tm_sec);
-  lua_setfield(L, -2, "sec");
-  lua_pushboolean(L, info->tm_isdst > 0);
-  lua_setfield(L, -2, "isdst");
-
-  return 1;
-
 }
 
 static int utc_local (lua_State *L)
