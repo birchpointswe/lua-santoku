@@ -29,6 +29,7 @@ local gsub = string.gsub
 local format = string.format
 local reverse = string.reverse
 local smatch = string.match
+local sgmatch = string.gmatch
 local mhuge = math.huge
 local io_write = io.write
 
@@ -376,16 +377,50 @@ local function format_number (n)
   return sign .. num .. dec
 end
 
+local function to_query_stringify (v)
+  local t = type(v)
+  if t == "number" or t == "string" or t == "boolean" then
+    return base.to_url(tostring(v))
+  end
+end
+
 local function to_query (params)
   if not params then
     return
   end
   local out = { "?" }
   for k, v in pairs(params) do
-    arr.push(out, base.to_url(k), "=", base.to_url(v), "&")
+    local k = to_query_stringify(k)
+    local v = to_query_stringify(v)
+    if k and v then
+      arr.push(out, k, "=", v, "&")
+    end
   end
   out[#out] = nil
   return arr.concat(out)
+end
+
+local function from_query_parse (v)
+  v = base.from_url(v)
+  if v == "true" then
+    return true
+  elseif v == "false" then
+    return false
+  else
+    return tonumber(v) or v
+  end
+end
+
+local function from_query (s, out)
+  out = out or {}
+  for k, v in sgmatch(s, "([^&=?]+)=([^&=?]*)") do
+    local k = from_query_parse(k)
+    local v = from_query_parse(v)
+    if k and v then
+      out[k] = v
+    end
+  end
+  return out
 end
 
 return tmerge({
@@ -413,4 +448,5 @@ return tmerge({
   commonprefix,
   format_number = format_number,
   to_query = to_query,
+  from_query = from_query,
 }, base, string)
