@@ -80,8 +80,17 @@ local function utc_offset ()
   return local_time - utc_time
 end
 
+local function utc_today ()
+  local d = os.date("*t")
+  d.hour = 0
+  d.min = 0
+  d.sec = 0
+  return os.time(d) + lua.utc_offset()
+end
+
 return tmerge({
   utc_offset = utc_offset,
+  utc_today = utc_today,
   loadstring = loadstring,
   setfenv = setfenv,
   getfenv = getfenv,
