@@ -376,6 +376,18 @@ local function format_number (n)
   return sign .. num .. dec
 end
 
+local function to_query (params)
+  if not params then
+    return
+  end
+  local out = { "?" }
+  for k, v in pairs(params) do
+    arr.push(out, base.to_url(k), "=", base.to_url(v), "&")
+  end
+  out[#out] = nil
+  return arr.concat(out)
+end
+
 return tmerge({
   splits = splits,
   matches = matches,
@@ -400,4 +412,5 @@ return tmerge({
   compare = compare,
   commonprefix,
   format_number = format_number,
+  to_query = to_query,
 }, base, string)

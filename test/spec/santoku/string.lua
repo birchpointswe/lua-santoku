@@ -196,6 +196,17 @@ test("to/from_url", function ()
     str.from_url(str.to_url("A simple test with   spaces")))) -- URL encoding spaces
 end)
 
+test("to_query", function ()
+  assert(eq(
+    "?a=&%21%40%23%24%25%5e%26%2a%28%29=1&c=%21%40%23%24%25%5e%26%2a%28%29&b=%20",
+    str.to_query({
+      a = "",
+      b = " ",
+      c = "!@#$%^&*()",
+      ["!@#$%^&*()"] = 1
+    })))
+end)
+
 test("format_number", function ()
   assert(eq(str.format_number(12345678), "12,345,678"))
   assert(eq(str.format_number(-12345678), "-12,345,678"))
