@@ -23,3 +23,4 @@ end)
 
 -- local t = date.utc_time()
 -- print(date.utc_format(t, "%c", false), date.utc_format(t, "%c", true))
+-- print(serialize(date.utc_date(date.utc_trunc("month"))))

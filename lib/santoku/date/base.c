@@ -157,12 +157,12 @@ static int utc_trunc (lua_State *L)
     info.tm_hour = 0;
     info.tm_min = 0;
     info.tm_sec = 0;
-    info.tm_mday = 0;
+    info.tm_mday = 1;
   } else if (tk_lua_streq(L, 2, "year")) {
     info.tm_hour = 0;
     info.tm_min = 0;
     info.tm_sec = 0;
-    info.tm_mday = 0;
+    info.tm_mday = 1;
     info.tm_mon = 1;
   }
   time_t t = timegm(&info);
