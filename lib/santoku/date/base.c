@@ -107,6 +107,10 @@ static int utc_trunc (lua_State *L)
   lua_setfield(L, 1, "month");
   lua_pushinteger(L, info0->tm_mday);
   lua_setfield(L, 1, "day");
+  lua_pushinteger(L, info0->tm_wday + 1);
+  lua_setfield(L, 1, "wday");
+  lua_pushinteger(L, info0->tm_yday + 1);
+  lua_setfield(L, 1, "yday");
   lua_pushinteger(L, info0->tm_hour);
   lua_setfield(L, 1, "hour");
   lua_pushinteger(L, info0->tm_min);
@@ -165,6 +169,10 @@ static int utc_shift (lua_State *L)
   lua_setfield(L, 1, "month");
   lua_pushinteger(L, info0->tm_mday);
   lua_setfield(L, 1, "day");
+  lua_pushinteger(L, info0->tm_wday + 1);
+  lua_setfield(L, 1, "wday");
+  lua_pushinteger(L, info0->tm_yday + 1);
+  lua_setfield(L, 1, "yday");
   lua_pushinteger(L, info0->tm_hour);
   lua_setfield(L, 1, "hour");
   lua_pushinteger(L, info0->tm_min);
@@ -202,6 +210,10 @@ static int utc_date (lua_State *L)
   lua_setfield(L, -2, "month");
   lua_pushinteger(L, info->tm_mday);
   lua_setfield(L, -2, "day");
+  lua_pushinteger(L, info->tm_wday + 1);
+  lua_setfield(L, -2, "wday");
+  lua_pushinteger(L, info->tm_yday + 1);
+  lua_setfield(L, -2, "yday");
   lua_pushinteger(L, info->tm_hour);
   lua_setfield(L, -2, "hour");
   lua_pushinteger(L, info->tm_min);
