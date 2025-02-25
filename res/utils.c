@@ -114,6 +114,15 @@ static inline unsigned int tk_lua_checkunsigned (lua_State *L, int i)
   return (unsigned int) l;
 }
 
+static inline bool tk_lua_streq (lua_State *L, int i, char *str)
+{
+  i = tk_lua_absindex(i);
+  lua_pushstring(L, str);
+  int r = lua_equal(L, i, -1);
+  lua_pop(L, 1);
+  return r == 1;
+}
+
 static inline unsigned int tk_lua_optunsigned (lua_State *L, int i, unsigned int def)
 {
   if (lua_type(L, i) < 1)
@@ -153,6 +162,23 @@ static inline bool tk_lua_checkboolean (lua_State *L, int i)
     return false;
   luaL_checktype(L, i, LUA_TBOOLEAN);
   return lua_toboolean(L, i);
+}
+
+static inline lua_Integer tk_lua_checkfieldinteger (lua_State *L, int i, char *field)
+{
+  luaL_getfield(L, i, field);
+  lua_Integer n = luaL_checkinteger(L, -1);
+  lua_pop(L, 1);
+  return n;
+}
+
+static inline bool tk_lua_checkfieldboolean (lua_State *L, int i, char *field)
+{
+  lua_getfield(L, i, field);
+  lua_checktype(L, -1, LUA_TBOOLEAN)
+  bool n = lua_toboolean(L, -1);
+  lua_pop(L, 1);
+  return n;
 }
 
 static inline void tk_lua_register (lua_State *L, luaL_Reg *regs, int nup)
