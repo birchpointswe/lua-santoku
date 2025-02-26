@@ -35,8 +35,25 @@ local function assert (ok, ...)
   end
 end
 
-local function pcall_helper (ok, ...)
+local function pcall_finalizer (ok, ...)
   pcall_stack = pcall_stack - 1
+  if ok then
+    return ok, ...
+  elseif getmetatable(...) == mt then
+    return ok, aspread((...))
+  else
+    return ok, ...
+  end
+end
+
+local function pcall (fn, ...)
+  pcall_stack = pcall_stack + 1
+  return vtup(pcall_finalizer, _pcall(fn, ...))
+end
+
+local function xpcall_finalizer (ok, ...)
+  -- NOTE: not decrementing pcall_stack here since it's done in xpcall_helper.
+  -- Is that right?'
   if ok then
     return ok, ...
   elseif getmetatable(...) == mt then
@@ -49,22 +66,21 @@ end
 local function xpcall_helper (handler)
   return function (...)
     pcall_stack = pcall_stack - 1
-    if getmetatable((...)) == mt then
-      return handler(aspread((...)))
+    if getmetatable(...) == mt then
+      return varg.tup(function (...)
+        return setmetatable({ ... }, mt)
+      end, pcall(handler, aspread((...))))
     else
-      return handler(...)
+      return varg.tup(function (...)
+        return setmetatable({ ... }, mt)
+      end, pcall(handler, ...))
     end
   end
 end
 
-local function pcall (fn, ...)
-  pcall_stack = pcall_stack + 1
-  return vtup(pcall_helper, _pcall(fn, ...))
-end
-
 local function xpcall (fn, handler)
   pcall_stack = pcall_stack + 1
-  return _xpcall(fn, xpcall_helper(handler))
+  return vtup(xpcall_finalizer, _xpcall(fn, xpcall_helper(handler)))
 end
 
 local function _wrapok (v, ...)
