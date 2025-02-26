@@ -38,8 +38,9 @@ test("time", function ()
 end)
 
 test("shift", function ()
-  local t = utc.shift(1712554366, 1, "day")
+  local t = 1712554366;
   local d = utc.date(t)
+  utc.shift(t, 1, "day", d)
   err.assert(tbl.equals(d, {
     hour = 5,
     min = 32,
@@ -54,8 +55,9 @@ test("shift", function ()
 end)
 
 test("trunc", function ()
-  local t = utc.trunc(1712554366, "day")
+  local t = 1712554366
   local d = utc.date(t)
+  utc.trunc(t, "day", d)
   err.assert(tbl.equals(d, {
     hour = 0,
     min = 0,

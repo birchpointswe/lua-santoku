@@ -78,29 +78,38 @@ static inline unsigned int tk_lua_optunsigned (lua_State *L, int i, unsigned int
 
 static int utc_date (lua_State *L)
 {
-  lua_settop(L, 2);
 
   time_t t;
   bool local;
+  int n = lua_gettop(L);
 
-  if (lua_type(L, 1) == LUA_TNUMBER) {
-    t = luaL_checkinteger(L, 1);
-    local = lua_toboolean(L, 2);
-  } else if (lua_type(L, 1) == LUA_TBOOLEAN) {
+  if (n == 1 && lua_type(L, 1) == LUA_TNUMBER) {
+    t = lua_tointeger(L, 1);
+    local = false;
+    lua_settop(L, 0);
+    lua_newtable(L);
+  } else if (n == 1 && lua_type(L, 1) == LUA_TBOOLEAN) {
     t = time(NULL);
     local = lua_toboolean(L, 1);
+    lua_settop(L, 0);
+    lua_newtable(L);
+  } else if (n == 2 && lua_type(L, 2) == LUA_TTABLE) {
+    t = luaL_checkinteger(L, 1);
+    local = false;
   } else {
-    luaL_checktype(L, 1, LUA_TNUMBER);
-    luaL_checktype(L, 2, LUA_TBOOLEAN);
-    return 0;
+    lua_settop(L, 3);
+    t = luaL_checkinteger(L, 1);
+    local = lua_toboolean(L, 2);
+    if (lua_type(L, 3) == LUA_TNIL) {
+      lua_pop(L, 1);
+      lua_newtable(L);
+    }
   }
 
   struct tm *info = local ? localtime(&t) : gmtime(&t);
 
   if (info == NULL)
     return tk_lua_errno(L, errno);
-
-  lua_newtable(L);
 
   lua_pushinteger(L, info->tm_year + 1900);
   lua_setfield(L, -2, "year");
@@ -223,18 +232,25 @@ static int utc_trunc (lua_State *L)
   }
 
   time_t t0 = timegm(&info0);
-
   if (t0 == (time_t)(-1))
     return tk_lua_errno(L, errno);
 
-  lua_pushinteger(L, t0);
+  if (lua_type(L, 3) == LUA_TTABLE) {
+    lua_settop(L, 3);
+    lua_insert(L, 1);
+    lua_settop(L, 1);
+    lua_pushinteger(L, t0);
+    lua_insert(L, 1);
+    utc_date(L);
+  }
 
+  lua_pushinteger(L, t0);
   return 1;
 }
 
 static int utc_shift (lua_State *L)
 {
-  lua_settop(L, 3);
+  lua_settop(L, 4);
 
   time_t t = luaL_checkinteger(L, 1);
   lua_Integer offset = luaL_checkinteger(L, 2);
@@ -266,17 +282,25 @@ static int utc_shift (lua_State *L)
   if (t0 == (time_t)(-1))
     return tk_lua_errno(L, errno);
 
+  if (lua_type(L, 4) == LUA_TTABLE) {
+    lua_insert(L, 1);
+    lua_settop(L, 1);
+    lua_pushinteger(L, t0);
+    lua_insert(L, 1);
+    utc_date(L);
+  }
+
   lua_pushinteger(L, t0);
   return 1;
 }
 
 static luaL_Reg fns[] =
 {
-  { "date", utc_date }, // utc timestamp -> date table, utc or local
-  { "time", utc_time }, // date table, utc or local -> utc timestamp
-  { "shift", utc_shift }, // utc timestamp -> utc timestamp
-  { "trunc", utc_trunc }, // utc timestamp -> utc timestamp
-  { "format", utc_format }, // utc timestamp -> string, utc or local
+  { "date", utc_date },
+  { "time", utc_time },
+  { "shift", utc_shift },
+  { "trunc", utc_trunc },
+  { "format", utc_format },
   { NULL, NULL }
 };
 
