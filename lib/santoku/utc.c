@@ -158,12 +158,34 @@ static int utc_format (lua_State *L)
   return 1;
 }
 
+static time_t utc_time_seconds ()
+{
+  return time(NULL);
+}
+
+static double utc_time_subsec (lua_State *L)
+{
+  struct timespec tp;
+  if (clock_gettime(CLOCK_REALTIME, &tp))
+    return tk_lua_errno(L, errno);
+  return (double) tp.tv_sec + tp.tv_nsec / 1000000000.0;
+}
+
 static int utc_time (lua_State *L)
 {
-  lua_settop(L, 1);
+  lua_settop(L, 2);
 
   if (lua_type(L, 1) == LUA_TNIL) {
-    lua_pushinteger(L, time(NULL));
+    if (lua_toboolean(L, 2))
+      lua_pushnumber(L, utc_time_subsec(L));
+    else
+      lua_pushinteger(L, utc_time_seconds());
+    return 1;
+  } else if (lua_type(L, 1) == LUA_TBOOLEAN) {
+    if (lua_toboolean(L, 1))
+      lua_pushnumber(L, utc_time_subsec(L));
+    else
+      lua_pushinteger(L, utc_time_seconds());
     return 1;
   }
 

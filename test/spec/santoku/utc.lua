@@ -2,6 +2,7 @@ local serialize = require("santoku.serialize") -- luacheck: ignore
 local utc = require("santoku.utc")
 local test = require("santoku.test")
 local err = require("santoku.error")
+local num = require("santoku.num")
 local tbl = require("santoku.table")
 local vdt = require("santoku.validate")
 
@@ -76,3 +77,9 @@ test("format", function ()
   err.assert(vdt.isequal(s, "2024-04-08"))
 end)
 
+test("subsec", function ()
+  local t = utc.time(true)
+  local tt = num.trunc(t, 0)
+  t = t - tt
+  err.assert(t > 0 and t < 1, "subsec fraction is zero")
+end)
