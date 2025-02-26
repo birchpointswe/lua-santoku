@@ -36,6 +36,7 @@ test("time", function ()
     isdst = false
   }
   err.assert(vdt.isequal(t, utc.time(d)))
+  err.assert(utc.time({ year = 1, month = 1, day = 1 }))
 end)
 
 test("shift", function ()

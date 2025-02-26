@@ -27,6 +27,14 @@ static inline int tk_lua_errno (lua_State *L, int err)
   return 0;
 }
 
+static inline lua_Integer tk_lua_optfieldinteger (lua_State *L, int i, char *field, lua_Integer def)
+{
+  lua_getfield(L, i, field);
+  lua_Integer n = luaL_optinteger(L, -1, def);
+  lua_pop(L, 1);
+  return n;
+}
+
 static inline lua_Integer tk_lua_checkfieldinteger (lua_State *L, int i, char *field)
 {
   lua_getfield(L, i, field);
@@ -35,13 +43,20 @@ static inline lua_Integer tk_lua_checkfieldinteger (lua_State *L, int i, char *f
   return n;
 }
 
-static inline bool tk_lua_checkfieldboolean (lua_State *L, int i, char *field)
+static inline bool tk_lua_optboolean (lua_State *L, int i, bool def)
+{
+  if (lua_type(L, i) == LUA_TNIL)
+    return def;
+  luaL_checktype(L, i, LUA_TBOOLEAN);
+  return lua_toboolean(L, i);
+}
+
+static inline bool tk_lua_optfieldboolean (lua_State *L, int i, char *field, bool def)
 {
   lua_getfield(L, i, field);
-  luaL_checktype(L, -1, LUA_TBOOLEAN);
-  bool n = lua_toboolean(L, -1);
+  bool b = tk_lua_optboolean(L, -1, def);
   lua_pop(L, 1);
-  return n;
+  return b;
 }
 
 static inline int tk_lua_absindex (lua_State *L, int i) {
@@ -195,10 +210,10 @@ static int utc_time (lua_State *L)
     .tm_year = tk_lua_checkfieldinteger(L, 1, "year") - 1900,
     .tm_mon = tk_lua_checkfieldinteger(L, 1, "month") - 1,
     .tm_mday = tk_lua_checkfieldinteger(L, 1, "day"),
-    .tm_hour = tk_lua_checkfieldinteger(L, 1, "hour"),
-    .tm_min = tk_lua_checkfieldinteger(L, 1, "min"),
-    .tm_sec = tk_lua_checkfieldinteger(L, 1, "sec"),
-    .tm_isdst = tk_lua_checkfieldboolean(L, 1, "isdst") ? 1 : 0
+    .tm_hour = tk_lua_optfieldinteger(L, 1, "hour", 0),
+    .tm_min = tk_lua_optfieldinteger(L, 1, "min", 0),
+    .tm_sec = tk_lua_optfieldinteger(L, 1, "sec", 0),
+    .tm_isdst = tk_lua_optfieldboolean(L, 1, "isdst", 0) ? 1 : 0
   };
 
   time_t t = timegm(&info);

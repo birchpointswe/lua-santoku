@@ -130,6 +130,14 @@ static inline unsigned int tk_lua_optunsigned (lua_State *L, int i, unsigned int
   return tk_lua_checkunsigned(L, i);
 }
 
+static inline bool tk_lua_optboolean (lua_State *L, int i, bool def)
+{
+  if (lua_type(L, i) == LUA_TNIL)
+    return def;
+  luaL_checktype(L, i, LUA_TBOOLEAN);
+  return lua_toboolean(L, i);
+}
+
 static inline double tk_lua_checkposdouble (lua_State *L, int i)
 {
   lua_Number l = luaL_checknumber(L, i);
@@ -164,14 +172,16 @@ static inline bool tk_lua_checkboolean (lua_State *L, int i)
   return lua_toboolean(L, i);
 }
 
+// TODO: include the field name in error
 static inline lua_Integer tk_lua_checkfieldinteger (lua_State *L, int i, char *field)
 {
-  luaL_getfield(L, i, field);
+  lua_getfield(L, i, field);
   lua_Integer n = luaL_checkinteger(L, -1);
   lua_pop(L, 1);
   return n;
 }
 
+// TODO: include the field name in error
 static inline bool tk_lua_checkfieldboolean (lua_State *L, int i, char *field)
 {
   lua_getfield(L, i, field);
@@ -179,6 +189,22 @@ static inline bool tk_lua_checkfieldboolean (lua_State *L, int i, char *field)
   bool n = lua_toboolean(L, -1);
   lua_pop(L, 1);
   return n;
+}
+
+static inline lua_Integer tk_lua_optfieldinteger (lua_State *L, int i, char *field, lua_Integer def)
+{
+  lua_getfield(L, i, field);
+  lua_Integer n = luaL_optinteger(L, -1, def);
+  lua_pop(L, 1);
+  return n;
+}
+
+static inline boolean tk_lua_optfieldboolean (lua_State *L, int i, char *field, bool def)
+{
+  lua_getfield(L, i, field);
+  bool b = tk_lua_optboolean(L, -1, def);
+  lua_pop(L, 1);
+  return b;
 }
 
 static inline void tk_lua_register (lua_State *L, luaL_Reg *regs, int nup)
