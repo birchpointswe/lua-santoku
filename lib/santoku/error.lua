@@ -57,9 +57,14 @@ local function xpcall_finalizer (ok, ...)
   if ok then
     return ok, ...
   elseif getmetatable(...) == mt then
-    return ok, aspread((...))
+    return ok, varg.sel(2, aspread((...)))
   else
-    return ok, ...
+    -- NOTE: This hides the bool we get from calling the error handler in
+    -- another pcall. This isn't a problem because the error function is
+    -- semantically already returning an error, and this code just allows it to
+    -- return that either directly or by throwing another error and avoiding
+    -- xpcall recursion.
+    return ok, varg.sel(2, ...)
   end
 end
 

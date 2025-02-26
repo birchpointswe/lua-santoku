@@ -34,17 +34,28 @@ test("pcall", function ()
   assert(iseq(msg, "hi"))
 end)
 
+test("xpcall success", function ()
+  assert(teq({ true, 1, 2 }, {
+    xpcall(function ()
+      return 1, 2
+    end, function ()
+      assert(false)
+      return "fail"
+    end)
+  }))
+end)
+
 test("xpcall", function ()
-  assert(teq({ false, true, 1, 2, 3 }, {
+  assert(teq({ false, 1, 2, 3 }, {
     xpcall(function ()
       error(1, 2)
     end, function (...)
       assert(teq({ 1, 2 }, { ... }))
-        return 1, 2, 3
+      return 1, 2, 3
     end)
   }))
   local c = 0
-  assert(teq({ false, false, 1, 2, 3, 4 }, {
+  assert(teq({ false, 1, 2, 3, 4 }, {
     xpcall(function ()
       error("hi")
     end, function (...)
@@ -56,7 +67,7 @@ test("xpcall", function ()
 end)
 
 test("xpcall returned values", function ()
-  assert(teq({ false, true, 3, 4 }, {
+  assert(teq({ false, 3, 4 }, {
     xpcall(function ()
       error(1, 2)
     end, function (...)
