@@ -10,7 +10,6 @@ local iseq = validate.isequal
 
 local err = require("santoku.error")
 local _error = error
-local _xpcall = xpcall
 local error = err.error
 local assert = err.assert
 local pcall = err.pcall
@@ -47,8 +46,9 @@ test("xpcall", function ()
   local c = 0
   assert(teq({ false, false, 1, 2, 3, 4 }, {
     xpcall(function ()
-      _error("hi")
+      error("hi")
     end, function (...)
+      assert(teq({ "hi" }, { ... }))
       c = c + 1
       error(1, 2, 3, 4)
     end)
