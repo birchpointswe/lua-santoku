@@ -10,10 +10,10 @@ local _serialize_table
 
 local string_subs = { ["\n"] = "\\n", ["\r"] = "\\r", ["\""] = "\\\"" }
 
-local function _serialize_value (out, v, level, nl, div, sep)
+local function _serialize_value (out, v, level, nl, div, sep, seen)
   if type(v) == "table" then
     level = level or 0
-    _serialize_table(out, v, level + 1, nl, div, sep)
+    _serialize_table(out, v, level + 1, nl, div, sep, seen)
   elseif type(v) == "string" then
     apush(out, acat({ "\"", gsub(v, "[\"\r\n]", string_subs), "\"" }))
   else
@@ -21,14 +21,14 @@ local function _serialize_value (out, v, level, nl, div, sep)
   end
 end
 
-local function _serialize_table_key_assignment (out, k, level, nl, div, sep)
+local function _serialize_table_key_assignment (out, k, level, nl, div, sep, seen)
   apush(out, "[")
-  _serialize_value(out, k, level, nl, div)
+  _serialize_value(out, k, level, nl, div, nil, seen)
   apush(out, "]")
   apush(out, sep, "=", sep)
 end
 
-local function _serialize_table_contents (out, tbl, level, nl, div, sep)
+local function _serialize_table_contents (out, tbl, level, nl, div, sep, seen)
   local sep0 = nl
   local indentation = div
   local maxi = nil
@@ -42,7 +42,7 @@ local function _serialize_table_contents (out, tbl, level, nl, div, sep)
     for _ = 1, level do
       apush(out, indentation)
     end
-    _serialize_value(out, v, level, nl, div, sep)
+    _serialize_value(out, v, level, nl, div, sep, seen)
     sep0 = "," .. nl
   end
   for k, v in pairs(tbl) do
@@ -51,8 +51,8 @@ local function _serialize_table_contents (out, tbl, level, nl, div, sep)
       for _ = 1, level do
         apush(out, indentation)
       end
-      _serialize_table_key_assignment(out, k, level, nl, div, sep)
-      _serialize_value(out, v, level, nl, div, sep)
+      _serialize_table_key_assignment(out, k, level, nl, div, sep, seen)
+      _serialize_value(out, v, level, nl, div, sep, seen)
       sep0 = "," .. nl
     end
   end
@@ -64,10 +64,15 @@ local function _serialize_table_contents (out, tbl, level, nl, div, sep)
   end
 end
 
-_serialize_table = function (out, tbl, level, nl, div, sep)
-  apush(out, "{")
-  _serialize_table_contents(out, tbl, level, nl, div, sep)
-  apush(out, "}")
+_serialize_table = function (out, tbl, level, nl, div, sep, seen)
+  if seen[tbl] then
+    apush(out, "nil")
+  else
+    seen[tbl] = true
+    apush(out, "{")
+    _serialize_table_contents(out, tbl, level, nl, div, sep, seen)
+    apush(out, "}")
+  end
 end
 
 local function get_separators (minify)
@@ -78,17 +83,19 @@ local function get_separators (minify)
   end
 end
 
-local function serialize_table_contents (t, minify)
+local function serialize_table_contents (t, minify, seen)
   local nl, div, sep = get_separators(minify)
   local out = {}
-  _serialize_table_contents(out, t, 1, nl, div, sep)
+  seen = seen or {}
+  _serialize_table_contents(out, t, 1, nl, div, sep, seen)
   return acat(out)
 end
 
-local function serialize (t, minify)
+local function serialize (t, minify, seen)
   local nl, div, sep = get_separators(minify)
   local out = {}
-  _serialize_value(out, t, nil, nl, div, sep)
+  seen = seen or {}
+  _serialize_value(out, t, nil, nl, div, sep, seen)
   return acat(out)
 end
 

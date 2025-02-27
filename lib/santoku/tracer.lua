@@ -5,7 +5,6 @@
 
 local str = require("santoku.string")
 local it = require("santoku.iter")
-local fs = require("santoku.fs")
 
 local line_cache = {}
 local name_cache = {}
@@ -16,12 +15,12 @@ local trace = function (_, line)
   if source then
     local ls = line_cache[source]
     if not ls then
-      ls = it.collect(fs.lines(source))
+      ls = it.collect(io.lines(source))
       line_cache[source] = ls
     end
     local bn = name_cache[source]
     if not bn then
-      bn = fs.basename(source)
+      bn = str.match(source, "([^/]+)$")
       name_cache[bn] = bn
     end
     if line then

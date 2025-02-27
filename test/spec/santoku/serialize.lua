@@ -35,3 +35,9 @@ test("minify", function ()
   assert(eq('{1,2,3,4,["a"]=10,["c"]={1,2,["z"]=9},["b"]=11}',
     serialize({ a = 10, b = 11, 1, 2, 3, 4, c = { 1, 2, z = 9 } }, true)))
 end)
+
+test("recursive", function ()
+  local a = { 1,2,3, x = 1 }
+  a.y = a
+  assert(eq('{1,2,3,["y"]=nil,["x"]=1}', serialize(a, true)))
+end)
