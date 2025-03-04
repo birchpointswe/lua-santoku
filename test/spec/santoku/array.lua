@@ -119,6 +119,12 @@ test("remove", function ()
     assert(tbl.equals({ 1, 4 }, vals))
   end)
 
+  test("remove", function ()
+    local t = { 1, 2, 3, 4, 5, 6 }
+    arr.remove(t, 4, 5)
+    assert(tbl.equals({ 1, 2, 3, 6 }, t))
+  end)
+
 end)
 
 test("filter", function ()
