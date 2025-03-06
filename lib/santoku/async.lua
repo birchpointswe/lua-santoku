@@ -76,7 +76,7 @@ end
 
 local run_process
 run_process = function (hs, each, done, asy, i, ...)
-  local h = hs[i]
+  local h = hs and hs[i]
   if not h then
     return done(...)
   elseif not asy[h] then
@@ -116,6 +116,8 @@ end
 
 M.ipairs = _ipairs
 
+local ALL_EVENTS = {}
+
 M.events = function ()
   local idx = {}
   local hs = {}
@@ -131,6 +133,7 @@ M.events = function ()
     -- called first, and those with the same order are called in the order in
     -- which they were registered.
     on = function (ev, handler, async)
+      ev = ev == nil and ALL_EVENTS or ev
       if ev and handler then
         local hs0 = hs[ev] or {}
         hs[ev] = hs0
@@ -141,6 +144,7 @@ M.events = function ()
     end,
 
     off = function (ev, handler)
+      ev = ev == nil and ALL_EVENTS or ev
       if ev and handler then
         local hs0 = hs[ev]
         if not hs0 then
@@ -157,8 +161,11 @@ M.events = function ()
     end,
 
     emit = function (ev, ...)
-      local hs0 = ev and hs[ev] or {}
-      return run_process(hs0, M.id, fun.noop, asy, 1, ...)
+      local hs0 = ev and hs[ev]
+      local hs1 = hs[ALL_EVENTS]
+      return run_process(hs0, M.id, function (...)
+        return run_process(hs1, M.id, fun.noop, asy, 1, ev, ...)
+      end, asy, 1, ...)
     end,
 
     process = function (ev, each, done, ...)
