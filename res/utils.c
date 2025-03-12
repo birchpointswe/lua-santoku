@@ -1,3 +1,4 @@
+// TODO: allow caching of function lookups
 static inline void tk_lua_callmod (lua_State *L, int nargs, int nret, const char *smod, const char *sfn)
 {
   lua_getglobal(L, "require"); // arg req
@@ -32,7 +33,8 @@ static inline int tk_lua_errmalloc (lua_State *L)
   return 0;
 }
 
-static inline int tk_lua_absindex (lua_State *L, int i) {
+static inline int tk_lua_absindex (lua_State *L, int i)
+{
   if (i < 0 && i > LUA_REGISTRYINDEX)
     i += lua_gettop(L) + 1;
   return i;
