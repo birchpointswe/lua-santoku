@@ -23,7 +23,22 @@ local function atan (...)
   end
 end
 
+local function mavg (alpha)
+  alpha = alpha or 0.2
+  local avg
+  return function (v)
+    if not avg then
+      avg = v
+      return avg
+    else
+      avg = alpha * v + (1 - alpha) * avg
+      return avg
+    end
+  end
+end
+
 return tmerge({
   trunc = trunc,
   atan = atan,
+  mavg = mavg,
 }, math)

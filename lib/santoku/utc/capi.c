@@ -341,7 +341,7 @@ static luaL_Reg fns[] =
   { NULL, NULL }
 };
 
-int luaopen_santoku_utc (lua_State *L)
+int luaopen_santoku_utc_capi (lua_State *L)
 {
   lua_newtable(L); // mt
   luaL_register(L, NULL, fns); // mt
