@@ -211,6 +211,24 @@ static inline lua_Integer tk_lua_fcheckunsigned (lua_State *L, int i, char *fiel
 }
 
 // TODO: include the field name in error
+static inline const char *tk_lua_fcheckstring (lua_State *L, int i, char *field)
+{
+  lua_getfield(L, i, field);
+  const char *s = luaL_checkstring(L, -1);
+  lua_pop(L, 1);
+  return s;
+}
+
+// TODO: include the field name in error
+static inline lua_Integer tk_lua_fchecklstring (lua_State *L, int i, char *field, size_t *len)
+{
+  lua_getfield(L, i, field);
+  const char *s = luaL_checklstring(L, -1, len);
+  lua_pop(L, 1);
+  return s;
+}
+
+// TODO: include the field name in error
 static inline lua_Number tk_lua_foptnumber (lua_State *L, int i, char *field, double d)
 {
   lua_getfield(L, i, field);
@@ -246,7 +264,7 @@ static inline lua_Integer tk_lua_foptinteger (lua_State *L, int i, char *field, 
   return n;
 }
 
-static inline boolean tk_lua_foptboolean (lua_State *L, int i, char *field, bool def)
+static inline bool tk_lua_foptboolean (lua_State *L, int i, char *field, bool def)
 {
   lua_getfield(L, i, field);
   bool b = tk_lua_optboolean(L, -1, def);
