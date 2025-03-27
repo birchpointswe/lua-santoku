@@ -40,6 +40,32 @@ static inline int tk_lua_absindex (lua_State *L, int i)
   return i;
 }
 
+static inline FILE *tk_lua_tmpfile (lua_State *L)
+{
+  FILE *fh = tmpfile();
+  if (fh) return fh;
+  int e = errno;
+  lua_settop(L, 0);
+  lua_pushstring(L, "Error opening tmpfile");
+  lua_pushstring(L, strerror(e));
+  lua_pushinteger(L, e);
+  tk_lua_callmod(L, 3, 0, "santoku.error", "error");
+  return NULL;
+}
+
+static inline FILE *tk_lua_fmemopen (lua_State *L, char *data, size_t size, const char *flag)
+{
+  FILE *fh = fmemopen(data, size, flag);
+  if (fh) return fh;
+  int e = errno;
+  lua_settop(L, 0);
+  lua_pushstring(L, "Error opening string as file");
+  lua_pushstring(L, strerror(e));
+  lua_pushinteger(L, e);
+  tk_lua_callmod(L, 3, 0, "santoku.error", "error");
+  return NULL;
+}
+
 static inline FILE *tk_lua_fopen (lua_State *L, const char *fp, const char *flag)
 {
   FILE *fh = fopen(fp, flag);
@@ -63,13 +89,12 @@ static inline void tk_lua_fclose (lua_State *L, FILE *fh)
   lua_pushstring(L, strerror(e));
   lua_pushinteger(L, e);
   tk_lua_callmod(L, 3, 0, "santoku.error", "error");
-  return NULL;
 }
 
 static inline void tk_lua_fwrite (lua_State *L, char *data, size_t size, size_t memb, FILE *fh)
 {
-  size_t read = fwrite(fh, data, size, memb);
-  if (!ferror(fh)) return;
+  size_t bytes = fwrite(data, size, memb, fh);
+  if (!ferror(fh) && bytes) return;
   int e = errno;
   lua_settop(L, 0);
   lua_pushstring(L, "Error writing to file");
@@ -88,6 +113,47 @@ static inline void tk_lua_fread (lua_State *L, void *data, size_t size, size_t m
   lua_pushstring(L, strerror(e));
   lua_pushinteger(L, e);
   tk_lua_callmod(L, 3, 0, "santoku.error", "error");
+}
+
+static inline void tk_lua_fseek (lua_State *L, size_t size, size_t memb, FILE *fh)
+{
+  int r = fseek(fh, (long) (size * memb), SEEK_CUR);
+  if (!ferror(fh) || !r) return;
+  int e = errno;
+  lua_settop(L, 0);
+  lua_pushstring(L, "Error reading from file");
+  lua_pushstring(L, strerror(e));
+  lua_pushinteger(L, e);
+  tk_lua_callmod(L, 3, 0, "santoku.error", "error");
+}
+
+static inline char *tk_lua_fslurp (lua_State *L, FILE *fh, size_t *len)
+{
+  if (fseek(fh, 0, SEEK_END) != 0) {
+    tk_lua_errno(L, errno);
+    return NULL;
+  }
+  long size = ftell(fh);
+  if (size < 0) {
+    tk_lua_errno(L, errno);
+    return NULL;
+  }
+  if (fseek(fh, 0, SEEK_SET) != 0) {
+    tk_lua_errno(L, errno);
+    return NULL;
+  }
+  char *buffer = malloc((size_t) size);
+  if (!buffer) {
+    tk_lua_errmalloc(L);
+    return NULL;
+  }
+  if (fread(buffer, 1, (size_t) size, fh) != (size_t) size) {
+    free(buffer);
+    tk_lua_errno(L, errno);
+    return NULL;
+  }
+  *len = (size_t) size;
+  return buffer;
 }
 
 static inline int tk_lua_ref (lua_State *L, int i)
@@ -220,7 +286,7 @@ static inline const char *tk_lua_fcheckstring (lua_State *L, int i, char *field)
 }
 
 // TODO: include the field name in error
-static inline lua_Integer tk_lua_fchecklstring (lua_State *L, int i, char *field, size_t *len)
+static inline const char *tk_lua_fchecklstring (lua_State *L, int i, char *field, size_t *len)
 {
   lua_getfield(L, i, field);
   const char *s = luaL_checklstring(L, -1, len);

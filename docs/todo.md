@@ -1,5 +1,7 @@
 # Now
 
+- Bindings to khash, kbtree, kvec, kstring, etc
+
 - io, os, math, coroutine, package
 
 - Env
