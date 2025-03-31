@@ -250,6 +250,15 @@ static inline lua_Integer tk_lua_ftype (lua_State *L, int i, char *field)
 }
 
 // TODO: include the field name in error
+static inline void tk_lua_fchecktype (lua_State *L, int i, char *field, int t)
+{
+  lua_getfield(L, i, field);
+  luaL_checktype(L, -1, t);
+  lua_pop(L, 1);
+  return t;
+}
+
+// TODO: include the field name in error
 static inline void *tk_lua_fcheckuserdata (lua_State *L, int i, char *field, char *mt)
 {
   lua_getfield(L, i, field);
@@ -263,6 +272,15 @@ static inline lua_Integer tk_lua_fcheckinteger (lua_State *L, int i, char *field
 {
   lua_getfield(L, i, field);
   lua_Integer n = luaL_checkinteger(L, -1);
+  lua_pop(L, 1);
+  return n;
+}
+
+// TODO: include the field name in error
+static inline lua_Integer tk_lua_fchecknumber (lua_State *L, int i, char *field)
+{
+  lua_getfield(L, i, field);
+  lua_Integer n = luaL_checknumber(L, -1);
   lua_pop(L, 1);
   return n;
 }

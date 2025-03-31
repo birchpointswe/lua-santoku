@@ -257,16 +257,20 @@ local function reverse (t)
   return t
 end
 
-local function sum (t)
-  local s = 0
-  for i = 1, #t do
-    s = s + t[i]
+local function sum (t, s, e)
+  s = s or 1
+  e = e or #t
+  local c = 0
+  for i = s, e do
+    c = c + t[i]
   end
-  return s
+  return c
 end
 
-local function mean (t)
-  return sum(t) / #t
+local function mean (t, s, e)
+  s = s or 1
+  e = e or #t
+  return sum(t, s, e) / (e - s + 1)
 end
 
 local function max (t)
