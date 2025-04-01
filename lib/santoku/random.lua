@@ -75,8 +75,8 @@ local function _options (params, unique)
 end
 
 local function options (params, each, unique)
-  for ret, n in _options(params, unique) do
-    if each(ret, n) == false then
+  for ret, n, k in _options(params, unique) do
+    if each(ret, n, k) == false then
       break
     end
   end
