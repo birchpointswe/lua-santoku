@@ -64,7 +64,14 @@ local function _options (params, unique)
       ret[k] = v[i]
     end
     n = n + 1
-    local k = tbl.concat(arr.map(arr.sort(it.collect(it.keys(ret))), fun.tget(ret)), " ")
+    local k = tbl.concat(arr.map(arr.sort(it.collect(it.keys(ret))), function (k)
+      local r = ret[k]
+      if type(r) == "table" then
+        return tbl.concat(arr.map(arr.sort(it.collect(it.keys(r))), fun.tget(r)), " ")
+      else
+        return r
+      end
+    end), " ")
     if not unique or not seen[k] then
       return ret, n, k
     else

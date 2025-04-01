@@ -31,12 +31,13 @@ test("fast", function ()
 end)
 
 -- local fun = require("santoku.functional")
+-- local arr = require("santoku.array")
 -- local it = require("santoku.iter")
 -- local serialize = require("santoku.serialize")
 -- test("options", function ()
 --   rand.options({
 --     hidden = it.range(64, 2048, fun.mul(2)),
---     specificity = it.range(2, 20, fun.add(2), 4),
+--     specificity = it.map(arr.pack, it.range(2, 20, fun.add(2), 4)),
 --     clauses = it.range(512, 8192, fun.mul(2), 2),
 --     target = it.range(8, 4096, fun.mul(2))
 --   }, function (opts, n)
