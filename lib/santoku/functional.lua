@@ -1,3 +1,4 @@
+local op = require("santoku.op")
 local varg = require("santoku.varg")
 local vsel = varg.sel
 local vlen = varg.len
@@ -62,7 +63,7 @@ local function const (x)
   end
 end
 
-return {
+local M = {
   id = id,
   bind = bind,
   maybe = maybe,
@@ -73,3 +74,37 @@ return {
   choose = choose,
   const = const,
 }
+
+M.get = function (p)
+  return function (t)
+    return t[p]
+  end
+end
+
+M.tget = function (t)
+  return function (p)
+    return t[p]
+  end
+end
+
+M.set = function (p, v)
+  return function (t)
+    t[p] = v
+  end
+end
+
+M.tset = function (t, v)
+  return function (p)
+    t[p] = v
+  end
+end
+
+for k, v in pairs(op) do
+  if not M[k] then
+    M[k] = function (...)
+      return M.bind(v, ...)
+    end
+  end
+end
+
+return M

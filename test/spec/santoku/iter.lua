@@ -254,6 +254,12 @@ test("zip", function ()
   assert(teq({ { 1, 3 }, { 2, 4 } }, collect(map(pack, zip(ivals({ 1, 2 }), ivals({ 3, 4 }))))))
 end)
 
+test("range", function ()
+  assert(teq({ 1, 2, 3, 4 }, collect(range(4))))
+  assert(teq({ -1, -2, -3, -4 }, collect(range(-4))))
+  assert(teq({ 2, 4, 6 }, collect(range(2, 6, 2))))
+end)
+
 test("sum", function ()
   assert(teq({ 10 }, { sum(ivals({ 1, 2, 3, 4 })) }))
 end)
@@ -276,12 +282,6 @@ end)
 
 test("set", function ()
   assert(teq({ a = true, b = true }, set(ivals({ "a", "b" }))))
-end)
-
-test("range", function ()
-  assert(teq({ 1, 2, 3, 4 }, collect(range(4))))
-  assert(teq({ -1, -2, -3, -4 }, collect(range(-4))))
-  assert(teq({ 2, 4, 6 }, collect(range(2, 6, 2))))
 end)
 
 test("spread", function ()

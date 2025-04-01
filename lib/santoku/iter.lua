@@ -1,8 +1,8 @@
 local fun = require("santoku.functional")
 local noop = fun.noop
 
-local err = require("santoku.error")
-local error = err.error
+local num = require("santoku.num")
+local abs = num.abs
 
 local op = require("santoku.op")
 local add = op.add
@@ -386,31 +386,40 @@ local function async (it)
   end
 end
 
-local function range (...)
-  local s, e, m
-  if select("#", ...) == 1 then
-    e = ...
-    s = e < 0 and -1 or 1
-    m = s
-  else
-    s, e, m = ...
-    s = s or 1
-    e = e or math.huge
-    m = m or 1
-    if s < e and m <= 0 then
-      error("invalid range params: start < end but m <= 0", s, e, m)
-    elseif s > e and m >= 0 then
-      error("invalid range params: start > end but m >= 0", s, e, m)
-    end
+local function range (s, e, d, i)
+  local neg = s < 0
+  s = abs(s)
+  if not s then
+    return fun.noop
   end
-  local i = s
-  return function ()
-    if (s < e and i > e) or (s > e and i < e) then
-      return
+  if not e then
+    e = s
+    s = 1
+  end
+  d = d or (s <= e and fun.add(1) or fun.sub(1))
+  if type(d) == "number" then
+    d = fun.add(d)
+  end
+  if i then
+    return function ()
+      if s > e then
+        return
+      end
+      local x0 = s
+      local x1 = x0 + i
+      x1 = x1 > e and e or x1
+      s = d(s)
+      return x0, x1
     end
-    local r = i
-    i = i + m
-    return r
+  else
+    return function ()
+      if s > e then
+        return
+      end
+      local x = s
+      s = d(s)
+      return neg and -x or x
+    end
   end
 end
 

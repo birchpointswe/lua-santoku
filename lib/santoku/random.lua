@@ -1,7 +1,8 @@
-local fast = require("santoku.random.fast")
-
 local tbl = require("santoku.table")
-local merge = tbl.merge
+local fun = require("santoku.functional")
+local it = require("santoku.iter")
+local arr = require("santoku.array")
+local fast = require("santoku.random.fast")
 
 local _seed = math.randomseed
 local _time = os.time
@@ -48,11 +49,44 @@ local function norm ()
   return _max(-1, _min(1, z))
 end
 
+local function _options (params, unique)
+  local n = 0
+  local base = {}
+  for k, v in pairs(params) do
+    base[k] = it.collect(v)
+  end
+  local seen = {}
+  local helper
+  helper = function ()
+    local ret = {}
+    for k, v in pairs(base) do
+      local i = _rand(1, #v)
+      ret[k] = v[i]
+    end
+    n = n + 1
+    local k = tbl.concat(arr.map(arr.sort(it.collect(it.keys(ret))), fun.tget(ret)), " ")
+    if not unique or not seen[k] then
+      return ret, n
+    else
+      return helper()
+    end
+  end
+  return helper
+end
 
-return merge({
+local function options (params, each, unique)
+  for ret, n in _options(params, unique) do
+    if each(ret, n) == false then
+      break
+    end
+  end
+end
+
+return tbl.merge({
   seed = seed,
   str = str,
   num = _rand,
   norm = norm,
   alnum = alnum,
+  options = options
 }, fast)
