@@ -66,7 +66,7 @@ local function _options (params, unique)
     n = n + 1
     local k = tbl.concat(arr.map(arr.sort(it.collect(it.keys(ret))), fun.tget(ret)), " ")
     if not unique or not seen[k] then
-      return ret, n
+      return ret, n, k
     else
       return helper()
     end
