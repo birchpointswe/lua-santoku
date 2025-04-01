@@ -49,11 +49,13 @@ local function norm ()
   return _max(-1, _min(1, z))
 end
 
-local function _options (params, unique)
+local function _options (params, unique, chunk)
   local n = 0
+  chunk = chunk or 1000
   local base = {}
   for k, v in pairs(params) do
-    base[k] = it.collect(v)
+    base[k] = it.collect(it.take(chunk, v))
+    arr.shuffle(base[k])
   end
   local seen = {}
   local helper
@@ -81,8 +83,8 @@ local function _options (params, unique)
   return helper
 end
 
-local function options (params, each, unique)
-  for ret, n, k in _options(params, unique) do
+local function options (params, each, unique, chunk)
+  for ret, n, k in _options(params, unique, chunk) do
     if each(ret, n, k) == false then
       break
     end
