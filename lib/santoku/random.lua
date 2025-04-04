@@ -71,7 +71,7 @@ local function _options (params, unique, chunk)
       if type(r) == "table" then
         return tbl.concat(arr.map(arr.sort(it.collect(it.keys(r))), fun.tget(r)), " ")
       else
-        return r
+        return tostring(r)
       end
     end), " ")
     if not unique or not seen[k] then
