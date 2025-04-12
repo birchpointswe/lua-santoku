@@ -37,8 +37,18 @@ local function mavg (alpha)
   end
 end
 
+
+local function round (n, m)
+  if m then
+    return math.ceil(n / m) * m
+  else
+    return math.floor(n + 0.5)
+  end
+end
+
 return tmerge({
   trunc = trunc,
   atan = atan,
   mavg = mavg,
+  round = round,
 }, math)
