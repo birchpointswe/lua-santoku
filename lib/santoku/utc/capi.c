@@ -1,95 +1,5 @@
-#include "lua.h"
-#include "lauxlib.h"
-
-#include <stdbool.h>
-#include <string.h>
-#include <errno.h>
-#include <stdio.h>
+#include <santoku/lua/utils.h>
 #include <time.h>
-
-static inline void tk_lua_callmod (lua_State *L, int nargs, int nret, const char *smod, const char *sfn)
-{
-  lua_getglobal(L, "require"); // arg req
-  lua_pushstring(L, smod); // arg req smod
-  lua_call(L, 1, 1); // arg mod
-  lua_pushstring(L, sfn); // args mod sfn
-  lua_gettable(L, -2); // args mod fn
-  lua_remove(L, -2); // args fn
-  lua_insert(L, - nargs - 1); // fn args
-  lua_call(L, nargs, nret); // results
-}
-
-static inline int tk_lua_errno (lua_State *L, int err)
-{
-  lua_pushstring(L, strerror(errno));
-  lua_pushinteger(L, err);
-  tk_lua_callmod(L, 2, 0, "santoku.error", "error");
-  return 0;
-}
-
-static inline lua_Integer tk_lua_optfieldinteger (lua_State *L, int i, char *field, lua_Integer def)
-{
-  lua_getfield(L, i, field);
-  lua_Integer n = luaL_optinteger(L, -1, def);
-  lua_pop(L, 1);
-  return n;
-}
-
-static inline lua_Integer tk_lua_checkfieldinteger (lua_State *L, int i, char *field)
-{
-  lua_getfield(L, i, field);
-  lua_Integer n = luaL_checkinteger(L, -1);
-  lua_pop(L, 1);
-  return n;
-}
-
-static inline bool tk_lua_optboolean (lua_State *L, int i, bool def)
-{
-  if (lua_type(L, i) == LUA_TNIL)
-    return def;
-  luaL_checktype(L, i, LUA_TBOOLEAN);
-  return lua_toboolean(L, i);
-}
-
-static inline bool tk_lua_optfieldboolean (lua_State *L, int i, char *field, bool def)
-{
-  lua_getfield(L, i, field);
-  bool b = tk_lua_optboolean(L, -1, def);
-  lua_pop(L, 1);
-  return b;
-}
-
-static inline int tk_lua_absindex (lua_State *L, int i) {
-  if (i < 0 && i > LUA_REGISTRYINDEX)
-    i += lua_gettop(L) + 1;
-  return i;
-}
-
-static inline bool tk_lua_streq (lua_State *L, int i, char *str)
-{
-  i = tk_lua_absindex(L, i);
-  lua_pushstring(L, str);
-  int r = lua_equal(L, i, -1);
-  lua_pop(L, 1);
-  return r == 1;
-}
-
-static inline unsigned int tk_lua_checkunsigned (lua_State *L, int i)
-{
-  lua_Integer l = luaL_checkinteger(L, i);
-  if (l < 0)
-    luaL_error(L, "value can't be negative");
-  if (l > UINT_MAX)
-    luaL_error(L, "value is too large");
-  return (unsigned int) l;
-}
-
-static inline unsigned int tk_lua_optunsigned (lua_State *L, int i, unsigned int def)
-{
-  if (lua_type(L, i) < 1)
-    return def;
-  return tk_lua_checkunsigned(L, i);
-}
 
 static int utc_date (lua_State *L)
 {
@@ -152,12 +62,10 @@ static int utc_format (lua_State *L)
 {
   lua_settop(L, 4);
 
-  time_t t = luaL_checkinteger(L, 1);
-
-  const char *fmt = luaL_checkstring(L, 2);
-
-  bool local = lua_toboolean(L, 3);
-  unsigned bufsize = tk_lua_optunsigned(L, 4, 1024);
+  time_t t = tk_lua_checkinteger(L, 1, "time");
+  const char *fmt = tk_lua_checkstring(L, 2, "format");
+  bool local = tk_lua_optboolean(L, 3, "local", false);
+  unsigned bufsize = tk_lua_optunsigned(L, 4, "bufsize", 1024);
 
   struct tm *info = local ? localtime(&t) : gmtime(&t);
 
@@ -207,13 +115,13 @@ static int utc_time (lua_State *L)
   luaL_checktype(L, 1, LUA_TTABLE);
 
   struct tm info = {
-    .tm_year = tk_lua_checkfieldinteger(L, 1, "year") - 1900,
-    .tm_mon = tk_lua_checkfieldinteger(L, 1, "month") - 1,
-    .tm_mday = tk_lua_checkfieldinteger(L, 1, "day"),
-    .tm_hour = tk_lua_optfieldinteger(L, 1, "hour", 0),
-    .tm_min = tk_lua_optfieldinteger(L, 1, "min", 0),
-    .tm_sec = tk_lua_optfieldinteger(L, 1, "sec", 0),
-    .tm_isdst = tk_lua_optfieldboolean(L, 1, "isdst", 0) ? 1 : 0
+    .tm_year = tk_lua_fcheckinteger(L, 1, "time", "year") - 1900,
+    .tm_mon = tk_lua_fcheckinteger(L, 1, "time", "month") - 1,
+    .tm_mday = tk_lua_fcheckinteger(L, 1, "time", "day"),
+    .tm_hour = tk_lua_foptinteger(L, 1, "time", "hour", 0),
+    .tm_min = tk_lua_foptinteger(L, 1, "time", "min", 0),
+    .tm_sec = tk_lua_foptinteger(L, 1, "time", "sec", 0),
+    .tm_isdst = tk_lua_foptboolean(L, 1, "time", "isdst", 0) ? 1 : 0
   };
 
   time_t t = timegm(&info);

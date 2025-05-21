@@ -1,38 +1,9 @@
-#include "lua.h"
-#include "lauxlib.h"
+// TODO: Expose via header
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
+#include <santoku/lua/utils.h>
 #include <ctype.h>
 
-static inline void tk_lua_callmod (lua_State *L, int nargs, int nret, const char *smod, const char *sfn)
-{
-  lua_getglobal(L, "require"); // arg req
-  lua_pushstring(L, smod); // arg req smod
-  lua_call(L, 1, 1); // arg mod
-  lua_pushstring(L, sfn); // args mod sfn
-  lua_gettable(L, -2); // args mod fn
-  lua_remove(L, -2); // args fn
-  lua_insert(L, - nargs - 1); // fn args
-  lua_call(L, nargs, nret); // results
-}
-
-static inline int tk_lua_error (lua_State *L, const char *err)
-{
-  lua_pushstring(L, err);
-  tk_lua_callmod(L, 1, 0, "santoku.error", "error");
-  return 0;
-}
-
-static inline int tk_lua_errmalloc (lua_State *L)
-{
-  lua_pushstring(L, "Error in malloc");
-  tk_lua_callmod(L, 1, 0, "santoku.error", "error");
-  return 0;
-}
-
-static int number (lua_State *L)
+static inline int number (lua_State *L)
 {
   lua_settop(L, 3);
   size_t len;
@@ -50,7 +21,7 @@ static int number (lua_State *L)
   }
 }
 
-static int equals (lua_State *L)
+static inline int equals (lua_State *L)
 {
   lua_settop(L, 4);
   size_t litlen;
@@ -75,7 +46,7 @@ static int equals (lua_State *L)
   return 1;
 }
 
-static int to_hex (lua_State *L)
+static inline int to_hex (lua_State *L)
 {
   size_t size0;
   const char *data = luaL_checklstring(L, 1, &size0);
@@ -89,7 +60,7 @@ static int to_hex (lua_State *L)
   return 1;
 }
 
-static int from_hex (lua_State *L) {
+static inline int from_hex (lua_State *L) {
   size_t size0;
   const char *data = luaL_checklstring(L, 1, &size0);
   if (size0 % 2 != 0)
@@ -116,7 +87,7 @@ static int from_hex (lua_State *L) {
 static unsigned char b64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static unsigned char b64url[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
-static int to_base64 (lua_State *L)
+static inline int to_base64 (lua_State *L)
 {
   size_t len;
   const char *src = luaL_checklstring(L, 1, &len);
@@ -158,7 +129,7 @@ static int to_base64 (lua_State *L)
   return 1;
 }
 
-static int from_base64 (lua_State *L)
+static inline int from_base64 (lua_State *L)
 {
   size_t len;
   const char *src = luaL_checklstring(L, 1, &len);
@@ -212,21 +183,21 @@ static int from_base64 (lua_State *L)
   return 1;
 }
 
-static int to_base64_url (lua_State *L)
+static inline int to_base64_url (lua_State *L)
 {
   lua_settop(L, 1);
   lua_pushboolean(L, true);
   return to_base64(L);
 }
 
-static int from_base64_url (lua_State *L)
+static inline int from_base64_url (lua_State *L)
 {
   lua_settop(L, 1);
   lua_pushboolean(L, true);
   return from_base64(L);
 }
 
-static int to_url (lua_State *L)
+static inline int to_url (lua_State *L)
 {
   size_t size0;
   const char *data = luaL_checklstring(L, 1, &size0);
@@ -248,7 +219,7 @@ static int to_url (lua_State *L)
   return 1;
 }
 
-static int from_url (lua_State *L) {
+static inline int from_url (lua_State *L) {
   size_t size0;
   const char *data = luaL_checklstring(L, 1, &size0);
   size_t size1 = size0;

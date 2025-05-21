@@ -1,6 +1,4 @@
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
+#include <santoku/lua/utils.h>
 
 int luaopen_santoku_validate_capi (lua_State *L)
 {

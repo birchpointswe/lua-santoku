@@ -1,7 +1,6 @@
-#include "lua.h"
-#include "lauxlib.h"
+#include <santoku/lua/utils.h>
 
-int tk_lua_mt_userdata (lua_State *L)
+static inline int tk_lua_mt_userdata (lua_State *L)
 {
   luaL_checktype(L, -1, LUA_TTABLE);
   lua_newuserdata(L, 0);

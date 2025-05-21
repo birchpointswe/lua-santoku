@@ -137,6 +137,10 @@ test("interp multiple", function ()
   assert(teq({ "hello world" }, { str.interp("%s#(greet) %s#(target)", { greet = "hello", target = "world" }) }))
 end)
 
+test("interp cloats", function ()
+  assert(teq({ "1234.123" }, { str.interp("%4.3f#(score)", { score = 1234.1234 }) }))
+end)
+
 test("equals", function ()
   assert(teq({ true }, { str.equals("two", "one two three", 5, 7) }));
   assert(teq({ true }, { str.equals("one", "one two three", 1, 3) }));

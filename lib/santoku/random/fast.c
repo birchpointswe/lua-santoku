@@ -1,47 +1,24 @@
-#include "lua.h"
-#include "lauxlib.h"
+#include <santoku/lua/utils.h>
 
-#include <stdint.h>
-#include <math.h>
-
-static uint64_t const multiplier = 6364136223846793005u;
-static uint64_t mcg_state = 0xcafef00dd15ea5e5u;
-
-static inline uint32_t _fast_random ()
+static inline int l_fast_random (lua_State *L)
 {
-  uint64_t x = mcg_state;
-  unsigned int count = (unsigned int) (x >> 61);
-  mcg_state = x * multiplier;
-  return (uint32_t) ((x ^ x >> 22) >> (22 + count));
-}
-
-static inline int _fast_normal (double mean, double variance)
-{
-  double u1 = (double) (_fast_random() + 1) / ((double) UINT32_MAX + 1);
-  double u2 = (double) _fast_random() / UINT32_MAX;
-  double n1 = sqrt(-2 * log(u1)) * sin(8 * atan(1) * u2);
-  return round(mean + sqrt(variance) * n1);
-}
-
-static inline int fast_random (lua_State *L)
-{
-  lua_pushinteger(L, _fast_random());
+  lua_pushinteger(L, tk_fast_random());
   return 1;
 }
 
-static inline int fast_normal (lua_State *L)
+static inline int l_fast_normal (lua_State *L)
 {
   double mean = luaL_checknumber(L, 1);
   double variance = luaL_checknumber(L, 2);
-  double normal = _fast_normal(mean, variance);
+  double normal = tk_fast_normal(mean, variance);
   lua_pushnumber(L, normal);
   return 1;
 }
 
 
 static luaL_Reg fns[] = {
-  { "fast_random", fast_random },
-  { "fast_normal", fast_normal },
+  { "fast_random", l_fast_random },
+  { "fast_normal", l_fast_normal },
   { NULL, NULL }
 };
 
