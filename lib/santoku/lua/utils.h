@@ -89,7 +89,7 @@ static inline int tk_lua_verror (lua_State *L, int n, ...) {
 
 static inline bool tk_lua_optboolean (lua_State *L, int i, char *name, bool def)
 {
-  if (lua_type(L, i) == LUA_TNIL)
+  if (lua_type(L, i) < 1)
     return def;
   if (lua_type(L, i) != LUA_TBOOLEAN)
     tk_lua_verror(L, 2, name, "value is not a boolean");
@@ -190,10 +190,20 @@ static inline int tk_error (
   return 1;
 }
 
+static inline double tk_lua_optnumber (lua_State *L, int i, char *name, double def)
+{
+  if (lua_type(L, i) < 1)
+    return def;
+  if (lua_type(L, i) != LUA_TNUMBER)
+    tk_lua_verror(L, 2, name, "value is not a number");
+  lua_Number l = luaL_checknumber(L, i);
+  return l;
+}
+
 static inline double tk_lua_foptnumber (lua_State *L, int i, char *name, char *field, double def)
 {
   lua_getfield(L, i, field);
-  if (lua_type(L, -1) == LUA_TNIL) {
+  if (lua_type(L, -1) < 1) {
     lua_pop(L, 1);
     return def;
   }
@@ -206,7 +216,7 @@ static inline double tk_lua_foptnumber (lua_State *L, int i, char *name, char *f
 
 static inline bool tk_lua_checkboolean (lua_State *L, int i)
 {
-  if (lua_type(L, i) == LUA_TNIL)
+  if (lua_type(L, i) < 1)
     return false;
   luaL_checktype(L, i, LUA_TBOOLEAN);
   return lua_toboolean(L, i);
@@ -354,7 +364,7 @@ static inline double tk_lua_fcheckposdouble (lua_State *L, int i, char *name, ch
 static inline double tk_lua_foptposdouble (lua_State *L, int i, char *name, char *field, double def)
 {
   lua_getfield(L, i, field);
-  if (lua_type(L, -1) == LUA_TNIL) {
+  if (lua_type(L, -1) < 1) {
     lua_pop(L, 1);
     return def;
   }
@@ -378,7 +388,7 @@ static inline lua_Integer tk_lua_checkinteger (lua_State *L, int i, char *name)
 static inline lua_Integer tk_lua_foptinteger (lua_State *L, int i, char *name, char *field, lua_Integer def)
 {
   lua_getfield(L, i, field);
-  if (lua_type(L, -1) == LUA_TNIL) {
+  if (lua_type(L, -1) < 1) {
     lua_pop(L, 1);
     return def;
   }
@@ -416,7 +426,7 @@ static inline unsigned int tk_lua_fcheckunsigned (lua_State *L, int i, char *nam
 static inline unsigned int tk_lua_foptunsigned (lua_State *L, int i, char *name, char *field, unsigned int def)
 {
   lua_getfield(L, i, field);
-  if (lua_type(L, -1) == LUA_TNIL) {
+  if (lua_type(L, -1) < 1) {
     lua_pop(L, 1);
     return def;
   }
@@ -431,7 +441,7 @@ static inline unsigned int tk_lua_foptunsigned (lua_State *L, int i, char *name,
 
 static inline unsigned int tk_lua_optunsigned (lua_State *L, int i, char *name, unsigned int def)
 {
-  if (lua_type(L, i) == LUA_TNIL)
+  if (lua_type(L, i) < 1)
     return def;
   if (lua_type(L, i) != LUA_TNUMBER)
     tk_lua_verror(L, 2, name, "value is not a positive integer");
@@ -569,6 +579,18 @@ static inline void *tk_malloc_aligned (
   return p;
 }
 
+static inline const void *tk_lua_optustring (lua_State *L, int i, char *name, void *d)
+{
+  void *r = d;
+  if (lua_type(L, i) == LUA_TSTRING)
+    r = (void *) luaL_checkstring(L, i);
+  else if (lua_type(L, i) == LUA_TLIGHTUSERDATA)
+    r = (void *) lua_touserdata(L, i);
+  else if (lua_type(L, i) > 0)
+    tk_lua_verror(L, 2, name, "field is not a string or light userdata");
+  return r;
+}
+
 static inline const void *tk_lua_foptustring (lua_State *L, int i, char *name, char *field, void *d)
 {
   lua_getfield(L, i, field);
@@ -577,9 +599,25 @@ static inline const void *tk_lua_foptustring (lua_State *L, int i, char *name, c
     r = (void *) luaL_checkstring(L, -1);
   else if (lua_type(L, -1) == LUA_TLIGHTUSERDATA)
     r = (void *) lua_touserdata(L, -1);
-  else if (!(lua_type(L, -1) == LUA_TNIL || lua_type(L, -1) == LUA_TNONE))
+  else if (lua_type(L, -1) > 0)
     tk_lua_verror(L, 3, name, field, "field is not a string or light userdata");
   lua_pop(L, 1);
+  return r;
+}
+
+static inline const void *tk_lua_checkustring (lua_State *L, int i, char *name)
+{
+  void *r = (void *) tk_lua_optustring(L, i, name, NULL);
+  if (r == NULL)
+    tk_lua_verror(L, 2, name, "value is not a string or light userdata");
+  return r;
+}
+
+static inline const void *tk_lua_fcheckustring (lua_State *L, int i, char *name, char *field)
+{
+  void *r = (void *) tk_lua_foptustring(L, i, name, field, NULL);
+  if (r == NULL)
+    tk_lua_verror(L, 3, name, field, "field is not a string or light userdata");
   return r;
 }
 
