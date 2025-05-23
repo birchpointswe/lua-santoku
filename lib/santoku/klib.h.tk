@@ -1,4 +1,7 @@
-<% return readfile("res/khash.h") %>
-<% return readfile("res/kbtree.h") %>
-<% return readfile("res/ksort.h") %>
-<% return readfile("res/kvec.h") %>
+<% return readfile("res/khash.h"), false %>
+
+<% return readfile("res/kbtree.h"), false %>
+
+<% return readfile("res/ksort.h"), false %>
+
+<% return readfile("res/kvec.h"), false %>
