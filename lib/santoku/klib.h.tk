@@ -1,26 +1,3 @@
-#define KMEM_ALIGN 8
-#define kmalloc(size) \
-  ({ void *ptr = NULL; \
-     if (posix_memalign(&ptr, KMEM_ALIGN, (size)) != 0) ptr = NULL; \
-     ptr; })
-#define kcalloc(n, size) \
-  ({ void *ptr = NULL; \
-     if (posix_memalign(&ptr, KMEM_ALIGN, (n) * (size)) != 0) ptr = NULL; \
-     else memset(ptr, 0, (n) * (size)); \
-     ptr; })
-#define krealloc(ptr, size) \
-  ({ void *new_ptr = NULL; \
-     if (posix_memalign(&new_ptr, KMEM_ALIGN, (size)) != 0) new_ptr = NULL; \
-     else if (ptr) { \
-       memcpy(new_ptr, ptr, (size)); \
-       free(ptr); \
-     } \
-     new_ptr; })
-
 <% return readfile("res/khash.h"), false %>
-
-<% return readfile("res/kbtree.h"), false %>
-
 <% return readfile("res/ksort.h"), false %>
-
 <% return readfile("res/kvec.h"), false %>
