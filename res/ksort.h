@@ -190,12 +190,12 @@ typedef struct {
 			return;														\
 		}																\
 		for (d = 2; 1ul<<d < n; ++d);									\
-		stack = (ks_isort_stack_t*)malloc(sizeof(ks_isort_stack_t) * ((sizeof(size_t)*d)+2)); \
+		stack = (ks_isort_stack_t*)malloc(sizeof(ks_isort_stack_t) * ((sizeof(size_t)*(size_t)d)+2)); \
 		top = stack; s = a; t = a + (n-1); d <<= 1;						\
 		while (1) {														\
 			if (s < t) {												\
 				if (--d == 0) {											\
-					ks_combsort_##name(t - s + 1, s);					\
+					ks_combsort_##name((size_t) (t - s + 1), s);					\
 					t = s;												\
 					continue;											\
 				}														\
@@ -265,17 +265,6 @@ typedef struct {
 			j = (int)(drand48() * i);									\
 			tmp = a[j]; a[j] = a[i-1]; a[i-1] = tmp;					\
 		}																\
-	}																	\
-	void ks_sample_##name(size_t n, size_t r, type_t a[]) /* FIXME: NOT TESTED!!! */ \
-	{ /* reference: http://code.activestate.com/recipes/272884/ */ \
-		int i, k, pop = n; \
-		for (i = (int)r, k = 0; i >= 0; --i) { \
-			double z = 1., x = drand48(); \
-			type_t tmp; \
-			while (x < z) z -= z * i / (pop--); \
-			if (k != n - pop - 1) tmp = a[k], a[k] = a[n-pop-1], a[n-pop-1] = tmp; \
-			++k; \
-		} \
 	}
 
 #define ks_mergesort(name, n, a, t) ks_mergesort_##name(n, a, t)

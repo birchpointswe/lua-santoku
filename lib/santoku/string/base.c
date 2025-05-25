@@ -46,6 +46,8 @@ static inline int equals (lua_State *L)
   return 1;
 }
 
+static const char hex[] = "0123456789ABCDEF";
+
 static inline int to_hex (lua_State *L)
 {
   size_t size0;
@@ -53,8 +55,11 @@ static inline int to_hex (lua_State *L)
   size_t size1 = size0 * 2;
   char *out = malloc(size1 + 1);
   if (!out) return tk_lua_errmalloc(L);
-  for (size_t i = 0; i < size0; ++i)
-    sprintf(out + i * 2, "%02X", data[i]);
+  for (size_t i = 0; i < size0; ++i) {
+    unsigned char byte = data[i];
+    out[i * 2] = hex[byte >> 4];
+    out[i * 2 + 1] = hex[byte & 0x0F];
+  }
   lua_pushlstring(L, out, size1);
   free(out);
   return 1;
@@ -96,8 +101,8 @@ static inline int to_base64 (lua_State *L)
   int i, j;
   i = j = 0;
   size_t size = 0;
-  unsigned char buf[4];
-  unsigned char tmp[3];
+  unsigned char buf[4] = {0};
+  unsigned char tmp[3] = {0};
   char *out = malloc(((len * + 2) / 3) * 4);
   if (!out) return tk_lua_errmalloc(L);
   while (len--) {
