@@ -56,7 +56,7 @@ static inline int to_hex (lua_State *L)
   char *out = malloc(size1 + 1);
   if (!out) return tk_lua_errmalloc(L);
   for (size_t i = 0; i < size0; ++i) {
-    unsigned char byte = data[i];
+    unsigned char byte = (unsigned char) data[i];
     out[i * 2] = hex[byte >> 4];
     out[i * 2 + 1] = hex[byte & 0x0F];
   }
@@ -103,17 +103,17 @@ static inline int to_base64 (lua_State *L)
   size_t size = 0;
   unsigned char buf[4] = {0};
   unsigned char tmp[3] = {0};
-  char *out = malloc(((len * + 2) / 3) * 4);
+  char *out = malloc(((len + 2) / 3) * 4);
   if (!out) return tk_lua_errmalloc(L);
   while (len--) {
-    tmp[i++] = *(src++);
+    tmp[i++] = (unsigned char) *(src++);
     if (3 == i) {
       buf[0] = (tmp[0] & 0xfc) >> 2;
       buf[1] = ((tmp[0] & 0x03) << 4) + ((tmp[1] & 0xf0) >> 4);
       buf[2] = ((tmp[1] & 0x0f) << 2) + ((tmp[2] & 0xc0) >> 6);
       buf[3] = tmp[2] & 0x3f;
       for (i = 0; i < 4; ++i)
-        out[size++] = enc[buf[i]];
+        out[size++] = (char) enc[buf[i]];
       i = 0;
     }
   }
@@ -125,7 +125,7 @@ static inline int to_base64 (lua_State *L)
     buf[2] = ((tmp[1] & 0x0f) << 2) + ((tmp[2] & 0xc0) >> 6);
     buf[3] = tmp[2] & 0x3f;
     for (j = 0; (j < i + 1); ++j)
-      out[size++] = enc[buf[j]];
+      out[size++] = (char) enc[buf[j]];
     while ((i++ < 3))
       out[size++] = '=';
   }
@@ -152,7 +152,7 @@ static inline int from_base64 (lua_State *L)
         ? ('-' == src[j] || '_' == src[j])
         : ('+' == src[j] || '/' == src[j]))))
       break;
-    tmp[i++] = src[j++];
+    tmp[i++] = (unsigned char) src[j++];
     if (4 == i) {
       for (i = 0; i < 4; ++i)
         for (l = 0; l < 64; ++l)
@@ -164,7 +164,7 @@ static inline int from_base64 (lua_State *L)
       buf[1] = ((tmp[1] & 0xf) << 4) + ((tmp[2] & 0x3c) >> 2);
       buf[2] = ((tmp[2] & 0x3) << 6) + tmp[3];
       for (i = 0; i < 3; ++i)
-        out[size++] = buf[i];
+        out[size++] = (char) buf[i];
       i = 0;
     }
   }
@@ -181,7 +181,7 @@ static inline int from_base64 (lua_State *L)
     buf[1] = ((tmp[1] & 0xf) << 4) + ((tmp[2] & 0x3c) >> 2);
     buf[2] = ((tmp[2] & 0x3) << 6) + tmp[3];
     for (j = 0; (j < i - 1); ++j)
-      out[size++] = buf[j];
+      out[size++] = (char) buf[j];
   }
   lua_pushlstring(L, out, (size_t) size);
   free(out);
@@ -211,9 +211,9 @@ static inline int to_url (lua_State *L)
   if (!out) return tk_lua_errmalloc(L);
   int64_t i, j;
   for (i = 0, j = 0; i < (int64_t) size0; i ++) {
-    unsigned char d = data[i];
+    unsigned char d = (unsigned char) data[i];
     if (isalnum(d) || strchr("-_.~", d)) {
-      out[j++] = d;
+      out[j++] = (char) d;
     } else {
       sprintf(out + j, "%%%02x", d);
       j += 3;
@@ -232,7 +232,7 @@ static inline int from_url (lua_State *L) {
   if (!out) return tk_lua_errmalloc(L);
   int64_t i, j = 0;
   for (i = 0; i < (int64_t) size0; i++) {
-    unsigned char d = data[i];
+    unsigned char d = (unsigned char) data[i];
     if (d == '%') {
       if (i + 2 < (int64_t) size0) {
         char hex[3] = { data[i + 1], data[i + 2], 0 };
@@ -243,7 +243,7 @@ static inline int from_url (lua_State *L) {
         return tk_lua_error(L, "Invalid URL encoding");
       }
     } else {
-      out[j++] = d;
+      out[j++] = (char) d;
     }
   }
   lua_pushlstring(L, out, (size_t) j);
