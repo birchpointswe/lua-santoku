@@ -345,7 +345,7 @@ static inline double tk_lua_optposdouble (lua_State *L, int i, char *name, doubl
     return def;
   lua_Number l = luaL_checknumber(L, i);
   if (l < 0)
-    luaL_error(L, "value can't be negative");
+    tk_lua_verror(L, 2, name, "value is not a positive number");
   return (double) l;
 }
 

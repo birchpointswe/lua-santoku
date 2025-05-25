@@ -9,7 +9,7 @@ static inline int number (lua_State *L)
   size_t len;
   const char *str = luaL_checklstring(L, 1, &len);
   lua_Integer s = luaL_checkinteger(L, 2) - 1;
-  if (s > len)
+  if (s > (int64_t) len)
     luaL_error(L, "string index out of bounds in number conversion");
   char *end;
   double val = strtod(str + s, &end);
@@ -33,7 +33,7 @@ static inline int equals (lua_State *L)
     lua_pushboolean(L, false);
     return 1;
   }
-  if (s > chunklen) {
+  if (s > (int64_t) chunklen) {
     lua_pushboolean(L, false);
     return 1;
   }
@@ -42,7 +42,7 @@ static inline int equals (lua_State *L)
     lua_pushboolean(L, false);
     return 1;
   }
-  lua_pushboolean(L, strncmp(lit, chunk + s - 1, e - s + 1) == 0);
+  lua_pushboolean(L, strncmp(lit, chunk + s - 1, (size_t) (e - s + 1)) == 0);
   return 1;
 }
 
@@ -60,7 +60,7 @@ static inline int to_hex (lua_State *L)
     out[i * 2] = hex[byte >> 4];
     out[i * 2 + 1] = hex[byte & 0x0F];
   }
-  lua_pushlstring(L, out, size1);
+  lua_pushlstring(L, out, (size_t) size1);
   free(out);
   return 1;
 }
@@ -84,7 +84,7 @@ static inline int from_hex (lua_State *L) {
     low = (isdigit(low) ? low - '0' : (toupper(low) - 'A' + 10));
     out[i / 2] = (high << 4) | low;
   }
-  lua_pushlstring(L, out, size1);
+  lua_pushlstring(L, out, (size_t) size1);
   free(out);
   return 1;
 }
@@ -98,7 +98,7 @@ static inline int to_base64 (lua_State *L)
   const char *src = luaL_checklstring(L, 1, &len);
   bool url = lua_toboolean(L, 2);
   unsigned char *enc = url ? b64url : b64;
-  int i, j;
+  int64_t i, j;
   i = j = 0;
   size_t size = 0;
   unsigned char buf[4] = {0};
@@ -129,7 +129,7 @@ static inline int to_base64 (lua_State *L)
     while ((i++ < 3))
       out[size++] = '=';
   }
-  lua_pushlstring(L, out, size);
+  lua_pushlstring(L, out, (size_t) size);
   free(out);
   return 1;
 }
@@ -140,7 +140,7 @@ static inline int from_base64 (lua_State *L)
   const char *src = luaL_checklstring(L, 1, &len);
   bool url = lua_toboolean(L, 2);
   unsigned char *enc = url ? b64url : b64;
-  int i, j, l;
+  int64_t i, j, l;
   i = j = l = 0;
   size_t size = 0;
   unsigned char buf[3];
@@ -183,7 +183,7 @@ static inline int from_base64 (lua_State *L)
     for (j = 0; (j < i - 1); ++j)
       out[size++] = buf[j];
   }
-  lua_pushlstring(L, out, size);
+  lua_pushlstring(L, out, (size_t) size);
   free(out);
   return 1;
 }
@@ -209,8 +209,8 @@ static inline int to_url (lua_State *L)
   size_t size1 = size0 * 3;
   char *out = malloc(size1 + 1);
   if (!out) return tk_lua_errmalloc(L);
-  int i, j;
-  for (i = 0, j = 0; i < size0; i++) {
+  int64_t i, j;
+  for (i = 0, j = 0; i < (int64_t) size0; i ++) {
     unsigned char d = data[i];
     if (isalnum(d) || strchr("-_.~", d)) {
       out[j++] = d;
@@ -219,7 +219,7 @@ static inline int to_url (lua_State *L)
       j += 3;
     }
   }
-  lua_pushlstring(L, out, j);
+  lua_pushlstring(L, out, (size_t) j);
   free(out);
   return 1;
 }
@@ -230,11 +230,11 @@ static inline int from_url (lua_State *L) {
   size_t size1 = size0;
   char *out = malloc(size1 + 1);
   if (!out) return tk_lua_errmalloc(L);
-  int i, j = 0;
-  for (i = 0; i < size0; i++) {
+  int64_t i, j = 0;
+  for (i = 0; i < (int64_t) size0; i++) {
     unsigned char d = data[i];
     if (d == '%') {
-      if (i + 2 < size0) {
+      if (i + 2 < (int64_t) size0) {
         char hex[3] = { data[i + 1], data[i + 2], 0 };
         out[j++] = (char) strtol(hex, NULL, 16);
         i += 2;
@@ -246,7 +246,7 @@ static inline int from_url (lua_State *L) {
       out[j++] = d;
     }
   }
-  lua_pushlstring(L, out, j);
+  lua_pushlstring(L, out, (size_t) j);
   free(out);
   return 1;
 }
