@@ -307,6 +307,10 @@ static inline void *tk_realloc (
   void *p,
   size_t s
 ) {
+  if (s == 0) {
+    free(p);
+    return NULL;
+  }
   p = realloc(p, s);
   if (!p) {
     tk_error(L, "realloc failed", ENOMEM);
@@ -320,6 +324,8 @@ static inline void *tk_malloc (
   lua_State *L,
   size_t s
 ) {
+  if (s == 0)
+    return NULL;
   void *p = malloc(s);
   if (!p) {
     tk_error(L, "malloc failed", ENOMEM);
@@ -327,6 +333,14 @@ static inline void *tk_malloc (
   } else {
     return p;
   }
+}
+
+static inline double tk_lua_checkdouble (lua_State *L, int i, char *name)
+{
+  if (lua_type(L, i) != LUA_TNUMBER)
+    tk_lua_verror(L, 2, name, "value is not a number");
+  lua_Number l = luaL_checknumber(L, i);
+  return (double) l;
 }
 
 static inline double tk_lua_checkposdouble (lua_State *L, int i, char *name)
@@ -337,6 +351,15 @@ static inline double tk_lua_checkposdouble (lua_State *L, int i, char *name)
   if (l < 0)
     tk_lua_verror(L, 2, name, "value is not a positive number");
   return (double) l;
+}
+
+static inline const char *tk_lua_optstring (lua_State *L, int i, char *name, char *def)
+{
+  if (lua_type(L, i) < 1)
+    return def;
+  if (lua_type(L, i) != LUA_TSTRING)
+    tk_lua_verror(L, 2, name, "value is not a string");
+  return luaL_checkstring(L, i);
 }
 
 static inline double tk_lua_optposdouble (lua_State *L, int i, char *name, double def)
