@@ -151,6 +151,37 @@ static inline void *tk_lua_checkuserdata (lua_State *L, int i, char *mt)
   return p;
 }
 
+#define tk_lua_newuserdata(L, t, mt, gc) \
+  (tk_lua_newuserdata_(L, sizeof(t), mt, gc))
+static inline void *tk_lua_newuserdata_ (
+  lua_State *L,
+  size_t s,
+  char *mt,
+  lua_CFunction gc
+) {
+  void *v = lua_newuserdata(L, s);
+  if (!v)
+    tk_lua_verror(L, 2, "newuserdata failed", mt);
+  memset(v, 0, s);
+  if (luaL_newmetatable(L, mt)) {
+    lua_pushcfunction(L, gc);
+    lua_setfield(L, -2, "__gc");
+  }
+  lua_setmetatable(L, -2);
+  return v;
+}
+
+static inline void *tk_lua_testuserdata (lua_State *L, int idx, const char *tname)
+{
+  void *ud = lua_touserdata(L, idx);
+  if (ud == NULL) return NULL;
+  if (!lua_getmetatable(L, idx)) return NULL;
+  luaL_getmetatable(L, tname);
+  int equal = lua_rawequal(L, -1, -2);
+  lua_pop(L, 2);
+  return equal ? ud : NULL;
+}
+
 // TODO: include the field name in error
 static inline void *tk_lua_fcheckuserdata (lua_State *L, int i, char *field, char *mt)
 {
