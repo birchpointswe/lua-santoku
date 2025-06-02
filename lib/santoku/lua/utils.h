@@ -11,6 +11,42 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include <santoku/klib.h>
+
+#define tk_lua_hash_string(s) (kh_str_hash_func(s))
+#define tk_lua_hash_integer(s) (kh_int64_hash_func(s))
+
+static inline uint64_t tk_lua_hash_double (double x)
+{
+  // Ensure -0.0 == +0.0
+  if (x == 0.0) x = 0.0;
+  uint64_t bits;
+  memcpy(&bits, &x, sizeof(bits));
+  return tk_lua_hash_integer(bits);
+}
+
+static inline uint64_t tk_lua_hash_mix (uint64_t x) {
+  x ^= x >> 33;
+  x *= 0xff51afd7ed558ccdULL;
+  x ^= x >> 33;
+  x *= 0xc4ceb9fe1a85ec53ULL;
+  x ^= x >> 33;
+  return x;
+}
+
+static inline uint64_t tk_lua_hash_128 (
+  uint64_t lo,
+  uint64_t hi
+) {
+  uint64_t x = lo ^ (hi + 0x9e3779b97f4a7c15ULL + (lo << 6) + (lo >> 2));
+  x ^= x >> 33;
+  x *= 0xff51afd7ed558ccdULL;
+  x ^= x >> 33;
+  x *= 0xc4ceb9fe1a85ec53ULL;
+  x ^= x >> 33;
+  return x;
+}
+
 // TODO: allow caching of function lookups
 static inline void tk_lua_callmod (
   lua_State *L,
@@ -151,12 +187,48 @@ static inline void *tk_lua_checkuserdata (lua_State *L, int i, char *mt)
   return p;
 }
 
-#define tk_lua_newuserdata(L, t, mt, gc) \
-  (tk_lua_newuserdata_(L, sizeof(t), mt, gc))
+static inline void tk_lua_add_ephemeron (lua_State *L, const char *eph_key, int idx_parent, int idx_ephemeron)
+{
+  idx_parent = tk_lua_absindex(L, idx_parent);
+  idx_ephemeron = tk_lua_absindex(L, idx_ephemeron);
+  lua_getfield(L, LUA_REGISTRYINDEX, eph_key);
+  if (lua_isnil(L, -1)) {
+    lua_pop(L, 1);
+    lua_newtable(L);
+    lua_newtable(L);
+    lua_pushliteral(L, "k");
+    lua_setfield(L, -2, "__mode");
+    lua_setmetatable(L, -2);
+    lua_pushvalue(L, -1);
+    lua_setfield(L, LUA_REGISTRYINDEX, eph_key);
+  }
+  lua_pushvalue(L, idx_parent);
+  lua_pushvalue(L, idx_ephemeron);
+  lua_rawset(L, -3);
+  lua_pop(L, 1);
+}
+
+static inline void tk_lua_register (lua_State *L, luaL_Reg *regs, int nup)
+{
+  while (true) {
+    if ((*regs).name == NULL)
+      break;
+    for (int i = 0; i < nup; i ++)
+      lua_pushvalue(L, -nup); // t upsa upsb
+    lua_pushcclosure(L, (*regs).func, nup); // t upsa fn
+    lua_setfield(L, -nup - 2, (*regs).name); // t
+    regs ++;
+  }
+  lua_pop(L, nup);
+}
+
+#define tk_lua_newuserdata(L, t, mt, fns, gc) \
+  (tk_lua_newuserdata_(L, sizeof(t), mt, fns, gc))
 static inline void *tk_lua_newuserdata_ (
   lua_State *L,
   size_t s,
   char *mt,
+  luaL_Reg *fns,
   lua_CFunction gc
 ) {
   void *v = lua_newuserdata(L, s);
@@ -166,6 +238,11 @@ static inline void *tk_lua_newuserdata_ (
   if (luaL_newmetatable(L, mt)) {
     lua_pushcfunction(L, gc);
     lua_setfield(L, -2, "__gc");
+    if (fns != NULL) {
+      lua_newtable(L);
+      tk_lua_register(L, fns, 0);
+      lua_setfield(L, -2, "__index");
+    }
   }
   lua_setmetatable(L, -2);
   return v;
@@ -264,20 +341,6 @@ static inline bool tk_lua_fcheckboolean (lua_State *L, int i, char *name, char *
   return n;
 }
 
-static inline void tk_lua_register (lua_State *L, luaL_Reg *regs, int nup)
-{
-  while (true) {
-    if ((*regs).name == NULL)
-      break;
-    for (int i = 0; i < nup; i ++)
-      lua_pushvalue(L, -nup); // t upsa upsb
-    lua_pushcclosure(L, (*regs).func, nup); // t upsa fn
-    lua_setfield(L, -nup - 2, (*regs).name); // t
-    regs ++;
-  }
-  lua_pop(L, nup);
-}
-
 static uint64_t const tk_fast_multiplier = 6364136223846793005u;
 static uint64_t tk_fast_mcg_state = 0xcafef00dd15ea5e5u;
 
@@ -311,6 +374,14 @@ static inline const char *tk_lua_checkstring (lua_State *L, int i, char *name)
   if (lua_type(L, i) != LUA_TSTRING)
     tk_lua_verror(L, 3, name, "value is not a string");
   return luaL_checkstring(L, i);
+}
+
+static inline const char *tk_lua_checklstring (lua_State *L, int i, size_t *lp, char *name)
+{
+  if (lua_type(L, i) != LUA_TSTRING)
+    tk_lua_verror(L, 2, name, "value is not a string");
+  const char *s = luaL_checklstring(L, 1, lp);
+  return s;
 }
 
 static inline const char *tk_lua_fchecklstring (lua_State *L, int i, size_t *lp, char *name, char *field)
