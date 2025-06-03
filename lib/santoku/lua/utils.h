@@ -13,6 +13,11 @@
 
 #include <santoku/klib.h>
 
+#define tk_pp_str(x) #x
+#define tk_pp_xstr(x) tk_pp_str(x)
+#define tk_pp_strcat2(a, b) a##_##b
+#define tk_pp_strcat(a, b) tk_pp_strcat2(a, b)
+
 #define tk_lua_hash_string(s) (kh_str_hash_func(s))
 #define tk_lua_hash_integer(s) (kh_int64_hash_func(s))
 
