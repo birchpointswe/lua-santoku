@@ -5,6 +5,7 @@
 #include <lauxlib.h>
 #include <lualib.h>
 #include <stdint.h>
+#include <limits.h>
 #include <math.h>
 #include <errno.h>
 #include <string.h>
