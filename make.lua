@@ -7,9 +7,8 @@ local env = {
   public = true,
 
   cflags = {
-    "-march=native", "-O3", "-Wall", "-Wextra",
-    "-Wsign-compare", "-Wsign-conversion", "-Wstrict-overflow",
-    "-Wpointer-sign"
+    "-Wall", "-Wextra", "-Wsign-compare", "-Wsign-conversion",
+    "-Wstrict-overflow", "-Wpointer-sign"
   },
 
   dependencies = {
