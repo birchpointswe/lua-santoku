@@ -1,14 +1,19 @@
 local env = {
 
   name = "santoku",
-  version = "0.0.274-1",
+  version = "0.0.276-1",
   variable_prefix = "TK",
   license = "MIT",
   public = true,
 
   cflags = {
+    "-march=native", "-O3",
     "-Wall", "-Wextra", "-Wsign-compare", "-Wsign-conversion",
     "-Wstrict-overflow", "-Wpointer-sign"
+  },
+
+  ldflags = {
+    "-march=native", "-O3",
   },
 
   dependencies = {

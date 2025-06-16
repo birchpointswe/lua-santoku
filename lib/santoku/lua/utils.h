@@ -637,7 +637,6 @@ static inline unsigned int tk_lua_optunsigned (lua_State *L, int i, char *name, 
   lua_Integer l = luaL_checkinteger(L, i);
   if (l < 0)
     tk_lua_verror(L, 2, name, "value is not a positive integer");
-  lua_pop(L, 1);
   return l;
 }
 
