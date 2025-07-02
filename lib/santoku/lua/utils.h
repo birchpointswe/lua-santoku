@@ -416,12 +416,12 @@ static inline uint32_t tk_fast_random ()
   return (uint32_t) ((x ^ x >> 22) >> (22 + count));
 }
 
-static inline int tk_fast_normal (double mean, double variance)
+static inline double tk_fast_normal (double mean, double variance)
 {
   double u1 = (double) (tk_fast_random() + 1) / ((double) UINT32_MAX + 1);
   double u2 = (double) tk_fast_random() / UINT32_MAX;
   double n1 = sqrt(-2 * log(u1)) * sin(8 * atan(1) * u2);
-  return round(mean + sqrt(variance) * n1);
+  return mean + sqrt(variance) * n1;
 }
 
 static inline bool tk_lua_streq (lua_State *L, int i, char *str)
