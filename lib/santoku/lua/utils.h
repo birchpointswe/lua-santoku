@@ -372,6 +372,16 @@ static inline double tk_lua_optnumber (lua_State *L, int i, char *name, double d
   return l;
 }
 
+static inline double tk_lua_fcheckdouble (lua_State *L, int i, char *name, char *field)
+{
+  lua_getfield(L, i, field);
+  if (lua_type(L, -1) != LUA_TNUMBER)
+    tk_lua_verror(L, 3, name, field, "field is not a number");
+  lua_Number l = luaL_checknumber(L, -1);
+  lua_pop(L, 1);
+  return l;
+}
+
 static inline double tk_lua_foptnumber (lua_State *L, int i, char *name, char *field, double def)
 {
   lua_getfield(L, i, field);

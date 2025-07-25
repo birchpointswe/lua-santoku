@@ -1,6 +1,9 @@
 # Now
 
-- Bindings to khash, kbtree, kvec, kstring, etc
+- Clean up todo
+- Fix naming inconsistencies with checknumber, optdouble, etc (use "double")
+
+# Next
 
 - io, os, math, coroutine, package
 
