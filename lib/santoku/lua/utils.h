@@ -140,6 +140,18 @@ static inline bool tk_lua_optboolean (lua_State *L, int i, char *name, bool def)
   return b;
 }
 
+static inline char *tk_lua_foptstring (lua_State *L, int i, char *name, char *field, char *def)
+{
+  lua_getfield(L, i, field);
+  if (lua_type(L, -1) < 1)
+    return def;
+  if (lua_type(L, -1) != LUA_TSTRING)
+    tk_lua_verror(L, 3, name, field, "field is not a string");
+  const char *b = lua_tostring(L, -1);
+  lua_pop(L, 1);
+  return (char *) b;
+}
+
 static inline bool tk_lua_foptboolean (lua_State *L, int i, char *name, char *field, bool def)
 {
   lua_getfield(L, i, field);
