@@ -585,13 +585,11 @@ Comprehensive Lua C API utilities.
 | `tk_lua_checkustring(L, i, name)` | Check string or light userdata |
 | `tk_lua_optustring(L, i, name, d)` | Optional string or light userdata |
 
-### `santoku/klib.h.tk`
-Template file that generates `klib.h` by including klib components.
+### `santoku/klib.h`
+Auto-generated header file that includes various lightly modified klib components.
 
 Includes:
 - `khash.h` - Hash table implementation
 - `kbtree.h` - B-tree implementation
 - `ksort.h` - Sorting algorithms
 - `kvec.h` - Dynamic array implementation
-
-This is a template file processed during build to generate the final `klib.h` header containing efficient C data structures from the klib library.
