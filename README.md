@@ -1,6 +1,6 @@
-# Santoku (base library)
+# Santoku
 
-Santoku is a comprehensive Lua utility library providing functional programming, asynchronous operations, data manipulation, testing, and system interaction capabilities.
+Santoku is a Lua utility library providing functional programming, asynchronous operations, data manipulation, testing, and system interaction capabilities.
 
 ## Module Reference
 
@@ -51,7 +51,7 @@ Asynchronous programming utilities with event-driven patterns.
 | `loop` | `loop_fn, final_fn` | `nil` | Creates async loop |
 | `id` | `callback, ...` | `nil` | Identity function with callback |
 | `ipairs` | `callback, table, userdata` | `nil` | Async ipairs iteration |
-| `events` | `()` | `emitter` | Creates event emitter with `on`, `off`, `emit`, `process` |
+| `events` | `-` | `emitter` | Creates event emitter with `on`, `off`, `emit`, `process` |
 
 ### `santoku.bench`
 Simple benchmarking utility.
@@ -229,7 +229,7 @@ Function-level performance profiling.
 
 | Function | Arguments | Returns | Description |
 |----------|-----------|---------|-------------|
-| `profiler` | `()` | `function` | Creates profiling function returning report generator |
+| `profiler` | `-` | `function` | Creates profiling function returning report generator |
 
 ### `santoku.random`
 Random number and data generation.
@@ -239,14 +239,14 @@ Random number and data generation.
 | `seed` | `[time]` | `nil` | Seeds random generator |
 | `str` | `length, [min_char], [max_char]` | `string` | Random string |
 | `num` | `[min], [max]` | `number` | Random number |
-| `norm` | `()` | `number` | Normal distribution random |
+| `norm` | `-` | `number` | Normal distribution random |
 | `alnum` | `length` | `string` | Alphanumeric string |
 | `options` | `params, [each_fn], [unique], [chunk_size]` | `iterator` | Random combinations |
 
 #### C Extension: `santoku.random.fast`
 | Function | Arguments | Returns | Description |
 |----------|-----------|---------|-------------|
-| `fast_random` | `()` | `integer` | Fast random number using MCG algorithm |
+| `fast_random` | `-` | `integer` | Fast random number using MCG algorithm |
 | `fast_normal` | `mean, variance` | `number` | Normal distribution using Box-Muller |
 | `fast_max` | - | `constant` | Maximum value (UINT32_MAX) |
 
@@ -331,14 +331,14 @@ Line-by-line execution tracing.
 
 | Function | Arguments | Returns | Description |
 |----------|-----------|---------|-------------|
-| `tracer` | `()` | `function` | Creates tracing function returning stop function |
+| `tracer` | `-` | `function` | Creates tracing function returning stop function |
 
 ### `santoku.utc`
 UTC time utilities.
 
 | Function | Arguments | Returns | Description |
 |----------|-----------|---------|-------------|
-| `stopwatch` | `()` | `function` | Creates stopwatch returning (duration, total) |
+| `stopwatch` | `-` | `function` | Creates stopwatch returning (duration, total) |
 
 #### C Extension: `santoku.utc.capi`
 | Function | Arguments | Returns | Description |
@@ -586,7 +586,7 @@ Comprehensive Lua C API utilities.
 | `tk_lua_optustring(L, i, name, d)` | Optional string or light userdata |
 
 ### `santoku/klib.h`
-Auto-generated header file that includes various lightly modified klib components.
+Template file for generating klib header includes.
 
 Includes:
 - `khash.h` - Hash table implementation

@@ -2,6 +2,7 @@
 
 - Clean up todo
 - Fix naming inconsistencies with checknumber, optdouble, etc (use "double")
+- Remove/deprecate execinfo
 
 # Next
 
