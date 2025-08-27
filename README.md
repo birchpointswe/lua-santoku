@@ -102,7 +102,7 @@ Functional programming utilities and operator binding.
 | `take` | `fn, n` | `function` | Takes first n arguments |
 | `choose` | `cond, true_fn, false_fn, ...` | `result` | Conditional function selection |
 | `id` | `...` | `...` | Identity function |
-| `noop` | `()` | `nil` | No-operation function |
+| `noop` | `-` | `-` | No-operation function |
 | `const` | `x` | `function` | Returns constant function |
 | `get` | `property` | `function` | Property getter |
 | `tget` | `table` | `function` | Table-specific getter |
