@@ -248,7 +248,7 @@ Random number and data generation.
 |----------|-----------|---------|-------------|
 | `fast_random` | `-` | `integer` | Fast random number using MCG algorithm |
 | `fast_normal` | `mean, variance` | `number` | Normal distribution using Box-Muller |
-| `fast_max` | - | `constant` | Maximum value (UINT32_MAX) |
+| `fast_max` | `-` | `constant` | Maximum value (UINT32_MAX) |
 
 ### `santoku.serialize`
 Lua value serialization.
