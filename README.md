@@ -475,11 +475,11 @@ Comprehensive Lua C API utilities.
 #### Hash Functions
 | Function | Description |
 |----------|-------------|
-| `tk_lua_hash_string(s)` | Hash string using kh_str_hash_func |
-| `tk_lua_hash_integer(s)` | Hash integer using kh_int64_hash_func |
-| `tk_lua_hash_double(x)` | Hash double with -0.0 == +0.0 normalization |
-| `tk_lua_hash_mix(x)` | Mix hash using multiplication |
-| `tk_lua_hash_128(lo, hi)` | Hash 128-bit value |
+| `tk_hash_string(s)` | Hash string using kh_str_hash_func |
+| `tk_hash_integer(s)` | Hash integer using kh_int64_hash_func |
+| `tk_hash_double(x)` | Hash double with -0.0 == +0.0 normalization |
+| `tk_hash_mix(x)` | Mix hash using multiplication |
+| `tk_hash_128(lo, hi)` | Hash 128-bit value |
 
 #### Error Handling
 | Function | Description |
@@ -575,6 +575,10 @@ Comprehensive Lua C API utilities.
 |----------|-------------|
 | `tk_fast_random()` | Fast MCG random number generator |
 | `tk_fast_normal(mean, variance)` | Normal distribution random |
+| `tk_fast_seed(r)` | Seed the fast random generator with time and r |
+| `tk_fast_drand()` | Random double between 0 and 1 |
+| `tk_fast_index(n)` | Random index from 0 to n-1 |
+| `tk_fast_chance(p)` | Returns true with probability p |
 
 #### String Utilities
 | Function | Description |

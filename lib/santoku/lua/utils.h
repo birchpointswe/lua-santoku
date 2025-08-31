@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <math.h>
+#include <time.h>
 #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
@@ -19,19 +20,19 @@
 #define tk_pp_strcat2(a, b) a##_##b
 #define tk_pp_strcat(a, b) tk_pp_strcat2(a, b)
 
-#define tk_lua_hash_string(s) (kh_str_hash_func(s))
-#define tk_lua_hash_integer(s) (kh_int64_hash_func(s))
+#define tk_hash_string(s) (kh_str_hash_func(s))
+#define tk_hash_integer(s) (kh_int64_hash_func(s))
 
-static inline uint64_t tk_lua_hash_double (double x)
+static inline uint64_t tk_hash_double (double x)
 {
   // Ensure -0.0 == +0.0
   if (x == 0.0) x = 0.0;
   uint64_t bits;
   memcpy(&bits, &x, sizeof(bits));
-  return tk_lua_hash_integer(bits);
+  return tk_hash_integer(bits);
 }
 
-static inline uint64_t tk_lua_hash_mix (uint64_t x) {
+static inline uint64_t tk_hash_mix (uint64_t x) {
   x ^= x >> 33;
   x *= 0xff51afd7ed558ccdULL;
   x ^= x >> 33;
@@ -40,7 +41,7 @@ static inline uint64_t tk_lua_hash_mix (uint64_t x) {
   return x;
 }
 
-static inline uint64_t tk_lua_hash_128 (
+static inline uint64_t tk_hash_128 (
   uint64_t lo,
   uint64_t hi
 ) {
@@ -444,6 +445,27 @@ static inline double tk_fast_normal (double mean, double variance)
   double u2 = (double) tk_fast_random() / UINT32_MAX;
   double n1 = sqrt(-2 * log(u1)) * sin(8 * atan(1) * u2);
   return mean + sqrt(variance) * n1;
+}
+
+static inline void tk_fast_seed (uint64_t r)
+{
+  uint64_t raw = (uint64_t) time(NULL) ^ ((uint64_t) r << 32);
+  tk_fast_mcg_state = tk_hash_mix(raw);
+}
+
+static inline double tk_fast_drand ()
+{
+  return ((double)tk_fast_random()) / ((double)UINT32_MAX);
+}
+
+static inline double tk_fast_index (unsigned int n)
+{
+  return tk_fast_random() % n;
+}
+
+static inline bool tk_fast_chance (double p)
+{
+  return tk_fast_drand() <= p;
 }
 
 static inline bool tk_lua_streq (lua_State *L, int i, char *str)
