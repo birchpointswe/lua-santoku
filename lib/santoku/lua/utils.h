@@ -429,7 +429,7 @@ static inline bool tk_lua_fcheckboolean (lua_State *L, int i, char *name, char *
 }
 
 static uint64_t const tk_fast_multiplier = 6364136223846793005u;
-static uint64_t tk_fast_mcg_state = 0xcafef00dd15ea5e5u;
+static uint64_t __thread tk_fast_mcg_state = 0xcafef00dd15ea5e5u;
 
 static inline uint32_t tk_fast_random ()
 {
@@ -458,7 +458,7 @@ static inline double tk_fast_drand ()
   return ((double)tk_fast_random()) / ((double)UINT32_MAX);
 }
 
-static inline double tk_fast_index (unsigned int n)
+static inline unsigned int tk_fast_index (unsigned int n)
 {
   return tk_fast_random() % n;
 }

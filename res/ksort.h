@@ -262,7 +262,7 @@ typedef struct {
 		int i, j;														\
 		for (i = n; i > 1; --i) {										\
 			type_t tmp;													\
-			j = (int)(drand48() * i);									\
+			j = (int)(tk_fast_drand() * i);									\
 			tmp = a[j]; a[j] = a[i-1]; a[i-1] = tmp;					\
 		}																\
 	}

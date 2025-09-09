@@ -1,3 +1,4 @@
+#include <santoku/lua/utils.h>
 <% return readfile("res/khash.h"), false %>
 <% return readfile("res/kbtree.h"), false %>
 <% return readfile("res/ksort.h"), false %>
