@@ -246,9 +246,9 @@ Random number and data generation.
 #### C Extension: `santoku.random.fast`
 | Function | Arguments | Returns | Description |
 |----------|-----------|---------|-------------|
-| `fast_random` | `-` | `integer` | Fast random number using MCG algorithm |
-| `fast_normal` | `mean, variance` | `number` | Normal distribution using Box-Muller |
-| `fast_max` | `-` | `constant` | Maximum value (UINT32_MAX) |
+| `fast_random` | `-` | `integer` | Fast random number using MCG (Multiplicative Congruential Generator) algorithm |
+| `fast_normal` | `mean, variance` | `number` | Normal distribution using Box-Muller transform |
+| `fast_max` | `-` | `integer` | Maximum value constant (UINT32_MAX = 4294967295) |
 
 ### `santoku.serialize`
 Lua value serialization.
@@ -573,11 +573,11 @@ Comprehensive Lua C API utilities.
 #### Random Number Generation
 | Function | Description |
 |----------|-------------|
-| `tk_fast_random()` | Fast MCG random number generator |
+| `tk_fast_random()` | Fast MCG random number generator (thread-safe via thread-local storage) |
 | `tk_fast_normal(mean, variance)` | Normal distribution random |
 | `tk_fast_seed(r)` | Seed the fast random generator with time and r |
 | `tk_fast_drand()` | Random double between 0 and 1 |
-| `tk_fast_index(n)` | Random index from 0 to n-1 |
+| `tk_fast_index(n)` | Random unsigned integer index from 0 to n-1 |
 | `tk_fast_chance(p)` | Returns true with probability p |
 
 #### String Utilities
@@ -595,5 +595,28 @@ Template file for generating klib header includes.
 Includes:
 - `khash.h` - Hash table implementation
 - `kbtree.h` - B-tree implementation
-- `ksort.h` - Sorting algorithms
+- `ksort.h` - Sorting algorithms (uses `tk_fast_drand()` for randomized pivots)
 - `kvec.h` - Dynamic array implementation
+
+## License
+
+MIT License
+
+Copyright 2025 Birch Point SWE
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
