@@ -289,59 +289,48 @@ static inline void tk_lua_get_ephemeron (lua_State *L, const char *eph_key, void
 static inline void tk_lua_del_ephemeron (lua_State *L, const char *eph_key, int idx_parent, void *e)
 {
   idx_parent = (idx_parent == LUA_NOREF) ? LUA_NOREF : tk_lua_absindex(L, idx_parent);
-
-  // First, get the ephemeron object from the lookup table
   char u_key[256];
   snprintf(u_key, sizeof(u_key), "%s%s", eph_key, tk_lua_eph_key_suffix);
   lua_getfield(L, LUA_REGISTRYINDEX, u_key); // lookup
   if (lua_isnil(L, -1)) {
     lua_pop(L, 1);
-    return; // No lookup table exists
+    return;
   }
-
-  lua_pushlightuserdata(L, e); // lookup e
-  lua_rawget(L, -2); // lookup ephemeron
+  lua_pushlightuserdata(L, e);
+  lua_rawget(L, -2);
   if (lua_isnil(L, -1)) {
     lua_pop(L, 2);
-    return; // Ephemeron not found
+    return;
   }
-
-  // Get the main ephemeron table
-  lua_getfield(L, LUA_REGISTRYINDEX, eph_key); // lookup ephemeron eph
+  lua_getfield(L, LUA_REGISTRYINDEX, eph_key);
   if (lua_isnil(L, -1)) {
     lua_pop(L, 3);
-    return; // Main table doesn't exist
+    return;
   }
-
   if (idx_parent == LUA_NOREF) {
-    // Remove from all parents
-    lua_pushnil(L); // lookup ephemeron eph nil
-    while (lua_next(L, -2) != 0) { // lookup ephemeron eph parent child_table
+    lua_pushnil(L);
+    while (lua_next(L, -2) != 0) {
       if (lua_type(L, -1) == LUA_TTABLE) {
-        lua_pushvalue(L, -4); // lookup ephemeron eph parent child_table ephemeron
-        lua_pushnil(L); // lookup ephemeron eph parent child_table ephemeron nil
-        lua_rawset(L, -3); // lookup ephemeron eph parent child_table
+        lua_pushvalue(L, -4);
+        lua_pushnil(L);
+        lua_rawset(L, -3);
       }
-      lua_pop(L, 1); // lookup ephemeron eph parent
+      lua_pop(L, 1);
     }
-
-    // Remove from lookup table when removing from all parents
-    lua_pushlightuserdata(L, e); // lookup ephemeron eph e
-    lua_pushnil(L); // lookup ephemeron eph e nil
-    lua_rawset(L, -5); // lookup ephemeron eph
+    lua_pushlightuserdata(L, e);
+    lua_pushnil(L);
+    lua_rawset(L, -5);
   } else {
-    // Remove from specific parent only
-    lua_pushvalue(L, idx_parent); // lookup ephemeron eph parent
-    lua_rawget(L, -2); // lookup ephemeron eph child_table
+    lua_pushvalue(L, idx_parent);
+    lua_rawget(L, -2);
     if (!lua_isnil(L, -1) && lua_type(L, -1) == LUA_TTABLE) {
-      lua_pushvalue(L, -3); // lookup ephemeron eph child_table ephemeron
-      lua_pushnil(L); // lookup ephemeron eph child_table ephemeron nil
-      lua_rawset(L, -3); // lookup ephemeron eph child_table
+      lua_pushvalue(L, -3);
+      lua_pushnil(L);
+      lua_rawset(L, -3);
     }
-    lua_pop(L, 1); // lookup ephemeron eph
+    lua_pop(L, 1);
   }
-
-  lua_pop(L, 3); // Clean up stack
+  lua_pop(L, 3);
 }
 
 static inline void tk_lua_register (lua_State *L, luaL_Reg *regs, int nup)
