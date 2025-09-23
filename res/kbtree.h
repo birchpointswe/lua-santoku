@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #define KB_MAX_DEPTH 64
 
@@ -56,16 +57,17 @@ typedef struct {
 		int	off_key, off_ptr, ilen, elen;		\
 		int	n, t;								\
 		int	n_keys, n_nodes;					\
+		bool lua_managed;						\
 	} kbtree_##name##_t;
 
 #define __KB_INIT(name, key_t)											\
-	kbtree_##name##_t *kb_init_##name(int size)							\
+	int kb_init_##name(kbtree_##name##_t *b, int size, bool lua_managed)	\
 	{																	\
-		kbtree_##name##_t *b;											\
-		b = (kbtree_##name##_t*)calloc(1, sizeof(kbtree_##name##_t));	\
+		memset(b, 0, sizeof(kbtree_##name##_t));						\
+		b->lua_managed = lua_managed;									\
 		b->t = ((size - 4 - sizeof(void*)) / (sizeof(void*) + sizeof(key_t)) + 1) >> 1; \
 		if (b->t < 2) {													\
-			free(b); return 0;											\
+			return -1;													\
 		}																\
 		b->n = 2 * b->t - 1;											\
 		b->off_ptr = 4 + b->n * sizeof(key_t);							\
@@ -73,13 +75,13 @@ typedef struct {
 		b->elen = (b->off_ptr + 3) >> 2 << 2;							\
 		b->root = (kbnode_t*)calloc(1, b->ilen);						\
 		++b->n_nodes;													\
-		return b;														\
+		return 0;														\
 	}
 
 #define __kb_destroy(b) do {											\
 		int i, max = 8;													\
 		kbnode_t *x, **top, **stack = 0;								\
-		if (b) {														\
+		if ((b) && (b)->root) {											\
 			top = stack = (kbnode_t**)calloc(max, sizeof(kbnode_t*));	\
 			*top++ = (b)->root;											\
 			while (top != stack) {										\
@@ -96,8 +98,8 @@ typedef struct {
 					}													\
 				free(x);												\
 			}															\
+			free(stack);												\
 		}																\
-		free(b); free(stack);											\
 	} while (0)
 
 #define __KB_GET_AUX1(name, key_t, __cmp)								\
@@ -374,7 +376,7 @@ typedef struct {
 #define KB_DEFAULT_SIZE 512
 
 #define kbtree_t(name) kbtree_##name##_t
-#define kb_init(name, s) kb_init_##name(s)
+#define kb_init(name, b, s, lua_managed) kb_init_##name(b, s, lua_managed)
 #define kb_destroy(name, b) __kb_destroy(b)
 #define kb_get(name, b, k) kb_get_##name(b, k)
 #define kb_put(name, b, k) kb_put_##name(b, k)

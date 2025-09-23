@@ -49,11 +49,12 @@ int main() {
 #define AC_KVEC_H
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 #define kv_roundup32(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
 
-#define kvec_t(type) struct { size_t n, m; type *a; }
-#define kv_init(v) ((v).n = (v).m = 0, (v).a = 0)
+#define kvec_t(type) struct { size_t n, m; type *a; bool lua_managed; }
+#define kv_init(v, lua_managed) ((v).n = (v).m = 0, (v).a = 0, (v).lua_managed = (lua_managed))
 #define kv_destroy(v) free((v).a)
 #define kv_A(v, i) ((v).a[(i)])
 #define kv_pop(v) ((v).a[--(v).n])

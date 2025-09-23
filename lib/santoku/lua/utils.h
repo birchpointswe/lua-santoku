@@ -23,6 +23,9 @@
 #define tk_hash_string(s) (kh_str_hash_func(s))
 #define tk_hash_integer(s) (kh_int64_hash_func(s))
 
+#define tk_max(a,b) ((a) > (b) ? (a) : (b))
+#define tk_min(a,b) ((a) < (b) ? (a) : (b))
+
 static inline uint64_t tk_hash_double (double x)
 {
   // Ensure -0.0 == +0.0
@@ -281,6 +284,64 @@ static inline void tk_lua_get_ephemeron (lua_State *L, const char *eph_key, void
   lua_pushlightuserdata(L, e); // lookup e
   lua_gettable(L, -2); // lookup v
   lua_remove(L, -2); // v
+}
+
+static inline void tk_lua_del_ephemeron (lua_State *L, const char *eph_key, int idx_parent, void *e)
+{
+  idx_parent = (idx_parent == LUA_NOREF) ? LUA_NOREF : tk_lua_absindex(L, idx_parent);
+
+  // First, get the ephemeron object from the lookup table
+  char u_key[256];
+  snprintf(u_key, sizeof(u_key), "%s%s", eph_key, tk_lua_eph_key_suffix);
+  lua_getfield(L, LUA_REGISTRYINDEX, u_key); // lookup
+  if (lua_isnil(L, -1)) {
+    lua_pop(L, 1);
+    return; // No lookup table exists
+  }
+
+  lua_pushlightuserdata(L, e); // lookup e
+  lua_rawget(L, -2); // lookup ephemeron
+  if (lua_isnil(L, -1)) {
+    lua_pop(L, 2);
+    return; // Ephemeron not found
+  }
+
+  // Get the main ephemeron table
+  lua_getfield(L, LUA_REGISTRYINDEX, eph_key); // lookup ephemeron eph
+  if (lua_isnil(L, -1)) {
+    lua_pop(L, 3);
+    return; // Main table doesn't exist
+  }
+
+  if (idx_parent == LUA_NOREF) {
+    // Remove from all parents
+    lua_pushnil(L); // lookup ephemeron eph nil
+    while (lua_next(L, -2) != 0) { // lookup ephemeron eph parent child_table
+      if (lua_type(L, -1) == LUA_TTABLE) {
+        lua_pushvalue(L, -4); // lookup ephemeron eph parent child_table ephemeron
+        lua_pushnil(L); // lookup ephemeron eph parent child_table ephemeron nil
+        lua_rawset(L, -3); // lookup ephemeron eph parent child_table
+      }
+      lua_pop(L, 1); // lookup ephemeron eph parent
+    }
+
+    // Remove from lookup table when removing from all parents
+    lua_pushlightuserdata(L, e); // lookup ephemeron eph e
+    lua_pushnil(L); // lookup ephemeron eph e nil
+    lua_rawset(L, -5); // lookup ephemeron eph
+  } else {
+    // Remove from specific parent only
+    lua_pushvalue(L, idx_parent); // lookup ephemeron eph parent
+    lua_rawget(L, -2); // lookup ephemeron eph child_table
+    if (!lua_isnil(L, -1) && lua_type(L, -1) == LUA_TTABLE) {
+      lua_pushvalue(L, -3); // lookup ephemeron eph child_table ephemeron
+      lua_pushnil(L); // lookup ephemeron eph child_table ephemeron nil
+      lua_rawset(L, -3); // lookup ephemeron eph child_table
+    }
+    lua_pop(L, 1); // lookup ephemeron eph
+  }
+
+  lua_pop(L, 3); // Clean up stack
 }
 
 static inline void tk_lua_register (lua_State *L, luaL_Reg *regs, int nup)
@@ -618,6 +679,14 @@ static inline lua_Integer tk_lua_checkinteger (lua_State *L, int i, char *name)
   return l;
 }
 
+static inline lua_Integer tk_lua_checknumber (lua_State *L, int i, char *name)
+{
+  if (lua_type(L, i) != LUA_TNUMBER)
+    tk_lua_verror(L, 2, name, "value is not an integer");
+  lua_Integer l = luaL_checknumber(L, i);
+  return l;
+}
+
 static inline lua_Integer tk_lua_foptinteger (lua_State *L, int i, char *name, char *field, lua_Integer def)
 {
   lua_getfield(L, i, field);
@@ -701,6 +770,7 @@ static inline FILE *tk_lua_fmemopen (lua_State *L, char *data, size_t size, cons
 {
   FILE *fh = fmemopen(data, size, flag);
   if (fh) return fh;
+  if (!L) return NULL; // Silently fail when L=NULL
   int e = errno;
   lua_settop(L, 0);
   lua_pushstring(L, "Error opening string as file");
@@ -714,6 +784,7 @@ static inline FILE *tk_lua_fopen (lua_State *L, const char *fp, const char *flag
 {
   FILE *fh = fopen(fp, flag);
   if (fh) return fh;
+  if (!L) return NULL; // Silently fail when L=NULL
   int e = errno;
   lua_settop(L, 0);
   lua_pushstring(L, "Error opening file");
@@ -727,6 +798,7 @@ static inline FILE *tk_lua_fopen (lua_State *L, const char *fp, const char *flag
 static inline void tk_lua_fclose (lua_State *L, FILE *fh)
 {
   if (!fclose(fh)) return;
+  if (!L) return; // Silently fail when L=NULL
   int e = errno;
   lua_settop(L, 0);
   lua_pushstring(L, "Error closing file");
@@ -739,6 +811,7 @@ static inline void tk_lua_fwrite (lua_State *L, void *data, size_t size, size_t 
 {
   fwrite(data, size, memb, fh);
   if (!ferror(fh)) return;
+  if (!L) return; // Silently fail when L=NULL
   int e = errno;
   lua_settop(L, 0);
   lua_pushstring(L, "Error writing to file");
@@ -751,6 +824,7 @@ static inline void tk_lua_fread (lua_State *L, void *data, size_t size, size_t m
 {
   size_t r = fread(data, size, memb, fh);
   if (!ferror(fh) || !r) return;
+  if (!L) return; // Silently fail when L=NULL
   int e = errno;
   lua_settop(L, 0);
   lua_pushstring(L, "Error reading from file");
@@ -763,6 +837,7 @@ static inline void tk_lua_fseek (lua_State *L, size_t size, size_t memb, FILE *f
 {
   int r = fseek(fh, (long) (size * memb), SEEK_CUR);
   if (!ferror(fh) || !r) return;
+  if (!L) return; // Silently fail when L=NULL
   int e = errno;
   lua_settop(L, 0);
   lua_pushstring(L, "Error reading from file");
@@ -774,26 +849,31 @@ static inline void tk_lua_fseek (lua_State *L, size_t size, size_t memb, FILE *f
 static inline char *tk_lua_fslurp (lua_State *L, FILE *fh, size_t *len)
 {
   if (fseek(fh, 0, SEEK_END) != 0) {
-    tk_lua_errno(L, errno);
+    if (L)
+      tk_lua_errno(L, errno);
     return NULL;
   }
   long size = ftell(fh);
   if (size < 0) {
-    tk_lua_errno(L, errno);
+    if (L)
+      tk_lua_errno(L, errno);
     return NULL;
   }
   if (fseek(fh, 0, SEEK_SET) != 0) {
-    tk_lua_errno(L, errno);
+    if (L)
+      tk_lua_errno(L, errno);
     return NULL;
   }
   char *buffer = malloc((size_t) size);
   if (!buffer) {
-    tk_lua_errmalloc(L);
+    if (L)
+      tk_lua_errmalloc(L);
     return NULL;
   }
   if (fread(buffer, 1, (size_t) size, fh) != (size_t) size) {
     free(buffer);
-    tk_lua_errno(L, errno);
+    if (L)
+      tk_lua_errno(L, errno);
     return NULL;
   }
   *len = (size_t) size;

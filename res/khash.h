@@ -128,6 +128,7 @@ int main() {
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <stdbool.h>
 
 /* compiler specific configuration */
 
@@ -197,10 +198,11 @@ static const double __ac_HASH_UPPER = 0.77;
 		khint32_t *flags; \
 		khkey_t *keys; \
 		khval_t *vals; \
+		bool lua_managed; \
 	} kh_##name##_t;
 
 #define __KHASH_PROTOTYPES(name, khkey_t, khval_t)	 					\
-	extern kh_##name##_t *kh_init_##name(void);							\
+	extern void kh_init_##name(kh_##name##_t *h, bool lua_managed);		\
 	extern void kh_destroy_##name(kh_##name##_t *h);					\
 	extern void kh_clear_##name(kh_##name##_t *h);						\
 	extern khint_t kh_get_##name(const kh_##name##_t *h, khkey_t key); 	\
@@ -209,15 +211,16 @@ static const double __ac_HASH_UPPER = 0.77;
 	extern void kh_del_##name(kh_##name##_t *h, khint_t x);
 
 #define __KHASH_IMPL(name, SCOPE, khkey_t, khval_t, kh_is_map, __hash_func, __hash_equal) \
-	SCOPE kh_##name##_t *kh_init_##name(void) {							\
-		return (kh_##name##_t*)kcalloc(1, sizeof(kh_##name##_t));		\
+	SCOPE void kh_init_##name(kh_##name##_t *h, bool lua_managed) {		\
+		memset(h, 0, sizeof(kh_##name##_t));							\
+		h->lua_managed = lua_managed;									\
 	}																	\
 	SCOPE void kh_destroy_##name(kh_##name##_t *h)						\
 	{																	\
 		if (h) {														\
 			kfree((void *)h->keys); kfree(h->flags);					\
 			kfree((void *)h->vals);										\
-			kfree(h);													\
+			memset(h, 0, sizeof(kh_##name##_t));						\
 		}																\
 	}																	\
 	SCOPE void kh_clear_##name(kh_##name##_t *h)						\
@@ -432,11 +435,12 @@ static kh_inline khint_t __ac_Wang_hash(khint_t key)
 #define khash_t(name) kh_##name##_t
 
 /*! @function
-  @abstract     Initiate a hash table.
-  @param  name  Name of the hash table [symbol]
-  @return       Pointer to the hash table [khash_t(name)*]
+  @abstract     Initiate a hash table in-place.
+  @param  name         Name of the hash table [symbol]
+  @param  h            Pointer to hash table struct [khash_t(name)*]
+  @param  lua_managed  Whether the struct is managed by Lua GC [bool]
  */
-#define kh_init(name) kh_init_##name()
+#define kh_init(name, h, lua_managed) kh_init_##name(h, lua_managed)
 
 /*! @function
   @abstract     Destroy a hash table.

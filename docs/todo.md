@@ -1,10 +1,10 @@
 # Now
 
-- Clean up todo
+- Clean up todo, lots of old/irrelevant stuff in here
 - Fix naming inconsistencies with checknumber, optdouble, etc (use "double")
 - Remove/deprecate execinfo
 
-# Next
+# Backlog
 
 - io, os, math, coroutine, package
 
