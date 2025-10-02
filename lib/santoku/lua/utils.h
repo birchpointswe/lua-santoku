@@ -347,6 +347,13 @@ static inline void tk_lua_register (lua_State *L, luaL_Reg *regs, int nup)
   lua_pop(L, nup);
 }
 
+static inline void tk_lua_replace (lua_State *L, int idx, int n)
+{
+  idx = tk_lua_absindex(L, idx);
+  for (int i = n - 1; i >= 0; i--)
+    lua_replace(L, idx + i);
+}
+
 #define tk_lua_newuserdata(L, t, mt, fns, gc) \
   (tk_lua_newuserdata_(L, sizeof(t), mt, fns, gc))
 static inline void *tk_lua_newuserdata_ (
