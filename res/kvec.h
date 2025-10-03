@@ -56,36 +56,61 @@ int main() {
 #define kvec_t(type) struct { size_t n, m; type *a; bool lua_managed; }
 #define kv_init(v, lua_managed) ((v).n = (v).m = 0, (v).a = 0, (v).lua_managed = (lua_managed))
 #define kv_destroy(v) free((v).a)
-#define kv_A(v, i) ((v).a[(i)])
 #define kv_pop(v) ((v).a[--(v).n])
 #define kv_size(v) ((v).n)
 #define kv_max(v) ((v).m)
 
-#define kv_resize(type, v, s)  ((v).m = (s), (v).a = (type*)realloc((v).a, sizeof(type) * (v).m))
+#define kv_resize(type, v, s) ({ \
+	size_t _new_m = (s); \
+	type *_new_a = (type*)realloc((v).a, sizeof(type) * _new_m); \
+	int _ok = (_new_a != NULL || _new_m == 0); \
+	if (_ok) { (v).a = _new_a; (v).m = _new_m; } \
+	_ok ? 0 : -1; \
+})
 
-#define kv_copy(type, v1, v0) do {							\
-		if ((v1).m < (v0).n) kv_resize(type, v1, (v0).n);	\
-		(v1).n = (v0).n;									\
-		memcpy((v1).a, (v0).a, sizeof(type) * (v0).n);		\
-	} while (0)												\
+#define kv_copy(type, v1, v0) ({ \
+	int _rc = 0; \
+	if ((v1).m < (v0).n) { \
+		_rc = kv_resize(type, v1, (v0).n); \
+	} \
+	if (_rc == 0) { \
+		(v1).n = (v0).n; \
+		memcpy((v1).a, (v0).a, sizeof(type) * (v0).n); \
+	} \
+	_rc; \
+})
 
-#define kv_push(type, v, x) do {									\
-		if ((v).n == (v).m) {										\
-			(v).m = (v).m? (v).m<<1 : 2;							\
-			(v).a = (type*)realloc((v).a, sizeof(type) * (v).m);	\
-		}															\
-		(v).a[(v).n++] = (x);										\
-	} while (0)
+#define kv_push(type, v, x) ({ \
+	int _rc = 0; \
+	if ((v).n == (v).m) { \
+		size_t _new_m = (v).m ? (v).m << 1 : 2; \
+		type *_new_a = (type*)realloc((v).a, sizeof(type) * _new_m); \
+		if (_new_a == NULL) { \
+			_rc = -1; \
+		} else { \
+			(v).a = _new_a; \
+			(v).m = _new_m; \
+		} \
+	} \
+	if (_rc == 0) \
+		(v).a[(v).n++] = (x); \
+	_rc; \
+})
 
-#define kv_pushp(type, v) (((v).n == (v).m)?							\
-						   ((v).m = ((v).m? (v).m<<1 : 2),				\
-							(v).a = (type*)realloc((v).a, sizeof(type) * (v).m), 0)	\
-						   : 0), ((v).a + ((v).n++))
-
-#define kv_a(type, v, i) (((v).m <= (size_t)(i)? \
-						  ((v).m = (v).n = (i) + 1, kv_roundup32((v).m), \
-						   (v).a = (type*)realloc((v).a, sizeof(type) * (v).m), 0) \
-						  : (v).n <= (size_t)(i)? (v).n = (i) + 1 \
-						  : 0), (v).a[(i)])
+#define kv_pushp(type, v) ({ \
+	type *_ret = NULL; \
+	if ((v).n == (v).m) { \
+		size_t _new_m = (v).m ? (v).m << 1 : 2; \
+		type *_new_a = (type*)realloc((v).a, sizeof(type) * _new_m); \
+		if (_new_a != NULL) { \
+			(v).a = _new_a; \
+			(v).m = _new_m; \
+			_ret = (v).a + (v).n++; \
+		} \
+	} else { \
+		_ret = (v).a + (v).n++; \
+	} \
+	_ret; \
+})
 
 #endif

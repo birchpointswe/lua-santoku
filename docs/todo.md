@@ -1,5 +1,10 @@
 # Now
 
+- Revise ephemeron helper functions (get_ephemeron is O(n) lookup, trade-off for
+  not storing two tables)
+
+# Next
+
 - Clean up todo, lots of old/irrelevant stuff in here
 - Fix naming inconsistencies with checknumber, optdouble, etc (use "double")
 - Remove/deprecate execinfo
