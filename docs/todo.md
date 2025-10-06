@@ -1,7 +1,7 @@
 # Now
 
-- Revise ephemeron helper functions (get_ephemeron is O(n) lookup, trade-off for
-  not storing two tables)
+- Fix incorrect usage of unsigned int instead of uint64_t or int64_t throughout
+  utils.h
 
 # Next
 

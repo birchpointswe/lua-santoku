@@ -744,6 +744,16 @@ static inline unsigned int tk_lua_foptunsigned (lua_State *L, int i, char *name,
   return l;
 }
 
+static inline int64_t tk_lua_optinteger (lua_State *L, int i, char *name, unsigned int def)
+{
+  if (lua_type(L, i) < 1)
+    return def;
+  if (lua_type(L, i) != LUA_TNUMBER)
+    tk_lua_verror(L, 2, name, "value is not an integer");
+  lua_Integer l = luaL_checkinteger(L, i);
+  return l;
+}
+
 static inline unsigned int tk_lua_optunsigned (lua_State *L, int i, char *name, unsigned int def)
 {
   if (lua_type(L, i) < 1)
