@@ -168,7 +168,7 @@ end
 
 local function interp (s, t)
 
-  local fmtpat = "%%[%w.]+"
+  local fmtpat = "%%[+-]?[%w.]+"
   local fmtpat_long = "%%%b()"
   local keypat = "^#%b()"
 
