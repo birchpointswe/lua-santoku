@@ -258,86 +258,74 @@ static inline void tk_lua_add_ephemeron (lua_State *L, const char *eph_key, int 
 
 static inline void tk_lua_get_ephemeron (lua_State *L, const char *eph_key, void *e)
 {
-  lua_getfield(L, LUA_REGISTRYINDEX, eph_key); // eph_table
+  lua_getfield(L, LUA_REGISTRYINDEX, eph_key);
   if (lua_isnil(L, -1))
     return;
-
-  // Scan all parents and their children to find userdata matching pointer
   lua_pushnil(L);
-  while (lua_next(L, -2) != 0) {  // eph_table parent children_table
+  while (lua_next(L, -2) != 0) {
     if (lua_type(L, -1) == LUA_TTABLE) {
-      // Scan this parent's children
       lua_pushnil(L);
-      while (lua_next(L, -2) != 0) {  // eph_table parent children_table child true
+      while (lua_next(L, -2) != 0) {
         void *child_ptr = lua_touserdata(L, -2);
         if (child_ptr == e) {
-          // Found it! Clean up stack and return child
-          lua_remove(L, -1);  // eph_table parent children_table child
-          lua_remove(L, -2);  // eph_table parent child
-          lua_remove(L, -2);  // eph_table child
-          lua_remove(L, -2);  // child
+          lua_remove(L, -1);
+          lua_remove(L, -2);
+          lua_remove(L, -2);
+          lua_remove(L, -2);
           return;
         }
-        lua_pop(L, 1);  // eph_table parent children_table
+        lua_pop(L, 1);
       }
     }
-    lua_pop(L, 1);  // eph_table
+    lua_pop(L, 1);
   }
-
-  // Not found
-  lua_pop(L, 1);  //
+  lua_pop(L, 1);
   lua_pushnil(L);
 }
 
 static inline void tk_lua_del_ephemeron (lua_State *L, const char *eph_key, int idx_parent, void *e)
 {
   idx_parent = (idx_parent == LUA_NOREF) ? LUA_NOREF : tk_lua_absindex(L, idx_parent);
-  lua_getfield(L, LUA_REGISTRYINDEX, eph_key); // eph
+  lua_getfield(L, LUA_REGISTRYINDEX, eph_key);
   if (lua_isnil(L, -1)) {
     lua_pop(L, 1);
     return;
   }
-
   if (idx_parent == LUA_NOREF) {
-    // Delete from all parents - scan and remove
     lua_pushnil(L);
-    while (lua_next(L, -2) != 0) {  // eph parent children_table
+    while (lua_next(L, -2) != 0) {
       if (lua_type(L, -1) == LUA_TTABLE) {
-        // Scan children to find and remove matching pointer
         lua_pushnil(L);
-        while (lua_next(L, -2) != 0) {  // eph parent children_table child true
+        while (lua_next(L, -2) != 0) {
           if (lua_touserdata(L, -2) == e) {
-            // Found it - remove from this parent's table
-            lua_pop(L, 1);  // eph parent children_table child
-            lua_pushnil(L);  // eph parent children_table child nil
-            lua_rawset(L, -3);  // eph parent children_table
+            lua_pop(L, 1);
+            lua_pushnil(L);
+            lua_rawset(L, -3);
             break;
           }
-          lua_pop(L, 1);  // eph parent children_table
+          lua_pop(L, 1);
         }
       }
-      lua_pop(L, 1);  // eph
+      lua_pop(L, 1);
     }
   } else {
-    // Delete from specific parent only
-    lua_pushvalue(L, idx_parent);  // eph parent
-    lua_rawget(L, -2);  // eph children_table
+    lua_pushvalue(L, idx_parent);
+    lua_rawget(L, -2);
     if (!lua_isnil(L, -1) && lua_type(L, -1) == LUA_TTABLE) {
-      // Scan to find child with matching pointer
       lua_pushnil(L);
-      while (lua_next(L, -2) != 0) {  // eph children_table child true
+      while (lua_next(L, -2) != 0) {
         if (lua_touserdata(L, -2) == e) {
-          lua_pop(L, 1);  // eph children_table child
-          lua_pushnil(L);  // eph children_table child nil
-          lua_rawset(L, -3);  // eph children_table
+          lua_pop(L, 1);
+          lua_pushnil(L);
+          lua_rawset(L, -3);
           break;
         }
-        lua_pop(L, 1);  // eph children_table
+        lua_pop(L, 1);
       }
     }
-    lua_pop(L, 1);  // eph
+    lua_pop(L, 1);
   }
-  lua_pop(L, 1);  //
+  lua_pop(L, 1);
 }
 
 static inline void tk_lua_register (lua_State *L, luaL_Reg *regs, int nup)
