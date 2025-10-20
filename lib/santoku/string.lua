@@ -447,7 +447,7 @@ return tmerge({
   isempty = isempty,
   stripprefix = stripprefix,
   compare = compare,
-  commonprefix,
+  commonprefix = commonprefix,
   format_number = format_number,
   to_query = to_query,
   from_query = from_query,
