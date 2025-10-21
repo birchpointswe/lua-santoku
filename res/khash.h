@@ -128,7 +128,6 @@ int main() {
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#include <stdbool.h>
 
 /* compiler specific configuration */
 
@@ -198,11 +197,11 @@ static const double __ac_HASH_UPPER = 0.77;
 		khint32_t *flags; \
 		khkey_t *keys; \
 		khval_t *vals; \
-		bool lua_managed; \
+		int lua_managed; \
 	} kh_##name##_t;
 
 #define __KHASH_PROTOTYPES(name, khkey_t, khval_t)	 					\
-	extern void kh_init_##name(kh_##name##_t *h, bool lua_managed);		\
+	extern void kh_init_##name(kh_##name##_t *h, int lua_managed);		\
 	extern void kh_destroy_##name(kh_##name##_t *h);					\
 	extern void kh_clear_##name(kh_##name##_t *h);						\
 	extern khint_t kh_get_##name(const kh_##name##_t *h, khkey_t key); 	\
@@ -211,16 +210,17 @@ static const double __ac_HASH_UPPER = 0.77;
 	extern void kh_del_##name(kh_##name##_t *h, khint_t x);
 
 #define __KHASH_IMPL(name, SCOPE, khkey_t, khval_t, kh_is_map, __hash_func, __hash_equal) \
-	SCOPE void kh_init_##name(kh_##name##_t *h, bool lua_managed) {		\
+	SCOPE void kh_init_##name(kh_##name##_t *h, int lua_managed) {		\
 		memset(h, 0, sizeof(kh_##name##_t));							\
 		h->lua_managed = lua_managed;									\
 	}																	\
 	SCOPE void kh_destroy_##name(kh_##name##_t *h)						\
 	{																	\
-		if (h) {														\
+		if (h && h->lua_managed != -1) {														\
 			kfree((void *)h->keys); kfree(h->flags);					\
 			kfree((void *)h->vals);										\
 			memset(h, 0, sizeof(kh_##name##_t));						\
+      h->lua_managed = -1; \
 		}																\
 	}																	\
 	SCOPE void kh_clear_##name(kh_##name##_t *h)						\
@@ -444,7 +444,7 @@ static kh_inline khint_t __ac_Wang_hash(khint_t key)
   @abstract     Initiate a hash table in-place.
   @param  name         Name of the hash table [symbol]
   @param  h            Pointer to hash table struct [khash_t(name)*]
-  @param  lua_managed  Whether the struct is managed by Lua GC [bool]
+  @param  lua_managed  Whether the struct is managed by Lua GC [int]
  */
 #define kh_init(name, h, lua_managed) kh_init_##name(h, lua_managed)
 

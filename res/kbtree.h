@@ -31,7 +31,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <stdbool.h>
 
 #define KB_MAX_DEPTH 64
 
@@ -57,11 +56,11 @@ typedef struct {
 		int	off_key, off_ptr, ilen, elen;		\
 		int	n, t;								\
 		int	n_keys, n_nodes;					\
-		bool lua_managed;						\
+		int lua_managed;						\
 	} kbtree_##name##_t;
 
 #define __KB_INIT(name, key_t)											\
-	int kb_init_##name(kbtree_##name##_t *b, int size, bool lua_managed)	\
+	int kb_init_##name(kbtree_##name##_t *b, int size, int lua_managed)	\
 	{																	\
 		memset(b, 0, sizeof(kbtree_##name##_t));						\
 		b->lua_managed = lua_managed;									\
@@ -81,7 +80,7 @@ typedef struct {
 #define __kb_destroy(b) do {											\
 		int i, max = 8;													\
 		kbnode_t *x, **top, **stack = 0;								\
-		if ((b) && (b)->root) {											\
+		if ((b) && (b)->root && (b)->lua_managed != -1) {											\
 			top = stack = (kbnode_t**)calloc(max, sizeof(kbnode_t*));	\
 			*top++ = (b)->root;											\
 			while (top != stack) {										\
@@ -99,6 +98,7 @@ typedef struct {
 				free(x);												\
 			}															\
 			free(stack);												\
+      (b)->lua_managed = -1; \
 		}																\
 	} while (0)
 
