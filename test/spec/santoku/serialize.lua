@@ -12,7 +12,6 @@ local tbl = require("santoku.table")
 local teq = tbl.equals
 
 test("serialize", function ()
-
   local t0 = {
     a = {
       b = 1,
@@ -20,11 +19,8 @@ test("serialize", function ()
       d = { 1, "two", 3, "four", { five = 10 } }
     }
   }
-
   local t1f = lua.loadstring("return " .. serialize(t0)) -- luacheck: ignore
-
   assert(teq(t0, assert(t1f)())) --
-
 end)
 
 test("newlines", function ()
