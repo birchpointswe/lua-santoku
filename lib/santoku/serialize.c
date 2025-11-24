@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include <santoku/lua/utils.h>
 
 #define MAX_DEPTH_DEFAULT 200
 #define INDENT_STRING "  "
@@ -406,14 +407,15 @@ static int santoku_serialize_call (lua_State *L) {
   return santoku_serialize(L);
 }
 
-static const luaL_Reg serialize_funcs[] = {
+static luaL_Reg fns[] = {
   { "serialize", santoku_serialize },
   { "serialize_table_contents", santoku_serialize_table_contents },
   { NULL, NULL }
 };
 
 int luaopen_santoku_serialize(lua_State *L) {
-  luaL_newlib(L, serialize_funcs);
+  lua_newtable(L);
+  tk_lua_register(L, fns, 0);
   lua_newtable(L);
   lua_pushcfunction(L, santoku_serialize_call);
   lua_setfield(L, -2, "__call");
