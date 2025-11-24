@@ -1,12 +1,18 @@
 #include <santoku/lua/utils.h>
 
-static inline int l_fast_random (lua_State *L)
+static inline int fast_seed (lua_State *L)
+{
+  tk_fast_seed(tk_lua_optunsigned(L, 1, "seed", time(NULL)));
+  return 0;
+}
+
+static inline int fast_random (lua_State *L)
 {
   lua_pushinteger(L, tk_fast_random());
   return 1;
 }
 
-static inline int l_fast_normal (lua_State *L)
+static inline int fast_normal (lua_State *L)
 {
   double mean = luaL_checknumber(L, 1);
   double variance = luaL_checknumber(L, 2);
@@ -17,8 +23,9 @@ static inline int l_fast_normal (lua_State *L)
 
 
 static luaL_Reg fns[] = {
-  { "fast_random", l_fast_random },
-  { "fast_normal", l_fast_normal },
+  { "fast_seed", fast_seed },
+  { "fast_random", fast_random },
+  { "fast_normal", fast_normal },
   { NULL, NULL }
 };
 
