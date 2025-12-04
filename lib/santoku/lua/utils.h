@@ -699,9 +699,9 @@ static inline unsigned int tk_lua_checkunsigned (lua_State *L, int i, char *name
   lua_Integer l = luaL_checkinteger(L, i);
   if (l < 0)
     tk_lua_verror(L, 2, name, "value is not a positive integer");
-  if (l > UINT_MAX)
+  if ((unsigned long)l > UINT_MAX)
     luaL_error(L, "value is too large");
-  return (unsigned int) l;
+  return (unsigned int)l;
 }
 
 static inline unsigned int tk_lua_fcheckunsigned (lua_State *L, int i, char *name, char *field)
@@ -713,7 +713,7 @@ static inline unsigned int tk_lua_fcheckunsigned (lua_State *L, int i, char *nam
   if (l < 0)
     tk_lua_verror(L, 3, name, field, "field is not a positive integer");
   lua_pop(L, 1);
-  return l;
+  return (unsigned int)l;
 }
 
 static inline unsigned int tk_lua_foptunsigned (lua_State *L, int i, char *name, char *field, unsigned int def)
@@ -729,7 +729,7 @@ static inline unsigned int tk_lua_foptunsigned (lua_State *L, int i, char *name,
   if (l < 0)
     tk_lua_verror(L, 3, name, field, "field is not a positive integer");
   lua_pop(L, 1);
-  return l;
+  return (unsigned int)l;
 }
 
 static inline int64_t tk_lua_optinteger (lua_State *L, int i, char *name, unsigned int def)
@@ -751,7 +751,7 @@ static inline unsigned int tk_lua_optunsigned (lua_State *L, int i, char *name, 
   lua_Integer l = luaL_checkinteger(L, i);
   if (l < 0)
     tk_lua_verror(L, 2, name, "value is not a positive integer");
-  return l;
+  return (unsigned int)l;
 }
 
 static inline FILE *tk_lua_tmpfile (lua_State *L)

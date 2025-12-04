@@ -425,6 +425,37 @@ local function from_query (s, out)
   return out
 end
 
+local function encode_url (t)
+  local out = {}
+  if t.scheme then
+    apush(out, t.scheme, ":")
+  end
+  if t.host then
+    apush(out, "//")
+    if t.userinfo then apush(out, t.userinfo, "@") end
+    if find(t.host, ":", 1, true) then
+      apush(out, "[", t.host, "]")
+    else
+      apush(out, t.host)
+    end
+    if t.port then apush(out, ":", tostring(t.port)) end
+  end
+  if t.pathname then
+    apush(out, t.pathname)
+  elseif t.path and #t.path > 0 then
+    for i = 1, #t.path do
+      apush(out, "/", t.path[i])
+    end
+  end
+  if t.search and t.search ~= "" then
+    apush(out, t.search)
+  elseif t.params and next(t.params) then
+    to_query(t.params, out)
+  end
+  if t.fragment then apush(out, "#", t.fragment) end
+  return acat(out)
+end
+
 return tmerge({
   splits = splits,
   matches = matches,
@@ -451,4 +482,5 @@ return tmerge({
   format_number = format_number,
   to_query = to_query,
   from_query = from_query,
+  encode_url = encode_url,
 }, base, string)
