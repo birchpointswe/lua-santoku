@@ -177,42 +177,49 @@ static void serialize_value (
       }
 
       int first_hash = (maxi == 0);
+
+      lua_newtable(L);
+      int keys_idx = lua_gettop(L);
+      lua_Integer key_count = 0;
+
       lua_pushnil(L);
-
       while (lua_next(L, idx) != 0) {
-
-        int key_idx = lua_gettop(L) - 1;
-        int val_idx = lua_gettop(L);
-
-        int skip = 0;
-        if (lua_type(L, key_idx) == LUA_TNUMBER && lua_isinteger_compat(L, key_idx)) {
-          lua_Integer k = lua_tointeger(L, key_idx);
+        lua_pop(L, 1);
+        int dominated = 0;
+        if (lua_type(L, -1) == LUA_TNUMBER && lua_isinteger_compat(L, -1)) {
+          lua_Integer k = lua_tointeger(L, -1);
           if (k >= 1 && k <= maxi)
-            skip = 1;
+            dominated = 1;
         }
+        if (!dominated) {
+          lua_pushvalue(L, -1);
+          lua_rawseti(L, keys_idx, ++key_count);
+        }
+      }
 
-        if (!skip) {
-          if (!first_hash && nl_len == 0)
+      for (lua_Integer ki = 1; ki <= key_count; ki++) {
+        if (!first_hash && nl_len == 0)
+          luaL_addchar(buf, ',');
+        if (nl_len > 0) {
+          if (!first_hash)
             luaL_addchar(buf, ',');
-          if (nl_len > 0) {
-            if (!first_hash)
-              luaL_addchar(buf, ',');
-            luaL_addchar(buf, '\n');
-            for (int d = 0; d <= level; d++)
-              luaL_addstring(buf, div);
-          }
-          luaL_addchar(buf, '[');
-          serialize_value(L, buf, key_idx, level + 1, nl, div, sep, seen_idx, max_depth);
-          luaL_addchar(buf, ']');
-          luaL_addstring(buf, sep);
-          luaL_addchar(buf, '=');
-          luaL_addstring(buf, sep);
-          serialize_value(L, buf, val_idx, level + 1, nl, div, sep, seen_idx, max_depth);
-          first_hash = 0;
-          has_items = 1;
+          luaL_addchar(buf, '\n');
+          for (int d = 0; d <= level; d++)
+            luaL_addstring(buf, div);
         }
-
-        lua_settop(L, key_idx);
+        lua_rawgeti(L, keys_idx, ki);
+        int key_idx = lua_gettop(L);
+        luaL_addchar(buf, '[');
+        serialize_value(L, buf, key_idx, level + 1, nl, div, sep, seen_idx, max_depth);
+        luaL_addchar(buf, ']');
+        luaL_addstring(buf, sep);
+        luaL_addchar(buf, '=');
+        luaL_addstring(buf, sep);
+        lua_pushvalue(L, key_idx);
+        lua_gettable(L, idx);
+        serialize_value(L, buf, lua_gettop(L), level + 1, nl, div, sep, seen_idx, max_depth);
+        first_hash = 0;
+        has_items = 1;
       }
 
       if (has_items && nl_len > 0) {
@@ -298,39 +305,49 @@ static void serialize_table_contents (
   }
 
   int first_hash = (maxi == 0);
+
+  lua_newtable(L);
+  int keys_idx = lua_gettop(L);
+  lua_Integer key_count = 0;
+
   lua_pushnil(L);
   while (lua_next(L, idx) != 0) {
-    int key_idx = lua_gettop(L) - 1;
-    int val_idx = lua_gettop(L);
-
-    int skip = 0;
-    if (lua_type(L, key_idx) == LUA_TNUMBER && lua_isinteger_compat(L, key_idx)) {
-      lua_Integer k = lua_tointeger(L, key_idx);
+    lua_pop(L, 1);
+    int dominated = 0;
+    if (lua_type(L, -1) == LUA_TNUMBER && lua_isinteger_compat(L, -1)) {
+      lua_Integer k = lua_tointeger(L, -1);
       if (k >= 1 && k <= maxi)
-        skip = 1;
+        dominated = 1;
     }
+    if (!dominated) {
+      lua_pushvalue(L, -1);
+      lua_rawseti(L, keys_idx, ++key_count);
+    }
+  }
 
-    if (!skip) {
-      if (!first_hash && nl_len == 0)
+  for (lua_Integer ki = 1; ki <= key_count; ki++) {
+    if (!first_hash && nl_len == 0)
+      luaL_addchar(buf, ',');
+    if (nl_len > 0) {
+      if (!first_hash)
         luaL_addchar(buf, ',');
-      if (nl_len > 0) {
-        if (!first_hash)
-          luaL_addchar(buf, ',');
-        luaL_addchar(buf, '\n');
-        for (int d = 0; d < level; d++)
-          luaL_addstring(buf, div);
-      }
-      luaL_addchar(buf, '[');
-      serialize_value(L, buf, key_idx, level, nl, div, sep, seen_idx, max_depth);
-      luaL_addchar(buf, ']');
-      luaL_addstring(buf, sep);
-      luaL_addchar(buf, '=');
-      luaL_addstring(buf, sep);
-      serialize_value(L, buf, val_idx, level, nl, div, sep, seen_idx, max_depth);
-      first_hash = 0;
-      has_items = 1;
+      luaL_addchar(buf, '\n');
+      for (int d = 0; d < level; d++)
+        luaL_addstring(buf, div);
     }
-    lua_settop(L, key_idx);
+    lua_rawgeti(L, keys_idx, ki);
+    int key_idx = lua_gettop(L);
+    luaL_addchar(buf, '[');
+    serialize_value(L, buf, key_idx, level, nl, div, sep, seen_idx, max_depth);
+    luaL_addchar(buf, ']');
+    luaL_addstring(buf, sep);
+    luaL_addchar(buf, '=');
+    luaL_addstring(buf, sep);
+    lua_pushvalue(L, key_idx);
+    lua_gettable(L, idx);
+    serialize_value(L, buf, lua_gettop(L), level, nl, div, sep, seen_idx, max_depth);
+    first_hash = 0;
+    has_items = 1;
   }
 
   if (has_items && nl_len > 0) {
