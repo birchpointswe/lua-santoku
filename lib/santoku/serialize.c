@@ -181,15 +181,15 @@ static void serialize_value (
 
       while (lua_next(L, idx) != 0) {
 
+        int key_idx = lua_gettop(L) - 1;
+        int val_idx = lua_gettop(L);
+
         int skip = 0;
-        if (lua_type(L, -2) == LUA_TNUMBER && lua_isinteger_compat(L, -2)) {
-          lua_Integer k = lua_tointeger(L, -2);
+        if (lua_type(L, key_idx) == LUA_TNUMBER && lua_isinteger_compat(L, key_idx)) {
+          lua_Integer k = lua_tointeger(L, key_idx);
           if (k >= 1 && k <= maxi)
             skip = 1;
         }
-
-        int key_idx = lua_gettop(L) - 1;
-        int val_idx = lua_gettop(L);
 
         if (!skip) {
           if (!first_hash && nl_len == 0)
@@ -212,7 +212,7 @@ static void serialize_value (
           has_items = 1;
         }
 
-        lua_pop(L, 1);
+        lua_settop(L, key_idx);
       }
 
       if (has_items && nl_len > 0) {
@@ -300,15 +300,15 @@ static void serialize_table_contents (
   int first_hash = (maxi == 0);
   lua_pushnil(L);
   while (lua_next(L, idx) != 0) {
+    int key_idx = lua_gettop(L) - 1;
+    int val_idx = lua_gettop(L);
+
     int skip = 0;
-    if (lua_type(L, -2) == LUA_TNUMBER && lua_isinteger_compat(L, -2)) {
-      lua_Integer k = lua_tointeger(L, -2);
+    if (lua_type(L, key_idx) == LUA_TNUMBER && lua_isinteger_compat(L, key_idx)) {
+      lua_Integer k = lua_tointeger(L, key_idx);
       if (k >= 1 && k <= maxi)
         skip = 1;
     }
-
-    int key_idx = lua_gettop(L) - 1;
-    int val_idx = lua_gettop(L);
 
     if (!skip) {
       if (!first_hash && nl_len == 0)
@@ -330,7 +330,7 @@ static void serialize_table_contents (
       first_hash = 0;
       has_items = 1;
     }
-    lua_pop(L, 1);
+    lua_settop(L, key_idx);
   }
 
   if (has_items && nl_len > 0) {
