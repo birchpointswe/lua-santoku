@@ -425,6 +425,17 @@ local function from_query (s, out)
   return out
 end
 
+local function to_formdata (t, out)
+  local q = to_query(t, out)
+  if q then
+    return sub(q, 2)
+  end
+end
+
+local function from_formdata (s, out)
+  return from_query(s, out)
+end
+
 local function encode_url (t)
   local out = {}
   if t.scheme then
@@ -482,5 +493,7 @@ return tmerge({
   format_number = format_number,
   to_query = to_query,
   from_query = from_query,
+  to_formdata = to_formdata,
+  from_formdata = from_formdata,
   encode_url = encode_url,
 }, base, string)
