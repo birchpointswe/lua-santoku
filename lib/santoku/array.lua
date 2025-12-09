@@ -546,10 +546,10 @@ local function pullmap (iter, fn, limit)
   local r = {}
   local i = 0
   while true do
-    local v = fn(iter())
-    if v == nil then break end
+    local t = pack(iter())
+    if t[1] == nil then break end
     i = i + 1
-    r[i] = v
+    r[i] = fn(spread(t))
     if limit and i >= limit then break end
   end
   return r
