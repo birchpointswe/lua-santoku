@@ -516,7 +516,7 @@ local function chunked (t, size)
   return r
 end
 
-local function consume (iter, limit)
+local function pull (iter, limit)
   local r = {}
   local i = 0
   for v in iter do
@@ -527,6 +527,106 @@ local function consume (iter, limit)
     end
   end
   return r
+end
+
+local function pullpacked (iter, limit)
+  local r = {}
+  local i = 0
+  while true do
+    local t = pack(iter())
+    if t[1] == nil then break end
+    i = i + 1
+    r[i] = t
+    if limit and i >= limit then break end
+  end
+  return r
+end
+
+local function pullmap (iter, fn, limit)
+  local r = {}
+  local i = 0
+  while true do
+    local v = fn(iter())
+    if v == nil then break end
+    i = i + 1
+    r[i] = v
+    if limit and i >= limit then break end
+  end
+  return r
+end
+
+local function pullfilter (iter, fn, limit)
+  local r = {}
+  local i = 0
+  while true do
+    local t = pack(iter())
+    if t[1] == nil then break end
+    if fn(spread(t)) then
+      i = i + 1
+      r[i] = t
+      if limit and i >= limit then break end
+    end
+  end
+  return r
+end
+
+local function pullreduce (iter, fn, acc)
+  while true do
+    local t = pack(iter())
+    if t[1] == nil then break end
+    acc = fn(acc, spread(t))
+  end
+  return acc
+end
+
+local function pulleach (iter, fn)
+  while true do
+    local t = pack(iter())
+    if t[1] == nil then break end
+    fn(spread(t))
+  end
+end
+
+local function pullfind (iter, fn)
+  while true do
+    local t = pack(iter())
+    if t[1] == nil then return nil end
+    if fn(spread(t)) then
+      return spread(t)
+    end
+  end
+end
+
+local function pullcount (iter, fn)
+  local c = 0
+  while true do
+    local t = pack(iter())
+    if t[1] == nil then break end
+    if not fn or fn(spread(t)) then
+      c = c + 1
+    end
+  end
+  return c
+end
+
+local function pullany (iter, fn)
+  while true do
+    local t = pack(iter())
+    if t[1] == nil then return false end
+    if fn(spread(t)) then
+      return true
+    end
+  end
+end
+
+local function pullall (iter, fn)
+  while true do
+    local t = pack(iter())
+    if t[1] == nil then return true end
+    if not fn(spread(t)) then
+      return false
+    end
+  end
 end
 
 local function scale (t, factor, i, j)
@@ -645,7 +745,17 @@ return {
   interleave = interleave,
   chunks = chunks,
   chunked = chunked,
-  consume = consume,
+  pull = pull,
+  pullpacked = pullpacked,
+  pullmap = pullmap,
+  pullfilter = pullfilter,
+  pullreduce = pullreduce,
+  pulleach = pulleach,
+  pullfind = pullfind,
+  pullcount = pullcount,
+  pullany = pullany,
+  pullall = pullall,
+  consume = pull,
   scale = scale,
   add = addscalar,
   abs = abs,
