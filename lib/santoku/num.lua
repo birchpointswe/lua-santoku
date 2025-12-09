@@ -1,6 +1,3 @@
-local varg = require("santoku.varg")
-local vlen = varg.len
-
 local tbl = require("santoku.table")
 local tmerge = tbl.merge
 
@@ -14,12 +11,11 @@ local function trunc (n, d)
   return i + modf(f * d) / d
 end
 
-local function atan (...)
-  if vlen(...) > 1 and _atan2  -- luacheck: ignore
-  then
-    return _atan2(...) -- luacheck: ignore
+local function atan (y, x)
+  if x ~= nil and _atan2 then -- luacheck: ignore
+    return _atan2(y, x) -- luacheck: ignore
   else
-    return _atan(...)
+    return _atan(y)
   end
 end
 

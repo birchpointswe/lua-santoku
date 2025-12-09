@@ -2,8 +2,7 @@ local validate = require("santoku.validate")
 local hasindex = validate.hasindex
 local hascall = validate.hascall
 
-local varg = require("santoku.varg")
-local vincludes = varg.includes
+local varg = require("santoku.varg") -- luacheck: ignore
 
 local tsort = table.sort
 local tcat = table.concat
@@ -101,26 +100,18 @@ local function remove (t, ts, te)
 end
 
 local function filter (t, fn, ...)
-  local rems = nil
-  local reme = nil
-  local i = 1
-  while i <= #t do
-    if not fn(t[i], i, ...)  then
-      if rems == nil then
-        rems = i
-        reme = i
-      else
-        reme = i
+  local n = #t
+  local w = 1
+  for r = 1, n do
+    if fn(t[r], r, ...) then
+      if w ~= r then
+        t[w] = t[r]
       end
-    elseif rems ~= nil then
-      remove(t, rems, reme)
-      i = i - (reme - rems + 1)
-      rems, reme = nil, nil
+      w = w + 1
     end
-    i = i + 1
   end
-  if rems ~= nil then
-    remove(t, rems, reme)
+  for i = w, n do
+    t[i] = nil
   end
   return t
 end
@@ -244,7 +235,16 @@ local function tabulate (t, ...)
 end
 
 local function includes (t, ...)
-  return nil ~= find(t, vincludes, ...)
+  local nvals = select("#", ...)
+  for i = 1, #t do
+    local v = t[i]
+    for j = 1, nvals do
+      if v == select(j, ...) then
+        return true
+      end
+    end
+  end
+  return false
 end
 
 local function reverse (t)

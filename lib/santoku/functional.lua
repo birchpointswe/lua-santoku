@@ -1,11 +1,8 @@
 local op = require("santoku.op")
-local varg = require("santoku.varg")
-local vsel = varg.sel
-local vlen = varg.len
-local vtake = varg.take
+local select = select
 
 local function bind (fn, ...)
-  if vlen(...) == 0 then
+  if select("#", ...) == 0 then
     return fn
   else
     local v = ...
@@ -33,13 +30,27 @@ end
 
 local function sel (fn, n)
   return function (...)
-    return fn(vsel(n, ...))
+    return fn(select(n, ...))
   end
 end
 
 local function take (fn, n)
   return function (...)
-    return fn(vtake(n, ...))
+    if n == 0 then
+      return fn()
+    elseif n == 1 then
+      return fn((...))
+    elseif n == 2 then
+      local a, b = ...
+      return fn(a, b)
+    elseif n == 3 then
+      local a, b, c = ...
+      return fn(a, b, c)
+    else
+      local t = {}
+      for i = 1, n do t[i] = select(i, ...) end
+      return fn((table.unpack or unpack)(t, 1, n)) -- luacheck: ignore
+    end
   end
 end
 

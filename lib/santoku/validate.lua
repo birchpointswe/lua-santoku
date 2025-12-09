@@ -1,5 +1,5 @@
-local _huge = math.huge
 local _match = string.match
+local floor = math.floor
 local select = select
 
 local capi = require("santoku.validate.capi")
@@ -139,25 +139,21 @@ local function isarray (t)
   if tt ~= "table" then
     return false, "Value is not of type table", t, tt
   end
-  if next(t) == nil then
-    return true
+  local n = #t
+  if n == 0 then
+    return next(t) == nil, "Value has non-array keys", t
   end
-  if not t[1] then
-    return false, "Value is missing index 1", t
-  end
-  local max = 1
-  for i = 2, _huge do
-    if not t[i] then
-      max = i - 1
-      break
+  local count = 0
+  local k = next(t)
+  while k ~= nil do
+    if type(k) ~= "number" or k < 1 or k > n or k ~= floor(k) then
+      return false, "Value has a non-array key", t, k
     end
+    count = count + 1
+    k = next(t, k)
   end
-  for k in pairs(t) do
-    if type(k) ~= "number" then
-      return false, "Value has a non numerical key", t, k
-    elseif k > max then
-      return false, "Value has a non-continuous numerical key", t, k
-    end
+  if count ~= n then
+    return false, "Value has non-continuous keys", t
   end
   return true
 end

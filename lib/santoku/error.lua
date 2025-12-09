@@ -1,11 +1,6 @@
 local arr = require("santoku.array")
-local acat = arr.concat
 local aspread = arr.spread
-
-local varg = require("santoku.varg")
-local vtup = varg.tup
-local vinterleave = varg.interleave
-local vmap = varg.map
+local select = select
 
 local _error = error
 local _pcall = pcall
@@ -14,7 +9,11 @@ local _xpcall = xpcall
 local pcall_stack = 0
 local mt = {
   __tostring = function (o)
-    return acat({ vinterleave(": ", vmap(tostring, aspread(o))) })
+    local parts = {}
+    for i = 1, #o do
+      parts[#parts + 1] = tostring(o[i])
+    end
+    return table.concat(parts, ": ")
   end
 }
 
@@ -48,71 +47,57 @@ end
 
 local function pcall (fn, ...)
   pcall_stack = pcall_stack + 1
-  return vtup(pcall_finalizer, _pcall(fn, ...))
+  return pcall_finalizer(_pcall(fn, ...))
 end
 
 local function xpcall_finalizer (ok, ...)
-  -- NOTE: not decrementing pcall_stack here since it's done in xpcall_helper.
-  -- Is that right?'
   if ok then
     return ok, ...
   elseif getmetatable(...) == mt then
-    return ok, varg.sel(2, aspread((...)))
+    return ok, select(2, aspread((...)))
   else
-    -- NOTE: This hides the bool we get from calling the error handler in
-    -- another pcall. This isn't a problem because the error function is
-    -- semantically already returning an error, and this code just allows it to
-    -- return that either directly or by throwing another error and avoiding
-    -- xpcall recursion.
-    return ok, varg.sel(2, ...)
+    return ok, select(2, ...)
   end
 end
 
 local function xpcall_helper (handler)
   return function (...)
     pcall_stack = pcall_stack - 1
+    local function wrap_result (...)
+      return setmetatable({ ... }, mt)
+    end
     if getmetatable(...) == mt then
-      return varg.tup(function (...)
-        return setmetatable({ ... }, mt)
-      end, pcall(handler, aspread((...))))
+      return wrap_result(pcall(handler, aspread((...))))
     else
-      return varg.tup(function (...)
-        return setmetatable({ ... }, mt)
-      end, pcall(handler, ...))
+      return wrap_result(pcall(handler, ...))
     end
   end
 end
 
 local function xpcall (fn, handler)
   pcall_stack = pcall_stack + 1
-  return vtup(xpcall_finalizer, _xpcall(fn, xpcall_helper(handler)))
-end
-
-local function _wrapok (v, ...)
-  if not v then
-    return error(...)
-  else
-    return ...
-  end
+  return xpcall_finalizer(_xpcall(fn, xpcall_helper(handler)))
 end
 
 local function wrapok (fn)
   return function (...)
-    return vtup(_wrapok, fn(...))
-  end
-end
-
-local function _wrapnil (v, ...)
-  if v == nil then
-    return error(...)
-  else
-    return v, ...
+    local v, r1, r2, r3, r4 = fn(...)
+    if not v then
+      return error(r1, r2, r3, r4)
+    else
+      return r1, r2, r3, r4
+    end
   end
 end
 
 local function wrapnil (fn)
   return function (...)
-    return vtup(_wrapnil, fn(...))
+    local v, r1, r2, r3, r4 = fn(...)
+    if v == nil then
+      return error(r1, r2, r3, r4)
+    else
+      return v, r1, r2, r3, r4
+    end
   end
 end
 
