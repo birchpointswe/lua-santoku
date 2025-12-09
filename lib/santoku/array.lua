@@ -296,6 +296,10 @@ local function min (t, i, j)
 end
 
 local function pack (...)
+  return { ... }
+end
+
+local function tup (...)
   return { n = select("#", ...), ... }
 end
 
@@ -533,7 +537,7 @@ local function pullpacked (iter, limit)
   local r = {}
   local i = 0
   while true do
-    local t = pack(iter())
+    local t = tup(iter())
     if t[1] == nil then break end
     i = i + 1
     r[i] = t
@@ -546,7 +550,7 @@ local function pullmap (iter, fn, limit)
   local r = {}
   local i = 0
   while true do
-    local t = pack(iter())
+    local t = tup(iter())
     if t[1] == nil then break end
     i = i + 1
     r[i] = fn(spread(t))
@@ -559,7 +563,7 @@ local function pullfilter (iter, fn, limit)
   local r = {}
   local i = 0
   while true do
-    local t = pack(iter())
+    local t = tup(iter())
     if t[1] == nil then break end
     if fn(spread(t)) then
       i = i + 1
@@ -572,7 +576,7 @@ end
 
 local function pullreduce (iter, fn, acc)
   while true do
-    local t = pack(iter())
+    local t = tup(iter())
     if t[1] == nil then break end
     acc = fn(acc, spread(t))
   end
@@ -581,7 +585,7 @@ end
 
 local function pulleach (iter, fn)
   while true do
-    local t = pack(iter())
+    local t = tup(iter())
     if t[1] == nil then break end
     fn(spread(t))
   end
@@ -589,7 +593,7 @@ end
 
 local function pullfind (iter, fn)
   while true do
-    local t = pack(iter())
+    local t = tup(iter())
     if t[1] == nil then return nil end
     if fn(spread(t)) then
       return spread(t)
@@ -600,7 +604,7 @@ end
 local function pullcount (iter, fn)
   local c = 0
   while true do
-    local t = pack(iter())
+    local t = tup(iter())
     if t[1] == nil then break end
     if not fn or fn(spread(t)) then
       c = c + 1
@@ -611,7 +615,7 @@ end
 
 local function pullany (iter, fn)
   while true do
-    local t = pack(iter())
+    local t = tup(iter())
     if t[1] == nil then return false end
     if fn(spread(t)) then
       return true
@@ -621,7 +625,7 @@ end
 
 local function pullall (iter, fn)
   while true do
-    local t = pack(iter())
+    local t = tup(iter())
     if t[1] == nil then return true end
     if not fn(spread(t)) then
       return false
@@ -697,6 +701,7 @@ end
 
 return {
   pack = pack,
+  tup = tup,
   concat = concat,
   insert = insert,
   replicate = replicate,
