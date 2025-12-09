@@ -2,8 +2,6 @@ local validate = require("santoku.validate")
 local hasindex = validate.hasindex
 local hascall = validate.hascall
 
-local varg = require("santoku.varg") -- luacheck: ignore
-
 local tsort = table.sort
 local tcat = table.concat
 local unpack = unpack or table.unpack -- luacheck: ignore
@@ -42,12 +40,12 @@ local _move = table.move or -- luacheck: ignore
     return d
   end
 
-local function _copy (d, s, ds, ss, se, ismove)
-  ds = ds or #d + 1
+local function _copy (d, s, ss, se, ds, ismove)
   ss = ss or 1
   se = se or #s
+  ds = ds or #d + 1
   if se > #s then se = #s end
-  if se == 0 then return d end
+  if se < ss then return d end
   _move(s, ss, se, ds, d)
   if ismove then
     local m = #s
@@ -57,18 +55,18 @@ local function _copy (d, s, ds, ss, se, ismove)
   return d
 end
 
-local function copy (d, s, ds, ss, se)
+local function copy (d, s, ss, se, ds)
   if not hasindex(s) then
-    s, ds, ss, se = d, s, ds, ss
+    s, ss, se, ds = d, s, ss, se
   end
-  return _copy(d, s, ds, ss, se, false)
+  return _copy(d, s, ss, se, ds, false)
 end
 
-local function move (d, s, ds, ss, se)
+local function move (d, s, ss, se, ds)
   if not hasindex(s) then
-    s, ds, ss, se = d, s, ds, ss
+    s, ss, se, ds = d, s, ss, se
   end
-  return _copy(d, s, ds, ss, se, true)
+  return _copy(d, s, ss, se, ds, true)
 end
 
 local function insert (t, i, v)
@@ -80,7 +78,7 @@ local function insert (t, i, v)
     t[#t + 1] = v
     return t
   end
-  copy(t, t, i + 1, i, #t)
+  copy(t, t, i, #t, i + 1)
   t[i] = v
   return t
 end
@@ -88,7 +86,7 @@ end
 local function replicate (t, n)
   local m = #t
   for _ = 1, n - 1 do
-    copy(t, t, #t + 1, 1, m)
+    copy(t, t, 1, m, #t + 1)
   end
   return t
 end
@@ -135,15 +133,20 @@ local function sort (t, opts)
 end
 
 local function shift (t)
-  return remove(t, 1, 1)
+  local v = t[1]
+  remove(t, 1, 1)
+  return t, v
 end
 
 local function pop (t)
-  return remove(t, #t, #t)
+  local n = #t
+  local v = t[n]
+  t[n] = nil
+  return t, v
 end
 
 local function slice (s, ss, se)
-  return copy({}, s, 1, ss, se)
+  return copy({}, s, ss, se, 1)
 end
 
 local function find (t, fn, ...)
@@ -157,14 +160,6 @@ end
 local function trunc (t, i)
   i = i or 0
   return clear(t, i + 1)
-end
-
-local function extend (t, ...)
-  for i = 1, select("#", ...) do
-    local n = select(i, ...)
-    copy(t, n, #t + 1, 1, #n)
-  end
-  return t
 end
 
 local function overlay (t, i, ...)
@@ -247,9 +242,10 @@ local function includes (t, ...)
   return false
 end
 
-local function reverse (t)
-  local i, j = 1, #t
-  while i <= j do
+local function reverse (t, i, j)
+  i = i or 1
+  j = j or #t
+  while i < j do
     t[i], t[j] = t[j], t[i]
     i = i + 1
     j = j - 1
@@ -273,44 +269,330 @@ local function mean (t, s, e)
   return sum(t, s, e) / (e - s + 1)
 end
 
-local function max (t)
-  local m = nil
-  for i = 1, #t do
-    if m == nil or t[i] > m then
-      m = t[i]
+local function max (t, i, j)
+  i = i or 1
+  j = j or #t
+  local m, mi = nil, nil
+  for k = i, j do
+    if m == nil or t[k] > m then
+      m = t[k]
+      mi = k
     end
   end
-  return m
+  return m, mi
 end
 
-local function min (t)
-  local m = nil
-  for i = 1, #t do
-    if m == nil or t[i] < m then
-      m = t[i]
+local function min (t, i, j)
+  i = i or 1
+  j = j or #t
+  local m, mi = nil, nil
+  for k = i, j do
+    if m == nil or t[k] < m then
+      m = t[k]
+      mi = k
     end
   end
-  return m
+  return m, mi
 end
 
 local function pack (...)
-  return { ... }
+  return { n = select("#", ...), ... }
 end
 
-local function spread (t, ...)
-  return unpack(t, ...)
+local function spread (t, i, j)
+  return unpack(t, i or 1, j or t.n or #t)
 end
 
-local function shuffle (...)
-  local m = select("#", ...)
-  local first = ...
-	for i = #first, 2, -1 do
-		local j = math.random(i)
-    for k = 1, m do
-      local t = select(k, ...)
-      t[i], t[j] = t[j], t[i]
+local function shuffle (t, i, j)
+  i = i or 1
+  j = j or #t
+  for k = j, i + 1, -1 do
+    local r = i + math.random(k - i + 1) - 1
+    t[k], t[r] = t[r], t[k]
+  end
+  return t
+end
+
+local function flatten (t, depth)
+  depth = depth or 1
+  local r = {}
+  local function _flatten (arr, d)
+    for i = 1, #arr do
+      local v = arr[i]
+      if d > 0 and type(v) == "table" then
+        _flatten(v, d - 1)
+      else
+        r[#r + 1] = v
+      end
     end
-	end
+  end
+  _flatten(t, depth)
+  return r
+end
+
+local function fill (t, v, i, j)
+  i = i or 1
+  j = j or #t
+  for k = i, j do
+    t[k] = v
+  end
+  return t
+end
+
+local function lookup (t, m)
+  for i = 1, #t do
+    t[i] = m[t[i]]
+  end
+  return t
+end
+
+local function take (t, n)
+  return slice(t, 1, n)
+end
+
+local function drop (t, n)
+  return slice(t, n + 1)
+end
+
+local function takelast (t, n)
+  local len = #t
+  local start = len - n + 1
+  if start < 1 then start = 1 end
+  return slice(t, start, len)
+end
+
+local function droplast (t, n)
+  return slice(t, 1, #t - n)
+end
+
+local function zip (a, b)
+  local r = {}
+  local n = #a < #b and #a or #b
+  for i = 1, n do
+    r[i] = { a[i], b[i] }
+  end
+  return r
+end
+
+local function unzip (t)
+  local a, b = {}, {}
+  for i = 1, #t do
+    a[i] = t[i][1]
+    b[i] = t[i][2]
+  end
+  return a, b
+end
+
+local function range (s, e, step)
+  step = step or 1
+  local r = {}
+  local i = 1
+  for v = s, e, step do
+    r[i] = v
+    i = i + 1
+  end
+  return r
+end
+
+local function compact (t)
+  local w = 1
+  for r = 1, #t do
+    if t[r] then
+      if w ~= r then
+        t[w] = t[r]
+      end
+      w = w + 1
+    end
+  end
+  for i = w, #t do
+    t[i] = nil
+  end
+  return t
+end
+
+local function compacted (t)
+  local r = {}
+  for i = 1, #t do
+    if t[i] then
+      r[#r + 1] = t[i]
+    end
+  end
+  return r
+end
+
+local function unique (t)
+  local seen = {}
+  local w = 1
+  for r = 1, #t do
+    local v = t[r]
+    if not seen[v] then
+      seen[v] = true
+      if w ~= r then
+        t[w] = v
+      end
+      w = w + 1
+    end
+  end
+  for i = w, #t do
+    t[i] = nil
+  end
+  return t
+end
+
+local function uniqued (t)
+  local r = {}
+  local seen = {}
+  for i = 1, #t do
+    local v = t[i]
+    if not seen[v] then
+      seen[v] = true
+      r[#r + 1] = v
+    end
+  end
+  return r
+end
+
+local function group (t, fn)
+  local r = {}
+  for i = 1, #t do
+    local v = t[i]
+    local k = fn(v)
+    if not r[k] then
+      r[k] = {}
+    end
+    r[k][#r[k] + 1] = v
+  end
+  return r
+end
+
+local function partition (t, fn)
+  local pass, fail = {}, {}
+  for i = 1, #t do
+    local v = t[i]
+    if fn(v) then
+      pass[#pass + 1] = v
+    else
+      fail[#fail + 1] = v
+    end
+  end
+  return pass, fail
+end
+
+local function toset (t)
+  local r = {}
+  for i = 1, #t do
+    r[t[i]] = true
+  end
+  return r
+end
+
+local function interleave (t, v)
+  local n = #t
+  if n == 0 then return t end
+  local r = {}
+  for i = 1, n - 1 do
+    r[#r + 1] = t[i]
+    r[#r + 1] = v
+  end
+  r[#r + 1] = t[n]
+  return r
+end
+
+local function chunks (t, size, fn)
+  local n = #t
+  for i = 1, n, size do
+    local j = i + size - 1
+    if j > n then j = n end
+    fn(t, i, j)
+  end
+  return t
+end
+
+local function chunked (t, size)
+  local r = {}
+  chunks(t, size, function (_, i, j)
+    r[#r + 1] = slice(t, i, j)
+  end)
+  return r
+end
+
+local function consume (iter, limit)
+  local r = {}
+  local i = 0
+  for v in iter do
+    i = i + 1
+    r[i] = v
+    if limit and i >= limit then
+      break
+    end
+  end
+  return r
+end
+
+local function scale (t, factor, i, j)
+  i = i or 1
+  j = j or #t
+  for k = i, j do
+    t[k] = t[k] * factor
+  end
+  return t
+end
+
+local function addscalar (t, value, i, j)
+  i = i or 1
+  j = j or #t
+  for k = i, j do
+    t[k] = t[k] + value
+  end
+  return t
+end
+
+local function abs (t, i, j)
+  i = i or 1
+  j = j or #t
+  local mabs = math.abs
+  for k = i, j do
+    t[k] = mabs(t[k])
+  end
+  return t
+end
+
+local function scalev (t, t2, i, j)
+  i = i or 1
+  j = j or #t
+  for k = i, j do
+    t[k] = t[k] * t2[k]
+  end
+  return t
+end
+
+local function addv (t, t2, i, j)
+  i = i or 1
+  j = j or #t
+  for k = i, j do
+    t[k] = t[k] + t2[k]
+  end
+  return t
+end
+
+local function dot (a, b, i, j)
+  i = i or 1
+  j = j or #a
+  local s = 0
+  for k = i, j do
+    s = s + a[k] * b[k]
+  end
+  return s
+end
+
+local function magnitude (t, i, j)
+  i = i or 1
+  j = j or #t
+  local s = 0
+  for k = i, j do
+    s = s + t[k] * t[k]
+  end
+  return math.sqrt(s)
 end
 
 return {
@@ -328,7 +610,6 @@ return {
   clear = clear,
   remove = remove,
   trunc = trunc,
-  extend = extend,
   overlay = overlay,
   push = push,
   each = each,
@@ -344,4 +625,32 @@ return {
   mean = mean,
   max = max,
   min = min,
+  flatten = flatten,
+  fill = fill,
+  lookup = lookup,
+  take = take,
+  drop = drop,
+  takelast = takelast,
+  droplast = droplast,
+  zip = zip,
+  unzip = unzip,
+  range = range,
+  compact = compact,
+  compacted = compacted,
+  unique = unique,
+  uniqued = uniqued,
+  group = group,
+  partition = partition,
+  toset = toset,
+  interleave = interleave,
+  chunks = chunks,
+  chunked = chunked,
+  consume = consume,
+  scale = scale,
+  add = addscalar,
+  abs = abs,
+  scalev = scalev,
+  addv = addv,
+  dot = dot,
+  magnitude = magnitude,
 }

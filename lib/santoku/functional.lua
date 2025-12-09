@@ -1,5 +1,5 @@
-local op = require("santoku.op")
 local select = select
+local spread = table.unpack or unpack -- luacheck: ignore
 
 local function bind (fn, ...)
   if select("#", ...) == 0 then
@@ -49,7 +49,7 @@ local function take (fn, n)
     else
       local t = {}
       for i = 1, n do t[i] = select(i, ...) end
-      return fn((table.unpack or unpack)(t, 1, n)) -- luacheck: ignore
+      return fn(spread(t, 1, n)) -- luacheck: ignore
     end
   end
 end
@@ -107,14 +107,6 @@ end
 M.tset = function (t, v)
   return function (p)
     t[p] = v
-  end
-end
-
-for k, v in pairs(op) do
-  if not M[k] then
-    M[k] = function (...)
-      return M.bind(v, ...)
-    end
   end
 end
 

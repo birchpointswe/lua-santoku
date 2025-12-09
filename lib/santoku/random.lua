@@ -1,6 +1,4 @@
 local tbl = require("santoku.table")
-local fun = require("santoku.functional")
-local it = require("santoku.iter")
 local arr = require("santoku.array")
 local fast = require("santoku.random.fast")
 
@@ -54,7 +52,7 @@ local function _options (params, unique, chunk)
   chunk = chunk or 1000
   local base = {}
   for k, v in pairs(params) do
-    base[k] = it.collect(it.take(chunk, v))
+    base[k] = arr.consume(v, chunk)
     arr.shuffle(base[k])
   end
   local seen = {}
@@ -66,10 +64,10 @@ local function _options (params, unique, chunk)
       ret[k] = v[i]
     end
     n = n + 1
-    local k = tbl.concat(arr.map(arr.sort(it.collect(it.keys(ret))), function (k)
+    local k = tbl.concat(arr.map(arr.sort(tbl.keys(ret)), function (k)
       local r = ret[k]
       if type(r) == "table" then
-        return tbl.concat(arr.map(arr.sort(it.collect(it.keys(r))), fun.tget(r)), " ")
+        return tbl.concat(arr.map(arr.sort(tbl.keys(r)), function (k) return r[k] end), " ")
       else
         return tostring(r)
       end

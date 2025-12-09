@@ -16,64 +16,57 @@ for _, impl in ipairs(implementations) do
       test("should copy into an array", function ()
         local dest = { 1, 2, 3, 4 }
         local source = { 3, 4, 5, 6 }
-        arr.copy(dest, source, 3)
+        arr.copy(dest, source, 1, 4, 3)
         assert(tbl.equals({ 1, 2, 3, 4, 5, 6 }, dest))
       end)
 
       test("should copy into an array", function ()
         local dest = {}
         local source = { 3, 4, 5, 6 }
-        arr.copy(dest, source, 1)
+        arr.copy(dest, source, 1, 4, 1)
         assert(tbl.equals({ 3, 4, 5, 6 }, dest))
       end)
 
       test("should work with the same array", function ()
         local v = { 1, 2, 3, 4, 5, 6 }
-        arr.copy(v, v, 1, 2)
+        arr.copy(v, v, 2, 6, 1)
         assert(tbl.equals({ 2, 3, 4, 5, 6, 6 }, v))
       end)
 
       test("should work with the same array", function ()
         local v = { 1, 2, 3, 4, 5, 6 }
-        arr.copy(v, v, 2, 1)
+        arr.copy(v, v, 1, 6, 2)
         assert(tbl.equals({ 1, 1, 2, 3, 4, 5, 6 }, v))
       end)
 
       test("should clear if moving", function ()
         local a = { 1, 2, 3, 4 }
         local b = { 3, 4, 5, 6, 7, 8 }
-        arr.move(a, b, 3, 1, 4)
+        arr.move(a, b, 1, 4, 3)
         assert(tbl.equals({ 1, 2, 3, 4, 5, 6 }, a))
         assert(tbl.equals({ 7, 8 }, b))
       end)
 
       test("simple copy within single table", function ()
-        assert(tbl.equals({ 1, 3, 4, 4 }, arr.copy({ 1, 2, 3, 4 }, 2, 3)))
+        assert(tbl.equals({ 1, 3, 4, 4 }, arr.copy({ 1, 2, 3, 4 }, 3, 4, 2)))
       end)
 
     end)
 
-    test("extend", function ()
+    test("flatten", function ()
 
-      test("should merge array-like tables", function ()
+      test("should flatten nested arrays", function ()
         local expected = { 1, 2, 3, 4 }
         local one = { 1, 2 }
         local two = { 3, 4 }
-        assert(tbl.equals(expected, arr.extend({}, one, two)))
+        assert(tbl.equals(expected, arr.flatten({ one, two })))
       end)
 
-      test("should handle non-empty initial tables", function ()
-        local expected = { "a", "b", 1, 2, 3, 4 }
-        local one = { 1, 2 }
-        local two = { 3, 4 }
-        assert(tbl.equals(expected, arr.extend({ "a", "b" }, one, two)))
-      end)
-
-      test("should handle extending by empty tables", function ()
+      test("should handle empty tables", function ()
         local expected = { 1, 2 }
         local one = {}
         local two = {}
-        assert(tbl.equals(expected, arr.extend({ 1, 2 }, one, two)))
+        assert(tbl.equals(expected, arr.flatten({ { 1, 2 }, one, two })))
       end)
 
     end)
@@ -200,14 +193,30 @@ for _, impl in ipairs(implementations) do
 
     test("pop", function ()
       local t = { 1, 2, 3 }
-      arr.pop(t)
+      local _, v = arr.pop(t)
       assert(tbl.equals({ 1, 2 }, t))
+      assert(v == 3)
+    end)
+
+    test("pop empty", function ()
+      local t = {}
+      local _, v = arr.pop(t)
+      assert(tbl.equals({}, t))
+      assert(v == nil)
     end)
 
     test("shift", function ()
       local t = { 1, 2, 3 }
-      arr.shift(t)
+      local _, v = arr.shift(t)
       assert(tbl.equals({ 2, 3 }, t))
+      assert(v == 1)
+    end)
+
+    test("shift empty", function ()
+      local t = {}
+      local _, v = arr.shift(t)
+      assert(tbl.equals({}, t))
+      assert(v == nil)
     end)
 
     test("each", function ()
@@ -222,8 +231,10 @@ for _, impl in ipairs(implementations) do
     test("sum, mean, max, min", function ()
       assert(tbl.equals({ 10 }, { arr.sum({ 1, 2, 3, 4 }) }))
       assert(tbl.equals({ 7.5 }, { arr.mean({ 5, 10 }) }))
-      assert(tbl.equals({ 10 }, { arr.max({ 1, 5, 10, 3 }) }))
-      assert(tbl.equals({ 1 }, { arr.min({ 1, 5, 10, 3 }) }))
+      local maxval, maxidx = arr.max({ 1, 5, 10, 3 })
+      assert(maxval == 10 and maxidx == 3)
+      local minval, minidx = arr.min({ 1, 5, 10, 3 })
+      assert(minval == 1 and minidx == 1)
     end)
 
     test("concat", function ()
@@ -236,10 +247,327 @@ for _, impl in ipairs(implementations) do
 
     test("shuffle", function ()
       local a = { 1, 2, 3, 4 }
-      local b = { 1, 2, 3, 4 }
-      assert(tbl.equals(a, b))
-      arr.shuffle(a, b)
-      assert(tbl.equals(a, b))
+      arr.shuffle(a)
+      arr.sort(a)
+      assert(tbl.equals(a, { 1, 2, 3, 4 }))
+    end)
+
+    test("shuffle with range", function ()
+      local a = { 1, 2, 3, 4, 5, 6 }
+      arr.shuffle(a, 2, 5)
+      assert(a[1] == 1)
+      assert(a[6] == 6)
+      arr.sort(a, function (x, y) return x < y end)
+      assert(tbl.equals(a, { 1, 2, 3, 4, 5, 6 }))
+    end)
+
+    test("pack", function ()
+      local t = arr.pack(1, 2, 3)
+      assert(t.n == 3)
+      assert(t[1] == 1 and t[2] == 2 and t[3] == 3)
+    end)
+
+    test("pack empty", function ()
+      local t = arr.pack()
+      assert(t.n == 0)
+    end)
+
+    test("pack with nils", function ()
+      local t = arr.pack(1, nil, 3)
+      assert(t.n == 3)
+      assert(t[1] == 1)
+      assert(t[2] == nil)
+      assert(t[3] == 3)
+    end)
+
+    test("pack trailing nils", function ()
+      local t = arr.pack(1, 2, nil)
+      assert(t.n == 3)
+      assert(t[1] == 1)
+      assert(t[2] == 2)
+      assert(t[3] == nil)
+    end)
+
+    test("spread with n", function ()
+      local t = { n = 3, 1, nil, 3 }
+      local a, b, c = arr.spread(t)
+      assert(a == 1)
+      assert(b == nil)
+      assert(c == 3)
+    end)
+
+    test("spread preserves trailing nils", function ()
+      local t = arr.pack(1, 2, nil)
+      local a, b, c = arr.spread(t)
+      assert(a == 1)
+      assert(b == 2)
+      assert(c == nil)
+      assert(select("#", arr.spread(t)) == 3)
+    end)
+
+    test("spread without n uses #", function ()
+      local t = { 1, 2, 3 }
+      local a, b, c = arr.spread(t)
+      assert(a == 1 and b == 2 and c == 3)
+    end)
+
+    test("clear", function ()
+      test("clears entire array", function ()
+        local t = { 1, 2, 3, 4 }
+        arr.clear(t)
+        assert(tbl.equals({}, t))
+      end)
+      test("clears range", function ()
+        local t = { 1, 2, 3, 4, 5 }
+        arr.clear(t, 2, 4)
+        assert(t[1] == 1)
+        assert(t[2] == nil)
+        assert(t[3] == nil)
+        assert(t[4] == nil)
+        assert(t[5] == 5)
+      end)
+    end)
+
+    test("overlay", function ()
+      test("overlays values at index", function ()
+        local t = { 1, 2, 3, 4 }
+        arr.overlay(t, 2, 10, 20)
+        assert(tbl.equals({ 1, 10, 20 }, t))
+      end)
+      test("truncates with no values", function ()
+        local t = { 1, 2, 3, 4 }
+        arr.overlay(t, 2)
+        assert(tbl.equals({ 1 }, t))
+      end)
+    end)
+
+    test("find", function ()
+      test("finds element matching predicate", function ()
+        local v, i = arr.find({ 1, 2, 3, 4 }, function (x) return x > 2 end)
+        assert(v == 3)
+        assert(i == 3)
+      end)
+      test("returns nil if not found", function ()
+        local v, i = arr.find({ 1, 2, 3 }, function (x) return x > 10 end)
+        assert(v == nil)
+        assert(i == nil)
+      end)
+      test("passes extra args to predicate", function ()
+        local v, i = arr.find({ 1, 2, 3 }, function (x, threshold) return x > threshold end, 1)
+        assert(v == 2)
+        assert(i == 2)
+      end)
+    end)
+
+    test("fill", function ()
+      test("fills entire array", function ()
+        local t = { 1, 2, 3, 4 }
+        arr.fill(t, 0)
+        assert(tbl.equals({ 0, 0, 0, 0 }, t))
+      end)
+      test("fills range", function ()
+        local t = { 1, 2, 3, 4, 5 }
+        arr.fill(t, 0, 2, 4)
+        assert(tbl.equals({ 1, 0, 0, 0, 5 }, t))
+      end)
+    end)
+
+    test("lookup", function ()
+      local t = { 1, 3, 2 }
+      local map = { "a", "b", "c" }
+      arr.lookup(t, map)
+      assert(tbl.equals({ "a", "c", "b" }, t))
+    end)
+
+    test("take", function ()
+      assert(tbl.equals({ 1, 2 }, arr.take({ 1, 2, 3, 4 }, 2)))
+      assert(tbl.equals({ 1, 2, 3, 4 }, arr.take({ 1, 2, 3, 4 }, 10)))
+      assert(tbl.equals({}, arr.take({ 1, 2, 3, 4 }, 0)))
+    end)
+
+    test("drop", function ()
+      assert(tbl.equals({ 3, 4 }, arr.drop({ 1, 2, 3, 4 }, 2)))
+      assert(tbl.equals({}, arr.drop({ 1, 2, 3, 4 }, 10)))
+      assert(tbl.equals({ 1, 2, 3, 4 }, arr.drop({ 1, 2, 3, 4 }, 0)))
+    end)
+
+    test("takelast", function ()
+      assert(tbl.equals({ 3, 4 }, arr.takelast({ 1, 2, 3, 4 }, 2)))
+      assert(tbl.equals({ 1, 2, 3, 4 }, arr.takelast({ 1, 2, 3, 4 }, 10)))
+    end)
+
+    test("droplast", function ()
+      assert(tbl.equals({ 1, 2 }, arr.droplast({ 1, 2, 3, 4 }, 2)))
+      assert(tbl.equals({}, arr.droplast({ 1, 2, 3, 4 }, 10)))
+    end)
+
+    test("zip", function ()
+      local a = { 1, 2, 3 }
+      local b = { "a", "b", "c" }
+      assert(tbl.equals({ { 1, "a" }, { 2, "b" }, { 3, "c" } }, arr.zip(a, b)))
+      assert(tbl.equals({ { 1, "a" }, { 2, "b" } }, arr.zip({ 1, 2 }, { "a", "b", "c" })))
+    end)
+
+    test("unzip", function ()
+      local zipped = { { 1, "a" }, { 2, "b" }, { 3, "c" } }
+      local a, b = arr.unzip(zipped)
+      assert(tbl.equals({ 1, 2, 3 }, a))
+      assert(tbl.equals({ "a", "b", "c" }, b))
+    end)
+
+    test("range", function ()
+      assert(tbl.equals({ 1, 2, 3, 4, 5 }, arr.range(1, 5)))
+      assert(tbl.equals({ 2, 4, 6 }, arr.range(2, 6, 2)))
+      assert(tbl.equals({ 5, 4, 3, 2, 1 }, arr.range(5, 1, -1)))
+    end)
+
+    test("interleave", function ()
+      assert(tbl.equals({ 1, 0, 2, 0, 3 }, arr.interleave({ 1, 2, 3 }, 0)))
+      assert(tbl.equals({ 1 }, arr.interleave({ 1 }, 0)))
+      assert(tbl.equals({}, arr.interleave({}, 0)))
+    end)
+
+    test("compact", function ()
+      local t = { 1, nil, 2, false, 3, nil }
+      arr.compact(t)
+      assert(tbl.equals({ 1, 2, 3 }, t))
+    end)
+
+    test("compacted", function ()
+      local t = { 1, nil, 2, false, 3, nil }
+      local r = arr.compacted(t)
+      assert(tbl.equals({ 1, 2, 3 }, r))
+      assert(t[1] == 1)
+    end)
+
+    test("unique", function ()
+      local t = { 1, 2, 2, 3, 1, 4, 3 }
+      arr.unique(t)
+      assert(tbl.equals({ 1, 2, 3, 4 }, t))
+    end)
+
+    test("uniqued", function ()
+      local t = { 1, 2, 2, 3, 1, 4 }
+      local r = arr.uniqued(t)
+      assert(tbl.equals({ 1, 2, 3, 4 }, r))
+      assert(#t == 6)
+    end)
+
+    test("group", function ()
+      local t = { 1, 2, 3, 4, 5, 6 }
+      local g = arr.group(t, function (v) return v % 2 == 0 and "even" or "odd" end)
+      assert(tbl.equals({ 1, 3, 5 }, g["odd"]))
+      assert(tbl.equals({ 2, 4, 6 }, g["even"]))
+    end)
+
+    test("partition", function ()
+      local t = { 1, 2, 3, 4, 5, 6 }
+      local pass, fail = arr.partition(t, function (v) return v % 2 == 0 end)
+      assert(tbl.equals({ 2, 4, 6 }, pass))
+      assert(tbl.equals({ 1, 3, 5 }, fail))
+    end)
+
+    test("toset", function ()
+      local t = { "a", "b", "c" }
+      local s = arr.toset(t)
+      assert(s["a"] == true)
+      assert(s["b"] == true)
+      assert(s["c"] == true)
+      assert(s["d"] == nil)
+    end)
+
+    test("chunks", function ()
+      local result = {}
+      arr.chunks({ 1, 2, 3, 4, 5 }, 2, function (_, i, j)
+        result[#result + 1] = { i = i, j = j }
+      end)
+      assert(tbl.equals({ { i = 1, j = 2 }, { i = 3, j = 4 }, { i = 5, j = 5 } }, result))
+    end)
+
+    test("chunked", function ()
+      local r = arr.chunked({ 1, 2, 3, 4, 5 }, 2)
+      assert(tbl.equals({ { 1, 2 }, { 3, 4 }, { 5 } }, r))
+    end)
+
+    test("consume", function ()
+      local iter = coroutine.wrap(function ()
+        for i = 1, 5 do coroutine.yield(i) end
+      end)
+      assert(tbl.equals({ 1, 2, 3, 4, 5 }, arr.consume(iter)))
+    end)
+
+    test("consume with limit", function ()
+      local iter = coroutine.wrap(function ()
+        for i = 1, 10 do coroutine.yield(i) end
+      end)
+      assert(tbl.equals({ 1, 2, 3 }, arr.consume(iter, 3)))
+    end)
+
+    test("scale", function ()
+      local t = { 1, 2, 3, 4 }
+      arr.scale(t, 2)
+      assert(tbl.equals({ 2, 4, 6, 8 }, t))
+    end)
+
+    test("scale with range", function ()
+      local t = { 1, 2, 3, 4, 5 }
+      arr.scale(t, 2, 2, 4)
+      assert(tbl.equals({ 1, 4, 6, 8, 5 }, t))
+    end)
+
+    test("add", function ()
+      local t = { 1, 2, 3, 4 }
+      arr.add(t, 10)
+      assert(tbl.equals({ 11, 12, 13, 14 }, t))
+    end)
+
+    test("add with range", function ()
+      local t = { 1, 2, 3, 4, 5 }
+      arr.add(t, 10, 2, 4)
+      assert(tbl.equals({ 1, 12, 13, 14, 5 }, t))
+    end)
+
+    test("abs", function ()
+      local t = { -1, 2, -3, 4 }
+      arr.abs(t)
+      assert(tbl.equals({ 1, 2, 3, 4 }, t))
+    end)
+
+    test("scalev", function ()
+      local t = { 1, 2, 3, 4 }
+      local t2 = { 2, 3, 4, 5 }
+      arr.scalev(t, t2)
+      assert(tbl.equals({ 2, 6, 12, 20 }, t))
+    end)
+
+    test("addv", function ()
+      local t = { 1, 2, 3, 4 }
+      local t2 = { 10, 20, 30, 40 }
+      arr.addv(t, t2)
+      assert(tbl.equals({ 11, 22, 33, 44 }, t))
+    end)
+
+    test("dot", function ()
+      local a = { 1, 2, 3 }
+      local b = { 4, 5, 6 }
+      assert(arr.dot(a, b) == 32)
+    end)
+
+    test("dot with range", function ()
+      local a = { 1, 2, 3, 4 }
+      local b = { 10, 5, 6, 10 }
+      assert(arr.dot(a, b, 2, 3) == 28)
+    end)
+
+    test("magnitude", function ()
+      local t = { 3, 4 }
+      assert(arr.magnitude(t) == 5)
+    end)
+
+    test("reverse with range", function ()
+      local t = { 1, 2, 3, 4, 5 }
+      arr.reverse(t, 2, 4)
+      assert(tbl.equals({ 1, 4, 3, 2, 5 }, t))
     end)
 
   end)

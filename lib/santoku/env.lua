@@ -1,8 +1,4 @@
 local arr = require("santoku.array")
-local apush = arr.push
-
-local varg = require("santoku.varg")
-local vlen = varg.len
 
 local err = require("santoku.error")
 local error = err.error
@@ -26,12 +22,12 @@ local function interpreter (args)
   local ret = {}
   local i = i_min
   while i < 0 do
-    apush(ret, arg[i])
+    arr.push(ret, arg[i])
     i = i + 1
   end
   if args then
     while arg[i] do
-      apush(ret, arg[i])
+      arr.push(ret, arg[i])
       i = i + 1
     end
   end
@@ -40,7 +36,7 @@ end
 
 local function var (name, ...)
   local val = os_getenv(name)
-  local n = vlen(...)
+  local n = select("#", ...)
   if val then
     return val
   elseif n >= 1 then

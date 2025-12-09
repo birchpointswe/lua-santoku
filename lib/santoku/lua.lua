@@ -3,7 +3,6 @@ local tbl = require("santoku.table")
 local err = require("santoku.error")
 
 local wrapnil = err.wrapnil
-local tmerge = tbl.merge
 
 local _getupvalue = debug.getupvalue
 local _loadstring = wrapnil(loadstring) -- luacheck: ignore
@@ -71,7 +70,7 @@ local function loadstring (code, env)
   return fn
 end
 
-return tmerge({
+return tbl.merge({
   loadstring = loadstring,
   setfenv = setfenv,
   getfenv = getfenv,

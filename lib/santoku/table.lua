@@ -1,12 +1,9 @@
-local select = select
-
-local function get (t, ...)
-  local m = select("#", ...)
-  if m == 0 then
+local function get (t, path)
+  if not path or #path == 0 then
     return t
   end
-  for i = 1, m do
-    t = t[select(i, ...)]
+  for i = 1, #path do
+    t = t[path[i]]
     if t == nil then
       return nil
     end
@@ -14,18 +11,13 @@ local function get (t, ...)
   return t
 end
 
-local function set (t, ...)
-  local m = select("#", ...)
-  if m < 2 then
+local function set (t, path, v)
+  if not path or #path == 0 then
     return t
   end
-  local v = select(m, ...)
   local t0 = t
-  for i = 1, m - 2 do
-    local k = select(i, ...)
-    if t0 == nil then
-      return t
-    end
+  for i = 1, #path - 1 do
+    local k = path[i]
     local nxt = t0[k]
     if nxt == nil then
       nxt = {}
@@ -33,37 +25,12 @@ local function set (t, ...)
     end
     t0 = nxt
   end
-  t0[select(m - 1, ...)] = v
+  t0[path[#path]] = v
   return t
 end
 
-local function update (t, ...)
-  local m = select("#", ...)
-  if m == 0 then
-    return t
-  end
-  local fn = select(m, ...)
-  if m == 1 then
-    return set(t, fn(get(t)))
-  elseif m == 2 then
-    local k1 = ...
-    return set(t, k1, fn(get(t, k1)))
-  elseif m == 3 then
-    local k1, k2 = ...
-    return set(t, k1, k2, fn(get(t, k1, k2)))
-  elseif m == 4 then
-    local k1, k2, k3 = ...
-    return set(t, k1, k2, k3, fn(get(t, k1, k2, k3)))
-  else
-    local keys = {}
-    for i = 1, m - 1 do
-      keys[i] = select(i, ...)
-    end
-    local tunpack = table.unpack or unpack -- luacheck: ignore
-    local v = fn(get(t, tunpack(keys)))
-    keys[m] = v
-    return set(t, tunpack(keys))
-  end
+local function update (t, path, fn)
+  return set(t, path, fn(get(t, path)))
 end
 
 local function merge (t, ...)
@@ -130,12 +97,59 @@ local function map (t, fn)
   return t
 end
 
--- TODO: Faster in c?
 local function clear (t)
   for k in pairs(t) do
     t[k] = nil
   end
   return t
+end
+
+local function keys (t)
+  local r = {}
+  for k in pairs(t) do
+    r[#r + 1] = k
+  end
+  return r
+end
+
+local function vals (t)
+  local r = {}
+  for _, v in pairs(t) do
+    r[#r + 1] = v
+  end
+  return r
+end
+
+local function entries (t)
+  local r = {}
+  for k, v in pairs(t) do
+    r[#r + 1] = { k, v }
+  end
+  return r
+end
+
+local function each (t, fn)
+  for k, v in pairs(t) do
+    fn(v, k)
+  end
+  return t
+end
+
+local function from (arr, fn)
+  local r = {}
+  for i = 1, #arr do
+    local v = arr[i]
+    r[fn(v)] = v
+  end
+  return r
+end
+
+local function invert (t)
+  local r = {}
+  for k, v in pairs(t) do
+    r[v] = k
+  end
+  return r
 end
 
 return merge({
@@ -147,4 +161,10 @@ return merge({
   equals = equals,
   merge = merge,
   clear = clear,
+  keys = keys,
+  vals = vals,
+  entries = entries,
+  each = each,
+  from = from,
+  invert = invert,
 }, table)

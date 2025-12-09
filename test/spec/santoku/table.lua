@@ -37,13 +37,14 @@ for _, impl in ipairs(implementations) do
 
       test("should get deep vals in objects", function ()
         local obj = { a = { b = { 1, 2, { 3, 4 } } } }
-        assert(tbl.equals({ 4 }, { tbl.get(obj, "a", "b", 3, 2) }))
-        assert(tbl.equals({}, { tbl.get(obj, "a", "x", 3, 2) }))
+        assert(tbl.equals({ 4 }, { tbl.get(obj, { "a", "b", 3, 2 }) }))
+        assert(tbl.equals({}, { tbl.get(obj, { "a", "x", 3, 2 }) }))
       end)
 
       test("should get function as identity with no keys", function ()
         local obj = { a = { b = { 1, 2, { 3, 4 } } } }
         assert(tbl.equals(obj, tbl.get(obj)))
+        assert(tbl.equals(obj, tbl.get(obj, {})))
       end)
 
     end)
@@ -52,16 +53,16 @@ for _, impl in ipairs(implementations) do
 
       test("should set deep vals in objects", function ()
         local obj = { a = { b = { 1, 2, { 3, 4 } } } }
-        tbl.set(obj, "a", "b", 3, 2, "x")
+        tbl.set(obj, { "a", "b", 3, 2 }, "x")
         assert(tbl.equals({ "x" }, { obj.a.b[3][2] }))
-        assert(tbl.equals({ "x" }, { tbl.get(obj, "a", "b", 3, 2) }))
+        assert(tbl.equals({ "x" }, { tbl.get(obj, { "a", "b", 3, 2 }) }))
       end)
 
       test("should handle nil endpoints", function ()
         local obj = { a = { b = { c = { d = 1 } } } }
-        tbl.set(obj, "a", "b", 3, 2, "x")
+        tbl.set(obj, { "a", "b", 3, 2 }, "x")
         assert(tbl.equals({ "x" }, { obj.a.b[3][2] }))
-        assert(tbl.equals({ "x" }, { tbl.get(obj, "a", "b", 3, 2) }))
+        assert(tbl.equals({ "x" }, { tbl.get(obj, { "a", "b", 3, 2 }) }))
       end)
 
     end)
@@ -91,12 +92,67 @@ for _, impl in ipairs(implementations) do
     end)
 
     test("update", function ()
-      assert(tbl.equals({ a = 2 }, tbl.update({ a = 1 }, "a", fun.bind(op.add, 1))))
+      assert(tbl.equals({ a = 2 }, tbl.update({ a = 1 }, { "a" }, fun.bind(op.add, 1))))
     end)
 
     test("clear", function ()
       local t = { 1, 2, a = 1, b = 2 }
       assert(tbl.equals({}, tbl.clear(t)))
+    end)
+
+    test("map", function ()
+      local t = { a = 1, b = 2, c = 3 }
+      tbl.map(t, function (v) return v * 2 end)
+      assert(tbl.equals({ a = 2, b = 4, c = 6 }, t))
+    end)
+
+    test("keys", function ()
+      local t = { a = 1, b = 2, c = 3 }
+      local k = tbl.keys(t)
+      table.sort(k)
+      assert(tbl.equals({ "a", "b", "c" }, k))
+    end)
+
+    test("vals", function ()
+      local t = { a = 1, b = 2, c = 3 }
+      local v = tbl.vals(t)
+      table.sort(v)
+      assert(tbl.equals({ 1, 2, 3 }, v))
+    end)
+
+    test("entries", function ()
+      local t = { a = 1, b = 2 }
+      local e = tbl.entries(t)
+      table.sort(e, function (x, y) return x[1] < y[1] end)
+      assert(tbl.equals({ { "a", 1 }, { "b", 2 } }, e))
+    end)
+
+    test("each", function ()
+      local t = { a = 1, b = 2, c = 3 }
+      local sum = 0
+      local keys = {}
+      tbl.each(t, function (v, k)
+        sum = sum + v
+        keys[#keys + 1] = k
+      end)
+      assert(sum == 6)
+      table.sort(keys)
+      assert(tbl.equals({ "a", "b", "c" }, keys))
+    end)
+
+    test("from", function ()
+      local arr = { { id = "x", val = 1 }, { id = "y", val = 2 } }
+      local t = tbl.from(arr, function (v) return v.id end)
+      assert(t["x"].val == 1)
+      assert(t["y"].val == 2)
+    end)
+
+    test("invert", function ()
+      local t = { a = 1, b = 2, c = 3 }
+      local inv = tbl.invert(t)
+      assert(inv[1] == "a")
+      assert(inv[2] == "b")
+      assert(inv[3] == "c")
     end)
 
   end)

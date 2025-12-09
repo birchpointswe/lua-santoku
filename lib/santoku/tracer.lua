@@ -4,7 +4,7 @@
 -- TODO: integrate coverage analysis here
 
 local str = require("santoku.string")
-local it = require("santoku.iter")
+local arr = require("santoku.array")
 
 local line_cache = {}
 local name_cache = {}
@@ -15,7 +15,7 @@ local trace = function (_, line)
   if source then
     local ls = line_cache[source]
     if not ls then
-      ls = it.collect(io.lines(source))
+      ls = arr.consume(io.lines(source))
       line_cache[source] = ls
     end
     local bn = name_cache[source]

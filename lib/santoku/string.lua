@@ -1,26 +1,5 @@
-local err = require("santoku.error")
-local error = err.error
-
 local tbl = require("santoku.table")
-local tmerge = tbl.merge
-
-local iter = require("santoku.iter")
-local imap = iter.map
-local icollect = iter.collect
-local ifirst = iter.first
-local iflatten = iter.flatten
-local ionce = iter.once
-local ifilter = iter.filter
-local isingleton = iter.singleton
-local ichain = iter.chain
-
 local arr = require("santoku.array")
-local acat = arr.concat
-local apush = arr.push
-
-local fun = require("santoku.functional")
-local noop = fun.noop
-
 local base = require("santoku.string.base")
 
 local find = string.find
@@ -30,164 +9,93 @@ local format = string.format
 local reverse = string.reverse
 local smatch = string.match
 local sgmatch = string.gmatch
-local mhuge = math.huge
 local io_write = io.write
-
-local function _separate (str, pat, s, e)
-  local a = s
-  local b, c
-  return function ()
-    if a <= e then
-      if not b then
-        b, c = find(str, pat, a)
-        if not b then
-          local t = a
-          a = e + 1
-          return str, t, e, "outer"
-        elseif b == s then
-          return str, a, a - 1, "outer"
-        else
-          local t = a
-          a = c
-          return str, t, b - 1, "outer"
-        end
-      else
-        local t = b
-        a = c + 1
-        b = nil
-        return str, t, c, "inner"
-      end
-    elseif c then
-      b = c
-      c = nil
-      return str, a, b, "outer"
-    end
-  end
-end
-
-local _match_drop_tag = function (str, s, e)
-  return str, s, e
-end
-
-local function _match_keep (keep)
-  return function (_, _, _, t)
-    return t == keep
-  end
-end
-
-local function _match_clean (keep, fe)
-  local str0, s0, e0
-  local function ret ()
-    return str0, s0, e0
-  end
-  return function (str, s, e)
-    if not s0 and e < s and keep == "inner" then
-      str0, s0, e0 = str, s, e
-      return noop
-    elseif s0 and e < s and s == fe + 1 and keep == "inner" then
-      str0, s0, e0 = str, s, e
-      return noop
-    else
-      str0, s0, e0 = str, s, e
-      return ionce(ret)
-    end
-  end
-end
-
-local function _match_merge (keep, delim)
-  local str0, s0, e0
-  local function ret ()
-    return str0, s0, e0
-  end
-  return function (str, s, e, tag)
-    if delim == "left" then
-      if keep == "inner" then
-        if str == _match_merge or not e0 or tag == keep then
-          str0, s0, e0 = str, s, e
-          return noop
-        else
-          str0, s0, e0 = str, s0 or s, e
-          return ionce(ret)
-        end
-      elseif keep == "outer" then
-        if str == _match_merge then
-          return ionce(ret)
-        elseif not e0 or tag == keep then
-          str0, s0, e0 = str, s, e
-          return noop
-        else
-          str0, s0, e0 = str, s0 or s, e
-          return ionce(ret)
-        end
-      end
-    elseif delim == "right" then
-      if keep == "outer" then
-        if tag == keep then
-          str0, s0, e0 = str, s0 or s, e
-          return ionce(ret)
-        else
-          str0, s0, e0 = str, s, e
-          return noop
-        end
-      elseif keep == "inner" then
-        if tag == keep then
-          str0, s0, e0 = str, s0 or s, e
-          return ionce(ret)
-        else
-          str0, s0, e0 = str, s, e
-          return noop
-        end
-      end
-    else
-      error("invalid delimiter", delim)
-    end
-  end
-end
-
-local function _match (keep, delim, fe, it)
-  if delim == true then
-    return iflatten(imap(_match_clean(keep, fe), it))
-  elseif not delim then
-    return imap(_match_drop_tag, ifilter(_match_keep(keep), it))
-  else
-    return iflatten(imap(_match_merge(keep, delim), ichain(it, isingleton(_match_merge))))
-  end
-end
 
 local function splits (str, pat, delim, s, e)
   s = s or 1
   e = e or #str
-  return _match("outer", delim, e, _separate(str, pat, s, e))
+  local r = {}
+  local pos = s
+  local seg_start = s
+  while pos <= e do
+    local b, c = find(str, pat, pos)
+    if not b or b > e then
+      r[#r + 1] = sub(str, seg_start, e)
+      pos = e + 2
+      break
+    end
+    if delim == "right" then
+      if b > seg_start then
+        r[#r + 1] = sub(str, seg_start, b - 1)
+      elseif seg_start == s then
+        r[#r + 1] = ""
+      end
+      seg_start = b
+    elseif delim == "left" then
+      if b > seg_start then
+        r[#r + 1] = sub(str, seg_start, c)
+      elseif #r > 0 then
+        r[#r] = r[#r] .. sub(str, b, c)
+      else
+        r[#r + 1] = sub(str, b, c)
+      end
+      seg_start = c + 1
+    elseif delim == true then
+      if b > pos then
+        r[#r + 1] = sub(str, pos, b - 1)
+      end
+      r[#r + 1] = sub(str, b, c)
+      seg_start = c + 1
+    else
+      if b > pos then
+        r[#r + 1] = sub(str, pos, b - 1)
+      elseif pos == s then
+        r[#r + 1] = ""
+      end
+      seg_start = c + 1
+    end
+    pos = c + 1
+  end
+  if pos <= e + 1 and (not delim or delim == "left") then
+    local last = sub(str, pos, e)
+    if #r == 0 or last ~= "" or pos == e + 1 then
+      r[#r + 1] = last
+    end
+  end
+  return r
 end
 
-local function matches (str, pat, delim, s, e)
+local function matches (str, pat, s, e)
   s = s or 1
   e = e or #str
-  return _match("inner", delim, e, _separate(str, pat, s, e))
+  local r = {}
+  local pos = s
+  while pos <= e do
+    local b, c = find(str, pat, pos)
+    if not b or b > e then
+      break
+    end
+    r[#r + 1] = sub(str, b, c)
+    pos = c + 1
+  end
+  return r
 end
 
 local function interp (s, t)
-
   local fmtpat = "%%[+-]?[%w.]+"
   local fmtpat_long = "%%%b()"
   local keypat = "^#%b()"
-
-  local segments = icollect(imap(sub, splits(s, fmtpat, true)))
+  local segments = splits(s, fmtpat, true)
   local out = {}
-
   for i = 1, #segments do
-
-    local s = segments[i]
-
-    if not (ifirst(matches(s, fmtpat)) or ifirst(matches(s, fmtpat_long))) then
-
-      apush(out, s)
-
+    local seg = segments[i]
+    local m1 = matches(seg, fmtpat)
+    local m2 = matches(seg, fmtpat_long)
+    if #m1 == 0 and #m2 == 0 then
+      arr.push(out, seg)
     else
-
-      local fmt = s
-      local key = i <= #segments and segments[i + 1] and smatch(segments[i + 1], keypat)
-
+      local fmt = seg
+      local key = i < #segments and segments[i + 1] and smatch(segments[i + 1], keypat)
       if key then
         segments[i + 1] = sub(segments[i + 1], #key + 1)
         key = sub(key, 3, #key - 1)
@@ -198,33 +106,27 @@ local function interp (s, t)
         key = sub(fmt, 2)
         fmt = nil
       end
-
       local nkey = tonumber(key)
       local result
-
       if nkey and not t[key] then
         result = t[nkey] or ""
       else
         result = t[key] or ""
       end
-
-      apush(out, fmt and format(fmt, result) or result)
-
+      arr.push(out, fmt and format(fmt, result) or result)
     end
-
   end
-
-  return acat(out)
-
+  return arr.concat(out)
 end
 
 local function parse (s, pat)
   local keys = {}
   pat = gsub(pat, "%b()#%b()", function (k)
-    local fmt = ifirst(imap(sub, matches(k, "%b()")))
+    local m = matches(k, "%b()")
+    local fmt = m[1]
     local key = sub(k, #fmt + 2)
     key = sub(key, 2, #key - 1)
-    apush(keys, key)
+    arr.push(keys, key)
     return fmt
   end)
   local vals = { smatch(s, pat) }
@@ -254,7 +156,7 @@ end
 local function quote (s, q, e)
   q = q or "\""
   e = e or "\\"
-  return acat({ q, (gsub(s, q, e .. q)), q })
+  return arr.concat({ q, (gsub(s, q, e .. q)), q })
 end
 
 local function unquote (s, q, e)
@@ -286,10 +188,12 @@ local function printi (s, t)
 end
 
 local function trim (s, left, right)
-  if not left then
+  if left == nil then
     left = "%s*"
   end
-  right = right or left
+  if right == nil then
+    right = left
+  end
   if left ~= false then
     s = gsub(s, "^" .. left, "")
   end
@@ -326,30 +230,28 @@ local function compare (a, b)
   end
 end
 
--- TODO: Can this be more performant? Can we
--- avoid the { ... }
 local function commonprefix (...)
   local strs = { ... }
-  local shortest, prefix, first = mhuge, ""
-  for _, str in pairs(strs) do
-    if #str < shortest then
-      shortest = #str
+  local n = #strs
+  if n == 0 then return "" end
+  local first = strs[1]
+  if n == 1 then return first end
+  local shortest = #first
+  for i = 2, n do
+    local len = #strs[i]
+    if len < shortest then
+      shortest = len
     end
   end
   for i = 1, shortest do
-    if strs[1] then
-      first = sub(strs[1], i, i)
-    else
-      return prefix
-    end
-    for j = 2, #strs do
-      if sub(strs[j], i, i) ~= first then
-        return prefix
+    local c = sub(first, i, i)
+    for j = 2, n do
+      if sub(strs[j], i, i) ~= c then
+        return sub(first, 1, i - 1)
       end
     end
-    prefix = prefix .. first
   end
-  return prefix
+  return sub(first, 1, shortest)
 end
 
 local function _count (text, pat, s, n)
@@ -439,35 +341,35 @@ end
 local function encode_url (t)
   local out = {}
   if t.scheme then
-    apush(out, t.scheme, ":")
+    arr.push(out, t.scheme, ":")
   end
   if t.host then
-    apush(out, "//")
-    if t.userinfo then apush(out, t.userinfo, "@") end
+    arr.push(out, "//")
+    if t.userinfo then arr.push(out, t.userinfo, "@") end
     if find(t.host, ":", 1, true) then
-      apush(out, "[", t.host, "]")
+      arr.push(out, "[", t.host, "]")
     else
-      apush(out, t.host)
+      arr.push(out, t.host)
     end
-    if t.port then apush(out, ":", tostring(t.port)) end
+    if t.port then arr.push(out, ":", tostring(t.port)) end
   end
   if t.pathname then
-    apush(out, t.pathname)
+    arr.push(out, t.pathname)
   elseif t.path and #t.path > 0 then
     for i = 1, #t.path do
-      apush(out, "/", t.path[i])
+      arr.push(out, "/", t.path[i])
     end
   end
   if t.search and t.search ~= "" then
-    apush(out, t.search)
+    arr.push(out, t.search)
   elseif t.params and next(t.params) then
     to_query(t.params, out)
   end
-  if t.fragment then apush(out, "#", t.fragment) end
-  return acat(out)
+  if t.fragment then arr.push(out, "#", t.fragment) end
+  return arr.concat(out)
 end
 
-return tmerge({
+return tbl.merge({
   splits = splits,
   matches = matches,
   count = count,

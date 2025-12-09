@@ -108,3 +108,25 @@ test("assert", function ()
     pcall(assert, false, "hello", 1, 2, 3)
   }))
 end)
+
+test("checkok", function ()
+  assert(teq({ false, "error", 1, 2 }, {
+    pcall(err.checkok, false, "error", 1, 2)
+  }))
+  assert(teq({ true, 1, 2, 3 }, {
+    pcall(function ()
+      return err.checkok(true, 1, 2, 3)
+    end)
+  }))
+end)
+
+test("checknil", function ()
+  assert(teq({ false, "error", 1, 2 }, {
+    pcall(err.checknil, nil, "error", 1, 2)
+  }))
+  assert(teq({ true, "value", 1, 2, 3 }, {
+    pcall(function ()
+      return err.checknil("value", 1, 2, 3)
+    end)
+  }))
+end)

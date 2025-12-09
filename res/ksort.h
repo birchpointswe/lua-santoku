@@ -74,7 +74,7 @@ typedef struct {
 #define KSORT_SWAP(type_t, a, b) { register type_t t=(a); (a)=(b); (b)=t; }
 
 #define KSORT_INIT(name, type_t, __sort_lt) \
-	void ks_mergesort_##name(size_t n, type_t array[], type_t temp[]) \
+	static inline void ks_mergesort_##name(size_t n, type_t array[], type_t temp[]) \
 	{ \
 		type_t *a2[2], *a, *b; \
 		int curr, shift; \

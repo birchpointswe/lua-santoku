@@ -1,5 +1,5 @@
-local arr = require("santoku.array")
 local fun = require("santoku.functional")
+local arr = require("santoku.array")
 
 local M = {}
 
@@ -33,10 +33,6 @@ M._each = function (g, it, done)
   end
 end
 
-M.each = function (g, it, done)
-  return M._each(g, it, done)
-end
-
 M._iter = function (y, it, done)
   return y(function (...)
     return it(function (ok, ...)
@@ -53,12 +49,16 @@ M.iter = function (y, it, done)
   return M._iter(y, it, done)
 end
 
+M.consume = function (iter)
+  return function (each, final)
+    return M._each(iter, each, final)
+  end
+end
+
 M._loop = function (loop0, final, ...)
   return loop0(function (...)
     return M._loop(loop0, final, ...)
-  end, function (...)
-    return final(...)
-  end, ...)
+  end, final, ...)
 end
 
 M.loop = function (loop0, final)
@@ -71,18 +71,26 @@ run_process = function (hs, each, done, asy, i, ...)
   if not h then
     return done(...)
   elseif not asy[h] then
-    -- Note: intentionally not passing results to other
-    -- handlers when not async
     h(...)
-    return each(function (...)
+    if each == M.id then
       return run_process(hs, each, done, asy, i + 1, ...)
-    end, ...)
-  else
-    return h(function (...) --
+    else
       return each(function (...)
         return run_process(hs, each, done, asy, i + 1, ...)
       end, ...)
-    end, ...)
+    end
+  else
+    if each == M.id then
+      return h(function (...)
+        return run_process(hs, each, done, asy, i + 1, ...)
+      end, ...)
+    else
+      return h(function (...)
+        return each(function (...)
+          return run_process(hs, each, done, asy, i + 1, ...)
+        end, ...)
+      end, ...)
+    end
   end
 end
 
@@ -167,6 +175,117 @@ M.events = function ()
     end
 
   }
+end
+
+M.all = function (fns, done)
+  local n = #fns
+  if n == 0 then
+    return done(true, {})
+  end
+  local results = {}
+  local completed = 0
+  local failed = false
+  for i = 1, n do
+    fns[i](function (ok, ...)
+      if failed then return end
+      if not ok then
+        failed = true
+        return done(false, ...)
+      end
+      results[i] = (...)
+      completed = completed + 1
+      if completed == n then
+        return done(true, results)
+      end
+    end)
+  end
+end
+
+M.race = function (fns, done)
+  local n = #fns
+  if n == 0 then
+    return done(true)
+  end
+  local finished = false
+  for i = 1, n do
+    fns[i](function (ok, ...)
+      if finished then return end
+      finished = true
+      return done(ok, ...)
+    end)
+  end
+end
+
+local _series
+_series = function (fns, i, done, ...)
+  if i > #fns then
+    return done(true, ...)
+  end
+  return fns[i](function (ok, ...)
+    if not ok then
+      return done(false, ...)
+    end
+    return _series(fns, i + 1, done, ...)
+  end, ...)
+end
+
+M.series = function (fns, done, ...)
+  return _series(fns, 1, done, ...)
+end
+
+local _map
+_map = function (t, fn, done, i, results)
+  if i > #t then
+    return done(true, results)
+  end
+  return fn(function (ok, v)
+    if not ok then
+      return done(false, v)
+    end
+    results[i] = v
+    return _map(t, fn, done, i + 1, results)
+  end, t[i], i)
+end
+
+M.map = function (t, fn, done)
+  return _map(t, fn, done, 1, {})
+end
+
+local _filter
+_filter = function (t, fn, done, i, results)
+  if i > #t then
+    return done(true, results)
+  end
+  return fn(function (ok, keep)
+    if not ok then
+      return done(false, keep)
+    end
+    if keep then
+      results[#results + 1] = t[i]
+    end
+    return _filter(t, fn, done, i + 1, results)
+  end, t[i], i)
+end
+
+M.filter = function (t, fn, done)
+  return _filter(t, fn, done, 1, {})
+end
+
+local _reduce
+_reduce = function (t, fn, done, i, acc)
+  if i > #t then
+    return done(true, acc)
+  end
+  return fn(function (ok, v)
+    if not ok then
+      return done(false, v)
+    end
+    return _reduce(t, fn, done, i + 1, v)
+  end, acc, t[i], i)
+end
+
+M.reduce = function (t, fn, init, done)
+  return _reduce(t, fn, done, 1, init)
 end
 
 return M

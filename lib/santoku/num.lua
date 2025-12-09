@@ -1,5 +1,4 @@
 local tbl = require("santoku.table")
-local tmerge = tbl.merge
 
 local modf = math.modf
 local _atan = math.atan
@@ -42,7 +41,7 @@ local function round (n, m)
   end
 end
 
-return tmerge({
+return tbl.merge({
   trunc = trunc,
   atan = atan,
   mavg = mavg,

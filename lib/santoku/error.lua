@@ -1,5 +1,4 @@
 local arr = require("santoku.array")
-local aspread = arr.spread
 local select = select
 
 local _error = error
@@ -39,7 +38,7 @@ local function pcall_finalizer (ok, ...)
   if ok then
     return ok, ...
   elseif getmetatable(...) == mt then
-    return ok, aspread((...))
+    return ok, arr.spread((...))
   else
     return ok, ...
   end
@@ -54,7 +53,7 @@ local function xpcall_finalizer (ok, ...)
   if ok then
     return ok, ...
   elseif getmetatable(...) == mt then
-    return ok, select(2, aspread((...)))
+    return ok, select(2, arr.spread((...)))
   else
     return ok, select(2, ...)
   end
@@ -67,7 +66,7 @@ local function xpcall_helper (handler)
       return setmetatable({ ... }, mt)
     end
     if getmetatable(...) == mt then
-      return wrap_result(pcall(handler, aspread((...))))
+      return wrap_result(pcall(handler, arr.spread((...))))
     else
       return wrap_result(pcall(handler, ...))
     end
