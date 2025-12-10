@@ -55,18 +55,17 @@ for _, impl in ipairs(implementations) do
 
     test("flatten", function ()
 
-      test("should flatten nested arrays", function ()
-        local expected = { 1, 2, 3, 4 }
-        local one = { 1, 2 }
-        local two = { 3, 4 }
-        assert(tbl.equals(expected, arr.flatten({ one, two })))
+      test("flatten", function ()
+        local t = { 1, { 2, 3 }, 4 }
+        local result = arr.flatten(t)
+        assert(tbl.equals({ 1, 2, 3, 4 }, result))
+        assert(result ~= t)
       end)
 
-      test("should handle empty tables", function ()
-        local expected = { 1, 2 }
-        local one = {}
-        local two = {}
-        assert(tbl.equals(expected, arr.flatten({ { 1, 2 }, one, two })))
+      test("should handle mixed nesting", function ()
+        local t = { "a", { "b", "c" }, { "d" }, "e" }
+        local result = arr.flatten(t)
+        assert(tbl.equals({ "a", "b", "c", "d", "e" }, result))
       end)
 
     end)
@@ -434,9 +433,21 @@ for _, impl in ipairs(implementations) do
     end)
 
     test("interleave", function ()
-      assert(tbl.equals({ 1, 0, 2, 0, 3 }, arr.interleave({ 1, 2, 3 }, 0)))
-      assert(tbl.equals({ 1 }, arr.interleave({ 1 }, 0)))
-      assert(tbl.equals({}, arr.interleave({}, 0)))
+      local t = { 1, 2, 3 }
+      arr.interleave(t, 0)
+      assert(tbl.equals({ 1, 0, 2, 0, 3 }, t))
+      local t2 = { 1 }
+      arr.interleave(t2, 0)
+      assert(tbl.equals({ 1 }, t2))
+      local t3 = {}
+      arr.interleave(t3, 0)
+      assert(tbl.equals({}, t3))
+    end)
+
+    test("interleaved", function ()
+      assert(tbl.equals({ 1, 0, 2, 0, 3 }, arr.interleaved({ 1, 2, 3 }, 0)))
+      assert(tbl.equals({ 1 }, arr.interleaved({ 1 }, 0)))
+      assert(tbl.equals({}, arr.interleaved({}, 0)))
     end)
 
     test("compact", function ()
@@ -501,160 +512,90 @@ for _, impl in ipairs(implementations) do
       assert(tbl.equals({ { 1, 2 }, { 3, 4 }, { 5 } }, r))
     end)
 
-    test("pull", function ()
-      local iter = coroutine.wrap(function ()
-        for i = 1, 5 do coroutine.yield(i) end
-      end)
-      assert(tbl.equals({ 1, 2, 3, 4, 5 }, arr.pull(iter)))
-    end)
-
-    test("pull with limit", function ()
-      local iter = coroutine.wrap(function ()
-        for i = 1, 10 do coroutine.yield(i) end
-      end)
-      assert(tbl.equals({ 1, 2, 3 }, arr.pull(iter, 3)))
-    end)
-
-    test("pullpacked", function ()
-      local iter = coroutine.wrap(function ()
-        coroutine.yield("a", 1, 2)
-        coroutine.yield("b", 3, 4)
-        coroutine.yield("c", 5, 6)
-      end)
-      local r = arr.pullpacked(iter)
-      assert(tbl.equals({ { "a", 1, 2, n = 3 }, { "b", 3, 4, n = 3 }, { "c", 5, 6, n = 3 } }, r))
-    end)
-
-    test("pullpacked with limit", function ()
-      local iter = coroutine.wrap(function ()
-        coroutine.yield("a", 1)
-        coroutine.yield("b", 2)
-        coroutine.yield("c", 3)
-      end)
-      local r = arr.pullpacked(iter, 2)
-      assert(tbl.equals({ { "a", 1, n = 2 }, { "b", 2, n = 2 } }, r))
-    end)
-
-    test("pullmap", function ()
-      local iter = coroutine.wrap(function ()
-        coroutine.yield("hello", 1, 5)
-        coroutine.yield("world", 1, 5)
-      end)
-      local r = arr.pullmap(iter, string.sub)
-      assert(tbl.equals({ "hello", "world" }, r))
-    end)
-
-    test("pullfilter", function ()
-      local iter = coroutine.wrap(function ()
-        coroutine.yield("a", 1)
-        coroutine.yield("b", 2)
-        coroutine.yield("c", 3)
-        coroutine.yield("d", 4)
-      end)
-      local r = arr.pullfilter(iter, function (_, n) return n % 2 == 0 end)
-      assert(tbl.equals({ { "b", 2, n = 2 }, { "d", 4, n = 2 } }, r))
-    end)
-
-    test("pullfilter with limit", function ()
-      local iter = coroutine.wrap(function ()
-        for i = 1, 10 do coroutine.yield("x", i) end
-      end)
-      local r = arr.pullfilter(iter, function (_, n) return n % 2 == 0 end, 2)
-      assert(tbl.equals({ { "x", 2, n = 2 }, { "x", 4, n = 2 } }, r))
-    end)
-
-    test("pullreduce", function ()
-      local iter = coroutine.wrap(function ()
-        coroutine.yield(1, 10)
-        coroutine.yield(2, 20)
-        coroutine.yield(3, 30)
-      end)
-      local r = arr.pullreduce(iter, function (acc, a, b) return acc + a + b end, 0)
-      assert(r == 66)
-    end)
-
-    test("pulleach", function ()
-      local iter = coroutine.wrap(function ()
-        coroutine.yield("a", 1)
-        coroutine.yield("b", 2)
-      end)
+    test("ieach", function ()
       local results = {}
-      arr.pulleach(iter, function (s, n) results[s] = n end)
-      assert(tbl.equals({ a = 1, b = 2 }, results))
+      arr.ieach(function (i, v) results[i] = v end, ipairs({ "a", "b", "c" }))
+      assert(tbl.equals({ "a", "b", "c" }, results))
     end)
 
-    test("pullfind", function ()
-      local iter = coroutine.wrap(function ()
-        coroutine.yield("a", 1)
-        coroutine.yield("b", 2)
-        coroutine.yield("c", 3)
-      end)
-      local s, n = arr.pullfind(iter, function (_, n) return n == 2 end)
-      assert(s == "b" and n == 2)
+    test("ieach with pairs", function ()
+      local results = {}
+      arr.ieach(function (k, v) results[k] = v end, pairs({ x = 1, y = 2 }))
+      assert(tbl.equals({ x = 1, y = 2 }, results))
     end)
 
-    test("pullfind not found", function ()
-      local iter = coroutine.wrap(function ()
-        coroutine.yield("a", 1)
-      end)
-      local r = arr.pullfind(iter, function (_, n) return n == 99 end)
-      assert(r == nil)
+    test("imap", function ()
+      local r = arr.imap(function (i, v) return v .. i end, ipairs({ "a", "b", "c" }))
+      assert(tbl.equals({ "a1", "b2", "c3" }, r))
     end)
 
-    test("pullcount", function ()
+    test("imap with pairs", function ()
+      local r = arr.imap(function (k, v) return k .. "=" .. v end, pairs({ x = "1", y = "2" }))
+      table.sort(r)
+      assert(tbl.equals({ "x=1", "y=2" }, r))
+    end)
+
+    test("ifilter", function ()
+      local r = arr.ifilter(function (i) return i % 2 == 0 end, ipairs({ 1, 2, 3, 4, 5 }))
+      assert(tbl.equals({ 2, 4 }, r))
+    end)
+
+    test("ifiltermap", function ()
+      local r = arr.ifiltermap(function (i, v)
+        if i % 2 == 0 then return v .. "!" end
+      end, ipairs({ "a", "b", "c", "d" }))
+      assert(tbl.equals({ "b!", "d!" }, r))
+    end)
+
+    test("ireduce", function ()
+      local r = arr.ireduce(function (acc, _, v) return acc + v end, 0, ipairs({ 1, 2, 3, 4 }))
+      assert(r == 10)
+    end)
+
+    test("ireduce with pairs", function ()
+      local r = arr.ireduce(function (acc, _, v) return acc + v end, 0, pairs({ a = 1, b = 2, c = 3 }))
+      assert(r == 6)
+    end)
+
+    test("icollect", function ()
       local iter = coroutine.wrap(function ()
         for i = 1, 5 do coroutine.yield(i) end
       end)
-      assert(arr.pullcount(iter) == 5)
+      assert(tbl.equals({ 1, 2, 3, 4, 5 }, arr.icollect(iter)))
     end)
 
-    test("pullcount with predicate", function ()
+    test("icollect with limit", function ()
       local iter = coroutine.wrap(function ()
         for i = 1, 10 do coroutine.yield(i) end
       end)
-      assert(arr.pullcount(iter, function (n) return n % 2 == 0 end) == 5)
+      assert(tbl.equals({ 1, 2, 3 }, arr.icollect(3, iter)))
     end)
 
-    test("pullany true", function ()
-      local iter = coroutine.wrap(function ()
-        coroutine.yield(1)
-        coroutine.yield(2)
-        coroutine.yield(3)
-      end)
-      assert(arr.pullany(iter, function (n) return n == 2 end) == true)
-    end)
-
-    test("pullany false", function ()
-      local iter = coroutine.wrap(function ()
-        coroutine.yield(1)
-        coroutine.yield(3)
-      end)
-      assert(arr.pullany(iter, function (n) return n == 2 end) == false)
-    end)
-
-    test("pullall true", function ()
-      local iter = coroutine.wrap(function ()
-        coroutine.yield(2)
-        coroutine.yield(4)
-        coroutine.yield(6)
-      end)
-      assert(arr.pullall(iter, function (n) return n % 2 == 0 end) == true)
-    end)
-
-    test("pullall false", function ()
-      local iter = coroutine.wrap(function ()
-        coroutine.yield(2)
-        coroutine.yield(3)
-        coroutine.yield(4)
-      end)
-      assert(arr.pullall(iter, function (n) return n % 2 == 0 end) == false)
-    end)
-
-    test("consume alias", function ()
+    test("icollect into dest", function ()
       local iter = coroutine.wrap(function ()
         for i = 1, 3 do coroutine.yield(i) end
       end)
-      assert(tbl.equals({ 1, 2, 3 }, arr.consume(iter)))
+      local dest = { 9, 9, 9, 9, 9 }
+      arr.icollect(dest, iter)
+      assert(tbl.equals({ 1, 2, 3 }, dest))
+    end)
+
+    test("icollect with limit and dest", function ()
+      local iter = coroutine.wrap(function ()
+        for i = 1, 10 do coroutine.yield(i) end
+      end)
+      local dest = { 9, 9, 9, 9, 9 }
+      arr.icollect(2, dest, iter)
+      assert(tbl.equals({ 1, 2 }, dest))
+    end)
+
+    test("icollect with dest and limit", function ()
+      local iter = coroutine.wrap(function ()
+        for i = 1, 10 do coroutine.yield(i) end
+      end)
+      local dest = {}
+      arr.icollect(dest, 2, iter)
+      assert(tbl.equals({ 1, 2 }, dest))
     end)
 
     test("scale", function ()

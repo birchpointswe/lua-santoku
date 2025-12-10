@@ -114,6 +114,16 @@ local function filter (t, fn, ...)
   return t
 end
 
+local function filtered (t, fn, ...)
+  local r = {}
+  for i = 1, #t do
+    if fn(t[i], i, ...) then
+      r[#r + 1] = t[i]
+    end
+  end
+  return r
+end
+
 -- TODO: Unique currently implemented via a sort
 -- and then a filter. Can we make it faster?
 local function sort (t, opts)
@@ -130,6 +140,14 @@ local function sort (t, opts)
     end)
   end
   return t
+end
+
+local function sorted (t, opts)
+  local r = {}
+  for i = 1, #t do
+    r[i] = t[i]
+  end
+  return sort(r, opts)
 end
 
 local function shift (t)
@@ -190,6 +208,14 @@ local function map (t, fn, ...)
     t[i] = fn(t[i], ...)
   end
   return t
+end
+
+local function mapped (t, fn, ...)
+  local r = {}
+  for i = 1, #t do
+    r[i] = fn(t[i], ...)
+  end
+  return r
 end
 
 local function reduce (t, acc, ...)
@@ -492,7 +518,17 @@ end
 
 local function interleave (t, v)
   local n = #t
-  if n == 0 then return t end
+  if n <= 1 then return t end
+  for i = n, 2, -1 do
+    t[2 * i - 1] = t[i]
+    t[2 * (i - 1)] = v
+  end
+  return t
+end
+
+local function interleaved (t, v)
+  local n = #t
+  if n == 0 then return {} end
   local r = {}
   for i = 1, n - 1 do
     r[#r + 1] = t[i]
@@ -520,117 +556,114 @@ local function chunked (t, size)
   return r
 end
 
-local function pull (iter, limit)
+local function ieach (fn, iter_fn, state, ctrl)
+  local var = ctrl
+  while true do
+    local vals = tup(iter_fn(state, var))
+    if vals[1] == nil then break end
+    var = vals[1]
+    fn(spread(vals))
+  end
+end
+
+local function imap (fn, iter_fn, state, ctrl)
   local r = {}
   local i = 0
-  for v in iter do
+  local var = ctrl
+  while true do
+    local vals = tup(iter_fn(state, var))
+    if vals[1] == nil then break end
+    var = vals[1]
     i = i + 1
-    r[i] = v
-    if limit and i >= limit then
-      break
-    end
+    r[i] = fn(spread(vals))
   end
   return r
 end
 
-local function pullpacked (iter, limit)
+local function ifilter (fn, iter_fn, state, ctrl)
   local r = {}
   local i = 0
+  local var = ctrl
   while true do
-    local t = tup(iter())
-    if t[1] == nil then break end
-    i = i + 1
-    r[i] = t
-    if limit and i >= limit then break end
-  end
-  return r
-end
-
-local function pullmap (iter, fn, limit)
-  local r = {}
-  local i = 0
-  while true do
-    local t = tup(iter())
-    if t[1] == nil then break end
-    i = i + 1
-    r[i] = fn(spread(t))
-    if limit and i >= limit then break end
-  end
-  return r
-end
-
-local function pullfilter (iter, fn, limit)
-  local r = {}
-  local i = 0
-  while true do
-    local t = tup(iter())
-    if t[1] == nil then break end
-    if fn(spread(t)) then
+    local vals = tup(iter_fn(state, var))
+    if vals[1] == nil then break end
+    var = vals[1]
+    if fn(spread(vals)) then
       i = i + 1
-      r[i] = t
-      if limit and i >= limit then break end
+      r[i] = vals[1]
     end
   end
   return r
 end
 
-local function pullreduce (iter, fn, acc)
+local function ifiltermap (fn, iter_fn, state, ctrl)
+  local r = {}
+  local i = 0
+  local var = ctrl
   while true do
-    local t = tup(iter())
-    if t[1] == nil then break end
-    acc = fn(acc, spread(t))
+    local vals = tup(iter_fn(state, var))
+    if vals[1] == nil then break end
+    var = vals[1]
+    local result = fn(spread(vals))
+    if result ~= nil then
+      i = i + 1
+      r[i] = result
+    end
+  end
+  return r
+end
+
+local function ireduce (fn, init, iter_fn, state, ctrl)
+  local acc = init
+  local var = ctrl
+  while true do
+    local vals = tup(iter_fn(state, var))
+    if vals[1] == nil then break end
+    var = vals[1]
+    acc = fn(acc, spread(vals))
   end
   return acc
 end
 
-local function pulleach (iter, fn)
-  while true do
-    local t = tup(iter())
-    if t[1] == nil then break end
-    fn(spread(t))
+local function icollect (...)
+  local limit, dest, iter_fn
+  local arg1 = select(1, ...)
+  local arg2 = select(2, ...)
+  local arg3 = select(3, ...)
+  if type(arg1) == "number" then
+    limit = arg1
+    if type(arg2) == "table" then
+      dest = arg2
+      iter_fn = arg3
+    else
+      iter_fn = arg2
+    end
+  elseif type(arg1) == "table" then
+    dest = arg1
+    if type(arg2) == "number" then
+      limit = arg2
+      iter_fn = arg3
+    else
+      iter_fn = arg2
+    end
+  else
+    iter_fn = arg1
   end
-end
-
-local function pullfind (iter, fn)
+  local r = dest or {}
+  local i = 0
   while true do
-    local t = tup(iter())
-    if t[1] == nil then return nil end
-    if fn(spread(t)) then
-      return spread(t)
+    local v = iter_fn()
+    if v == nil then break end
+    i = i + 1
+    r[i] = v
+    if limit and i >= limit then break end
+  end
+  if dest then
+    for k = i + 1, #dest do
+      dest[k] = nil
     end
   end
-end
-
-local function pullcount (iter, fn)
-  local c = 0
-  while true do
-    local t = tup(iter())
-    if t[1] == nil then break end
-    if not fn or fn(spread(t)) then
-      c = c + 1
-    end
-  end
-  return c
-end
-
-local function pullany (iter, fn)
-  while true do
-    local t = tup(iter())
-    if t[1] == nil then return false end
-    if fn(spread(t)) then
-      return true
-    end
-  end
-end
-
-local function pullall (iter, fn)
-  while true do
-    local t = tup(iter())
-    if t[1] == nil then return true end
-    if not fn(spread(t)) then
-      return false
-    end
-  end
+  return r
 end
 
 local function scale (t, factor, i, j)
@@ -705,7 +738,6 @@ return {
   concat = concat,
   insert = insert,
   replicate = replicate,
-  sort = sort,
   shift = shift,
   pop = pop,
   slice = slice,
@@ -719,8 +751,12 @@ return {
   push = push,
   each = each,
   map = map,
+  mapped = mapped,
   reduce = reduce,
   filter = filter,
+  filtered = filtered,
+  sort = sort,
+  sorted = sorted,
   tabulate = tabulate,
   includes = includes,
   reverse = reverse,
@@ -748,19 +784,15 @@ return {
   partition = partition,
   toset = toset,
   interleave = interleave,
+  interleaved = interleaved,
   chunks = chunks,
   chunked = chunked,
-  pull = pull,
-  pullpacked = pullpacked,
-  pullmap = pullmap,
-  pullfilter = pullfilter,
-  pullreduce = pullreduce,
-  pulleach = pulleach,
-  pullfind = pullfind,
-  pullcount = pullcount,
-  pullany = pullany,
-  pullall = pullall,
-  consume = pull,
+  ieach = ieach,
+  imap = imap,
+  ifilter = ifilter,
+  ifiltermap = ifiltermap,
+  ireduce = ireduce,
+  icollect = icollect,
   scale = scale,
   add = addscalar,
   abs = abs,

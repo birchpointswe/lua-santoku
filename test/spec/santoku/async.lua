@@ -6,7 +6,6 @@ local assert = err.assert
 
 local validate = require("santoku.validate")
 local eq = validate.isequal
-local isnil = validate.isnil
 
 local tbl = require("santoku.table")
 local teq = tbl.equals
@@ -14,8 +13,136 @@ local teq = tbl.equals
 local arr = require("santoku.array")
 local push = arr.push
 
-test("pipe true", function ()
+test("ieach with ipairs", function ()
+  local results = {}
+  async.ieach(function (done, i, v)
+    push(results, { i, v })
+    return done(true)
+  end, function (ok)
+    assert(eq(true, ok))
+  end, ipairs({ "a", "b", "c" }))
+  assert(teq({ { 1, "a" }, { 2, "b" }, { 3, "c" } }, results))
+end)
 
+test("ieach with pairs", function ()
+  local results = {}
+  async.ieach(function (done, k, v)
+    results[k] = v
+    return done(true)
+  end, function (ok)
+    assert(eq(true, ok))
+  end, pairs({ x = 1, y = 2 }))
+  assert(teq({ x = 1, y = 2 }, results))
+end)
+
+test("ieach failure", function ()
+  local results = {}
+  async.ieach(function (done, _, v)
+    push(results, v)
+    if v == "b" then
+      return done(false, "stopped")
+    end
+    return done(true)
+  end, function (ok, err)
+    assert(eq(false, ok))
+    assert(eq("stopped", err))
+  end, ipairs({ "a", "b", "c" }))
+  assert(teq({ "a", "b" }, results))
+end)
+
+test("imap", function ()
+  async.imap(function (done, i, v)
+    done(true, v .. i)
+  end, function (ok, results)
+    assert(eq(true, ok))
+    assert(teq({ "a1", "b2", "c3" }, results))
+  end, ipairs({ "a", "b", "c" }))
+end)
+
+test("imap failure", function ()
+  async.imap(function (done, _, v)
+    if v == "b" then
+      done(false, "error")
+    else
+      done(true, v)
+    end
+  end, function (ok, err)
+    assert(eq(false, ok))
+    assert(eq("error", err))
+  end, ipairs({ "a", "b", "c" }))
+end)
+
+test("ifilter", function ()
+  async.ifilter(function (done, i)
+    done(true, i % 2 == 0)
+  end, function (ok, results)
+    assert(eq(true, ok))
+    assert(teq({ 2, 4 }, results))
+  end, ipairs({ 1, 2, 3, 4, 5 }))
+end)
+
+test("ifilter failure", function ()
+  async.ifilter(function (done, i)
+    if i == 3 then
+      done(false, "error")
+    else
+      done(true, true)
+    end
+  end, function (ok, err)
+    assert(eq(false, ok))
+    assert(eq("error", err))
+  end, ipairs({ 1, 2, 3, 4 }))
+end)
+
+test("ifiltermap", function ()
+  async.ifiltermap(function (done, i, v)
+    if i % 2 == 0 then
+      done(true, v .. "!")
+    else
+      done(true, nil)
+    end
+  end, function (ok, results)
+    assert(eq(true, ok))
+    assert(teq({ "b!", "d!" }, results))
+  end, ipairs({ "a", "b", "c", "d" }))
+end)
+
+test("ifiltermap failure", function ()
+  async.ifiltermap(function (done, i)
+    if i == 2 then
+      done(false, "error")
+    else
+      done(true, i)
+    end
+  end, function (ok, err)
+    assert(eq(false, ok))
+    assert(eq("error", err))
+  end, ipairs({ 1, 2, 3 }))
+end)
+
+test("ireduce", function ()
+  async.ireduce(function (done, acc, _, v)
+    done(true, acc + v)
+  end, 0, function (ok, result)
+    assert(eq(true, ok))
+    assert(eq(10, result))
+  end, ipairs({ 1, 2, 3, 4 }))
+end)
+
+test("ireduce failure", function ()
+  async.ireduce(function (done, acc, i)
+    if i == 3 then
+      done(false, "error")
+    else
+      done(true, acc + i)
+    end
+  end, 0, function (ok, err)
+    assert(eq(false, ok))
+    assert(eq("error", err))
+  end, ipairs({ 1, 2, 3, 4 }))
+end)
+
+test("pipe true", function ()
   local in_url = "https://santoku.rocks"
   local in_resp = { url = in_url, status = 200 }
 
@@ -35,16 +162,24 @@ test("pipe true", function ()
     assert(eq(true, ok))
     assert(eq(200, data))
   end)
+end)
 
+test("pipe with array", function ()
+  async.pipe({
+    function (done) done(true, 1) end,
+    function (done, v) done(true, v + 1) end,
+    function (ok, v)
+      assert(eq(true, ok))
+      assert(eq(2, v))
+    end
+  })
 end)
 
 test("pipe first false", function ()
-
   local in_url = "https://santoku.rocks"
   local in_err = "some error"
 
-  local function fetch (done, url)
-    assert(eq(in_url, url))
+  local function fetch (done)
     return done(false, in_err)
   end
 
@@ -58,87 +193,9 @@ test("pipe first false", function ()
     assert(eq(false, ok))
     assert(eq(in_err, data))
   end)
-
-end)
-
-test("pipe last false", function ()
-
-  local in_url = "https://santoku.rocks"
-  local in_resp = { url = in_url, status = 200 }
-  local in_err = "some error"
-
-  local function fetch (done, url)
-    assert(eq(in_url, url))
-    return done(true, in_resp)
-  end
-
-  local function status (done, resp)
-    assert(eq(in_resp, resp))
-    return done(false, in_err)
-  end
-
-  async.pipe(function (done)
-    return fetch(done, in_url)
-  end, status, function (ok, data)
-    assert(eq(false, ok))
-    assert(eq(in_err, data))
-  end)
-
-end)
-
-test("pipe true", function ()
-
-  local in_url = "https://santoku.rocks"
-  local in_resp = { url = in_url, status = 200 }
-  local in_extra = "testing"
-
-  local function fetch (done, url)
-    assert(eq(in_url, url))
-    return done(true, in_resp, in_extra)
-  end
-
-  local function status (done, resp, extra)
-    assert(eq(in_resp, resp))
-    assert(eq(in_extra, extra))
-    return done(true, resp.status)
-  end
-
-  async.pipe(function (done)
-    return fetch(done, in_url)
-  end, status, function (ok, data)
-    assert(eq(true, ok))
-    assert(eq(200, data))
-  end)
-
-end)
-
-test("iter", function ()
-
-  local idx = 0
-  local results = {}
-
-  async.iter(function (yield, done)
-    idx = idx + 1
-    if idx > 5 then
-      return done(true)
-    else
-      return yield(idx)
-    end
-  end, function (done, data)
-    assert(eq(data, idx))
-    push(results, data)
-    return done(true)
-  end, function (ok, err)
-    assert(eq(ok, true))
-    assert(isnil(err))
-  end)
-
-  assert(teq({ 1, 2, 3, 4, 5 }, results))
-
 end)
 
 test("loop", function ()
-
   local idx = 0
   async.loop(function (loop, stop, ...)
     idx = idx + 1
@@ -151,12 +208,48 @@ test("loop", function ()
     assert(eq(true, ok))
     assert(teq({ 5, 4, 3, 2, 1 }, { ... }))
   end)
+end)
 
+test("race success", function ()
+  local completed = false
+  async.race(
+    function (done) done(true, "first") end,
+    function (done) if not completed then done(true, "second") end end,
+    function (ok, result)
+      completed = true
+      assert(eq(true, ok))
+      assert(eq("first", result))
+    end)
+end)
+
+test("race with array", function ()
+  async.race({
+    function (done) done(true, "winner") end,
+    function (done) done(true, "loser") end,
+  }, function (ok, result)
+    assert(eq(true, ok))
+    assert(eq("winner", result))
+  end)
+end)
+
+test("race failure", function ()
+  async.race(
+    function (done) done(false, "error") end,
+    function (done) done(true, "second") end,
+    function (ok, result)
+      assert(eq(false, ok))
+      assert(eq("error", result))
+    end)
+end)
+
+test("race empty", function ()
+  async.race(function (ok)
+    assert(eq(true, ok))
+  end)
 end)
 
 test("events emit", function ()
   local x = 0
-  local y = 0
   local events = async.events()
   events.on("e", function (...)
     assert(teq({ select("#", ...) }, { 1 }))
@@ -166,188 +259,87 @@ test("events emit", function ()
   events.emit("e", 5)
   events.emit("e", 5)
   assert(teq({ x }, { 10 }))
+end)
+
+test("events async handler", function ()
+  local x = 0
+  local y = 0
+  local events = async.events()
+  events.on("e", function (n)
+    x = x + n
+  end)
   events.on("e", function (k, n)
     return k(n + 1)
   end, true)
-  events.on("e", function (...)
-    assert(teq({ select("#", ...) }, { 1 }))
-    assert(teq({ ... }, { 6 }))
-    y = y + ...
+  events.on("e", function (n)
+    y = y + n
   end)
   events.emit("e", 5)
-  assert(teq({ x }, { 15 }))
-  assert(teq({ y }, { 6 }))
+  assert(eq(5, x))
+  assert(eq(6, y))
 end)
 
-test("events process", function ()
-  local x = 0
+test("events off", function ()
+  local called = false
   local events = async.events()
-  events.on("e", function (...)
-    assert(teq({ select("#", ...) }, { 1 }))
-    assert(teq({ ... }, { 5 }))
-    x = x + (...)
-  end)
-  events.process("e", function (k, ...)
-    assert(teq({ select("#", ...) }, { 1 }))
-    assert(teq({ ... }, { 5 }))
-    return k((...) + 1)
-  end, function (...)
-    assert(teq({ x }, { 5 }))
-    assert(teq({ ... }, { 6 }))
-  end, 5)
+  local handler = function () called = true end
+  events.on("e", handler)
+  events.off("e", handler)
+  events.emit("e")
+  assert(not called)
 end)
 
-test("consume", function ()
-  local data = { 1, 2, 3, 4, 5 }
-  local idx = 0
-  local gen = function ()
-    idx = idx + 1
-    return data[idx]
-  end
+test("each success", function ()
   local results = {}
-  async.consume(gen)(function (done, v)
-    push(results, v)
-    return done(true)
+  local t = { 1, 2, 3 }
+  async.each(t, function (done, v, i)
+    push(results, { i, v })
+    done(true)
   end, function (ok)
     assert(eq(true, ok))
   end)
-  assert(teq({ 1, 2, 3, 4, 5 }, results))
+  assert(teq({ { 1, 1 }, { 2, 2 }, { 3, 3 } }, results))
 end)
 
-test("ipairs", function ()
-  local t = { "a", "b", "c" }
-  local results = {}
-  async.ipairs(function (helper, k, i, v, ud)
-    push(results, { i, v })
-    return helper(k, i, ud + 1)
-  end, t, 0)
-  assert(teq({ { 1, "a" }, { 2, "b" }, { 3, "c" } }, results))
-end)
-
-test("id", function ()
-  local called = false
-  async.id(function (...)
-    called = true
-    assert(teq({ 1, 2, 3 }, { ... }))
-  end, 1, 2, 3)
-  assert(called)
-end)
-
-test("all success", function ()
-  local order = {}
-  async.all({
-    function (done) push(order, 1); done(true, "a") end,
-    function (done) push(order, 2); done(true, "b") end,
-    function (done) push(order, 3); done(true, "c") end,
-  }, function (ok, results)
-    assert(eq(true, ok))
-    assert(teq({ "a", "b", "c" }, results))
-  end)
-  assert(teq({ 1, 2, 3 }, order))
-end)
-
-test("all failure", function ()
-  local called_third = false
-  async.all({
-    function (done) done(true, "a") end,
-    function (done) done(false, "error") end,
-    function (done) called_third = true; done(true, "c") end,
-  }, function (ok, err)
+test("each failure", function ()
+  local processed = {}
+  async.each({ 1, 2, 3 }, function (done, v)
+    push(processed, v)
+    if v == 2 then
+      done(false, "error")
+    else
+      done(true)
+    end
+  end, function (ok, err)
     assert(eq(false, ok))
     assert(eq("error", err))
   end)
-  assert(called_third)
+  assert(teq({ 1, 2 }, processed))
 end)
 
-test("all empty", function ()
-  async.all({}, function (ok, results)
-    assert(eq(true, ok))
-    assert(teq({}, results))
-  end)
-end)
-
-test("race success", function ()
-  local completed = false
-  async.race({
-    function (done) done(true, "first") end,
-    function (done) if not completed then done(true, "second") end end,
-  }, function (ok, result)
-    completed = true
-    assert(eq(true, ok))
-    assert(eq("first", result))
-  end)
-end)
-
-test("race failure", function ()
-  async.race({
-    function (done) done(false, "error") end,
-    function (done) done(true, "second") end,
-  }, function (ok, result)
-    assert(eq(false, ok))
-    assert(eq("error", result))
-  end)
-end)
-
-test("race empty", function ()
-  async.race({}, function (ok)
+test("each empty", function ()
+  async.each({}, function (done)
+    done(true)
+  end, function (ok)
     assert(eq(true, ok))
   end)
 end)
 
-test("series success", function ()
-  local order = {}
-  async.series({
-    function (done) push(order, 1); done(true, "a") end,
-    function (done, v) push(order, 2); assert(eq("a", v)); done(true, "b") end,
-    function (done, v) push(order, 3); assert(eq("b", v)); done(true, "c") end,
-  }, function (ok, result)
-    assert(eq(true, ok))
-    assert(eq("c", result))
-  end)
-  assert(teq({ 1, 2, 3 }, order))
-end)
-
-test("series failure", function ()
-  local called_third = false
-  async.series({
-    function (done) done(true, "a") end,
-    function (done) done(false, "error") end,
-    function (done) called_third = true; done(true, "c") end,
-  }, function (ok, err)
-    assert(eq(false, ok))
-    assert(eq("error", err))
-  end)
-  assert(not called_third)
-end)
-
-test("series empty", function ()
-  async.series({}, function (ok)
-    assert(eq(true, ok))
-  end)
-end)
-
-test("series with initial args", function ()
-  async.series({
-    function (done, x) done(true, x * 2) end,
-    function (done, x) done(true, x + 1) end,
-  }, function (ok, result)
-    assert(eq(true, ok))
-    assert(eq(11, result))
-  end, 5)
-end)
-
-test("map success", function ()
-  async.map({ 1, 2, 3 }, function (done, v, i)
+test("map success in-place", function ()
+  local t = { 1, 2, 3 }
+  async.map(t, function (done, v, i)
     done(true, v * 10 + i)
-  end, function (ok, results)
+  end, function (ok, result)
     assert(eq(true, ok))
-    assert(teq({ 11, 22, 33 }, results))
+    assert(result == t)
+    assert(teq({ 11, 22, 33 }, t))
   end)
 end)
 
 test("map failure", function ()
   local processed = {}
-  async.map({ 1, 2, 3 }, function (done, v)
+  local t = { 1, 2, 3 }
+  async.map(t, function (done, v)
     push(processed, v)
     if v == 2 then
       done(false, "error at 2")
@@ -362,20 +354,23 @@ test("map failure", function ()
 end)
 
 test("map empty", function ()
-  async.map({}, function (done, v)
+  local t = {}
+  async.map(t, function (done, v)
     done(true, v)
-  end, function (ok, results)
+  end, function (ok, result)
     assert(eq(true, ok))
-    assert(teq({}, results))
+    assert(result == t)
   end)
 end)
 
-test("filter success", function ()
-  async.filter({ 1, 2, 3, 4, 5 }, function (done, v)
+test("filter success in-place", function ()
+  local t = { 1, 2, 3, 4, 5 }
+  async.filter(t, function (done, v)
     done(true, v % 2 == 0)
-  end, function (ok, results)
+  end, function (ok, result)
     assert(eq(true, ok))
-    assert(teq({ 2, 4 }, results))
+    assert(result == t)
+    assert(teq({ 2, 4 }, t))
   end)
 end)
 
@@ -393,20 +388,30 @@ test("filter failure", function ()
 end)
 
 test("filter empty", function ()
-  async.filter({}, function (done)
+  local t = {}
+  async.filter(t, function (done)
     done(true, true)
-  end, function (ok, results)
+  end, function (ok, result)
     assert(eq(true, ok))
-    assert(teq({}, results))
+    assert(result == t)
   end)
 end)
 
 test("reduce success", function ()
   async.reduce({ 1, 2, 3, 4 }, function (done, acc, v)
     done(true, acc + v)
-  end, 0, function (ok, result)
+  end, function (ok, result)
     assert(eq(true, ok))
     assert(eq(10, result))
+  end, 0)
+end)
+
+test("reduce default init", function ()
+  async.reduce({ 1, 2, 3 }, function (done, acc, v)
+    done(true, acc + v)
+  end, function (ok, result)
+    assert(eq(true, ok))
+    assert(eq(6, result))
   end)
 end)
 
@@ -417,26 +422,130 @@ test("reduce failure", function ()
     else
       done(true, acc + v)
     end
-  end, 0, function (ok, err)
+  end, function (ok, err)
     assert(eq(false, ok))
     assert(eq("error", err))
-  end)
+  end, 0)
 end)
 
 test("reduce empty", function ()
   async.reduce({}, function (done, acc, v)
     done(true, acc + v)
-  end, 42, function (ok, result)
+  end, function (ok, result)
     assert(eq(true, ok))
     assert(eq(42, result))
-  end)
+  end, 42)
 end)
 
 test("reduce with index", function ()
   async.reduce({ "a", "b", "c" }, function (done, acc, v, i)
     done(true, acc .. v .. i)
-  end, "", function (ok, result)
+  end, function (ok, result)
     assert(eq(true, ok))
     assert(eq("a1b2c3", result))
+  end, "")
+end)
+
+test("all success", function ()
+  local order = {}
+  local t = { 1, 2, 3 }
+  async.all(t, function (done, v)
+    push(order, v)
+    done(true)
+  end, function (ok)
+    assert(eq(true, ok))
+  end)
+  assert(teq({ 1, 2, 3 }, order))
+end)
+
+test("all failure", function ()
+  local t = { 1, 2, 3 }
+  async.all(t, function (done, v)
+    if v == 2 then
+      done(false, "error")
+    else
+      done(true)
+    end
+  end, function (ok, err)
+    assert(eq(false, ok))
+    assert(eq("error", err))
+  end)
+end)
+
+test("all empty", function ()
+  async.all({}, function (done)
+    done(true)
+  end, function (ok)
+    assert(eq(true, ok))
+  end)
+end)
+
+test("mapall success", function ()
+  local t = { 1, 2, 3 }
+  async.mapall(t, function (done, v, i)
+    done(true, v * 10 + i)
+  end, function (ok, result)
+    assert(eq(true, ok))
+    assert(result == t)
+    assert(teq({ 11, 22, 33 }, t))
+  end)
+end)
+
+test("mapall failure", function ()
+  local t = { 1, 2, 3 }
+  async.mapall(t, function (done, v)
+    if v == 2 then
+      done(false, "error")
+    else
+      done(true, v * 10)
+    end
+  end, function (ok, err)
+    assert(eq(false, ok))
+    assert(eq("error", err))
+  end)
+end)
+
+test("mapall empty", function ()
+  local t = {}
+  async.mapall(t, function (done, v)
+    done(true, v)
+  end, function (ok, result)
+    assert(eq(true, ok))
+    assert(result == t)
+  end)
+end)
+
+test("filterall success", function ()
+  local t = { 1, 2, 3, 4, 5 }
+  async.filterall(t, function (done, v)
+    done(true, v % 2 == 0)
+  end, function (ok, result)
+    assert(eq(true, ok))
+    assert(result == t)
+    assert(teq({ 2, 4 }, t))
+  end)
+end)
+
+test("filterall failure", function ()
+  local t = { 1, 2, 3 }
+  async.filterall(t, function (done, v)
+    if v == 2 then
+      done(false, "error")
+    else
+      done(true, true)
+    end
+  end, function (ok, err)
+    assert(eq(false, ok))
+    assert(eq("error", err))
+  end)
+end)
+
+test("filterall empty", function ()
+  local t = {}
+  async.filterall(t, function (done)
+    done(true, true)
+  end, function (ok, result)
+    assert(eq(true, ok))
+    assert(result == t)
   end)
 end)

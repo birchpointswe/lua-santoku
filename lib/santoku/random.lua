@@ -52,7 +52,7 @@ local function _options (params, unique, chunk)
   chunk = chunk or 1000
   local base = {}
   for k, v in pairs(params) do
-    base[k] = arr.consume(v, chunk)
+    base[k] = arr.icollect(chunk, v)
     arr.shuffle(base[k])
   end
   local seen = {}

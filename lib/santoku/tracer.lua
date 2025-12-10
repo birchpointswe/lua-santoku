@@ -15,7 +15,7 @@ local trace = function (_, line)
   if source then
     local ls = line_cache[source]
     if not ls then
-      ls = arr.consume(io.lines(source))
+      ls = arr.icollect(io.lines(source))
       line_cache[source] = ls
     end
     local bn = name_cache[source]

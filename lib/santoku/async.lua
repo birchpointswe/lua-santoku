@@ -1,136 +1,186 @@
-local fun = require("santoku.functional")
 local arr = require("santoku.array")
 
 local M = {}
 
-M._pipe = function (n, fns, ok, ...)
+local function normalize_fns (...)
+  local first = ...
+  if type(first) == "table" then
+    return first
+  else
+    return { ... }
+  end
+end
+
+local function _ieach (fn, done, iter_fn, state, var)
+  local values = { iter_fn(state, var) }
+  if values[1] == nil then
+    return done(true)
+  else
+    return fn(function (ok, ...)
+      if not ok then
+        return done(ok, ...)
+      else
+        return _ieach(fn, done, iter_fn, state, values[1])
+      end
+    end, arr.spread(values))
+  end
+end
+
+M.ieach = function (fn, done, iter_fn, state, var)
+  return _ieach(fn, done, iter_fn, state, var)
+end
+
+local function _imap (fn, done, iter_fn, state, var, results)
+  local values = { iter_fn(state, var) }
+  if values[1] == nil then
+    return done(true, results)
+  else
+    return fn(function (ok, v)
+      if not ok then
+        return done(ok, v)
+      else
+        results[#results + 1] = v
+        return _imap(fn, done, iter_fn, state, values[1], results)
+      end
+    end, arr.spread(values))
+  end
+end
+
+M.imap = function (fn, done, iter_fn, state, var)
+  return _imap(fn, done, iter_fn, state, var, {})
+end
+
+local function _ifilter (fn, done, iter_fn, state, var, results)
+  local values = { iter_fn(state, var) }
+  if values[1] == nil then
+    return done(true, results)
+  else
+    return fn(function (ok, keep)
+      if not ok then
+        return done(ok, keep)
+      else
+        if keep then
+          results[#results + 1] = values[1]
+        end
+        return _ifilter(fn, done, iter_fn, state, values[1], results)
+      end
+    end, arr.spread(values))
+  end
+end
+
+M.ifilter = function (fn, done, iter_fn, state, var)
+  return _ifilter(fn, done, iter_fn, state, var, {})
+end
+
+local function _ifiltermap (fn, done, iter_fn, state, var, results)
+  local values = { iter_fn(state, var) }
+  if values[1] == nil then
+    return done(true, results)
+  else
+    return fn(function (ok, v)
+      if not ok then
+        return done(ok, v)
+      else
+        if v ~= nil then
+          results[#results + 1] = v
+        end
+        return _ifiltermap(fn, done, iter_fn, state, values[1], results)
+      end
+    end, arr.spread(values))
+  end
+end
+
+M.ifiltermap = function (fn, done, iter_fn, state, var)
+  return _ifiltermap(fn, done, iter_fn, state, var, {})
+end
+
+local function _ireduce (fn, done, iter_fn, state, var, acc)
+  local values = { iter_fn(state, var) }
+  if values[1] == nil then
+    return done(true, acc)
+  else
+    return fn(function (ok, v)
+      if not ok then
+        return done(ok, v)
+      else
+        return _ireduce(fn, done, iter_fn, state, values[1], v)
+      end
+    end, acc, arr.spread(values))
+  end
+end
+
+M.ireduce = function (fn, init, done, iter_fn, state, var)
+  return _ireduce(fn, done, iter_fn, state, var, init)
+end
+
+local function _pipe (fns, n, ok, ...)
   if not ok or n == #fns then
     return fns[#fns](ok, ...)
   else
     return fns[n](function (...)
-      return M._pipe(n + 1, fns, ...)
+      return _pipe(fns, n + 1, ...)
     end, ...)
   end
 end
 
 M.pipe = function (...)
-  local fns = { ... }
-  return M._pipe(1, fns, true)
+  return _pipe(normalize_fns(...), 1, true)
 end
 
-M._each = function (g, it, done)
-  local v = g()
-  if v == nil then
+local function _loop (fn, done, ...)
+  return fn(function (...)
+    return _loop(fn, done, ...)
+  end, done, ...)
+end
+
+M.loop = function (fn, done)
+  return _loop(fn, done)
+end
+
+M.race = function (first, ...)
+  local fns, done
+  if type(first) == "table" then
+    fns = first
+    done = ...
+  else
+    fns = { first, ... }
+    fns, done = arr.pop(fns)
+  end
+  local n = #fns
+  if n == 0 then
     return done(true)
-  else
-    return it(function (ok, ...)
-      if not ok then
-        return done(ok, ...)
-      else
-        return M._each(g, it, done)
-      end
-    end, v)
+  end
+  local finished = false
+  for i = 1, n do
+    fns[i](function (ok, ...)
+      if finished then return end
+      finished = true
+      return done(ok, ...)
+    end)
   end
 end
-
-M._iter = function (y, it, done)
-  return y(function (...)
-    return it(function (ok, ...)
-      if not ok then
-        return done(ok, ...)
-      else
-        return M._iter(y, it, done)
-      end
-    end, ...)
-  end, done)
-end
-
-M.iter = function (y, it, done)
-  return M._iter(y, it, done)
-end
-
-M.consume = function (iter)
-  return function (each, final)
-    return M._each(iter, each, final)
-  end
-end
-
-M._loop = function (loop0, final, ...)
-  return loop0(function (...)
-    return M._loop(loop0, final, ...)
-  end, final, ...)
-end
-
-M.loop = function (loop0, final)
-  return M._loop(loop0, final)
-end
-
-local run_process
-run_process = function (hs, each, done, asy, i, ...)
-  local h = hs and hs[i]
-  if not h then
-    return done(...)
-  elseif not asy[h] then
-    h(...)
-    if each == M.id then
-      return run_process(hs, each, done, asy, i + 1, ...)
-    else
-      return each(function (...)
-        return run_process(hs, each, done, asy, i + 1, ...)
-      end, ...)
-    end
-  else
-    if each == M.id then
-      return h(function (...)
-        return run_process(hs, each, done, asy, i + 1, ...)
-      end, ...)
-    else
-      return h(function (...)
-        return each(function (...)
-          return run_process(hs, each, done, asy, i + 1, ...)
-        end, ...)
-      end, ...)
-    end
-  end
-end
-
-M.id = function (k, ...)
-  return k(...)
-end
-
-local _ipairs
-_ipairs = function (k, t, ud)
-  local helper
-  helper = function (fn, i, ud)
-    i = i + 1
-    local v = t[i]
-    if v == nil then
-      return ud
-    else
-      return fn(helper, k, i, v, ud)
-    end
-  end
-  return helper(k, 0, ud)
-end
-
-M.ipairs = _ipairs
 
 local ALL_EVENTS = {}
+
+local function run_events (hs, asy, i, ...)
+  local h = hs and hs[i]
+  if not h then
+    return
+  elseif not asy[h] then
+    h(...)
+    return run_events(hs, asy, i + 1, ...)
+  else
+    return h(function (...)
+      return run_events(hs, asy, i + 1, ...)
+    end, ...)
+  end
+end
 
 M.events = function ()
   local idx = {}
   local hs = {}
   local asy = {}
   return {
-
-    handlers = hs,
-    index = idx,
-    async = asy,
-
-    -- TODO: Allow caller to pass an "order" argument, which is used to sort
-    -- handlers. Handlers are sorted such that those with lower "orders" are
-    -- called first, and those with the same order are called in the order in
-    -- which they were registered.
     on = function (ev, handler, async)
       ev = ev == nil and ALL_EVENTS or ev
       if ev and handler then
@@ -141,7 +191,6 @@ M.events = function ()
         asy[handler] = async
       end
     end,
-
     off = function (ev, handler)
       ev = ev == nil and ALL_EVENTS or ev
       if ev and handler then
@@ -158,134 +207,167 @@ M.events = function ()
         asy[handler] = nil
       end
     end,
-
     emit = function (ev, ...)
-      local hs0 = ev and hs[ev]
-      local hs1 = hs[ALL_EVENTS]
-      return run_process(hs0, M.id, function (...)
-        return run_process(hs1, M.id, fun.noop, asy, 1, ev, ...)
-      end, asy, 1, ...)
-    end,
-
-    process = function (ev, each, done, ...)
-      local hs0 = ev and hs[ev] or {}
-      each = each or M.id
-      done = done or fun.noop
-      return run_process(hs0, each, done, asy, 1, ...)
+      run_events(hs[ev], asy, 1, ...)
+      return run_events(hs[ALL_EVENTS], asy, 1, ev, ...)
     end
-
   }
 end
 
-M.all = function (fns, done)
-  local n = #fns
-  if n == 0 then
-    return done(true, {})
-  end
-  local results = {}
-  local completed = 0
-  local failed = false
-  for i = 1, n do
-    fns[i](function (ok, ...)
-      if failed then return end
-      if not ok then
-        failed = true
-        return done(false, ...)
-      end
-      results[i] = (...)
-      completed = completed + 1
-      if completed == n then
-        return done(true, results)
-      end
-    end)
-  end
-end
-
-M.race = function (fns, done)
-  local n = #fns
-  if n == 0 then
+local function _each (t, fn, done, i)
+  if i > #t then
     return done(true)
   end
-  local finished = false
-  for i = 1, n do
-    fns[i](function (ok, ...)
-      if finished then return end
-      finished = true
-      return done(ok, ...)
-    end)
-  end
-end
-
-local _series
-_series = function (fns, i, done, ...)
-  if i > #fns then
-    return done(true, ...)
-  end
-  return fns[i](function (ok, ...)
+  return fn(function (ok, ...)
     if not ok then
-      return done(false, ...)
+      return done(ok, ...)
     end
-    return _series(fns, i + 1, done, ...)
-  end, ...)
+    return _each(t, fn, done, i + 1)
+  end, t[i], i)
 end
 
-M.series = function (fns, done, ...)
-  return _series(fns, 1, done, ...)
+M.each = function (t, fn, done)
+  return _each(t, fn, done, 1)
 end
 
-local _map
-_map = function (t, fn, done, i, results)
+local function _map (t, fn, done, i)
   if i > #t then
-    return done(true, results)
+    return done(true, t)
   end
   return fn(function (ok, v)
     if not ok then
-      return done(false, v)
+      return done(ok, v)
     end
-    results[i] = v
-    return _map(t, fn, done, i + 1, results)
+    t[i] = v
+    return _map(t, fn, done, i + 1)
   end, t[i], i)
 end
 
 M.map = function (t, fn, done)
-  return _map(t, fn, done, 1, {})
+  return _map(t, fn, done, 1)
 end
 
-local _filter
-_filter = function (t, fn, done, i, results)
+local function _filter (t, fn, done, i, j)
   if i > #t then
-    return done(true, results)
+    for k = j, #t do
+      t[k] = nil
+    end
+    return done(true, t)
   end
   return fn(function (ok, keep)
     if not ok then
-      return done(false, keep)
+      return done(ok, keep)
     end
     if keep then
-      results[#results + 1] = t[i]
+      t[j] = t[i]
+      return _filter(t, fn, done, i + 1, j + 1)
+    else
+      return _filter(t, fn, done, i + 1, j)
     end
-    return _filter(t, fn, done, i + 1, results)
   end, t[i], i)
 end
 
 M.filter = function (t, fn, done)
-  return _filter(t, fn, done, 1, {})
+  return _filter(t, fn, done, 1, 1)
 end
 
-local _reduce
-_reduce = function (t, fn, done, i, acc)
+local function _reduce (t, fn, done, i, acc)
   if i > #t then
     return done(true, acc)
   end
   return fn(function (ok, v)
     if not ok then
-      return done(false, v)
+      return done(ok, v)
     end
     return _reduce(t, fn, done, i + 1, v)
   end, acc, t[i], i)
 end
 
-M.reduce = function (t, fn, init, done)
-  return _reduce(t, fn, done, 1, init)
+M.reduce = function (t, fn, done, init)
+  if init == nil then
+    return _reduce(t, fn, done, 2, t[1])
+  else
+    return _reduce(t, fn, done, 1, init)
+  end
+end
+
+M.all = function (t, fn, done)
+  local n = #t
+  if n == 0 then
+    return done(true)
+  end
+  local completed = 0
+  local failed = false
+  for i = 1, n do
+    fn(function (ok, ...)
+      if failed then return end
+      if not ok then
+        failed = true
+        return done(ok, ...)
+      end
+      completed = completed + 1
+      if completed == n then
+        return done(true)
+      end
+    end, t[i], i)
+  end
+end
+
+M.mapall = function (t, fn, done)
+  local n = #t
+  if n == 0 then
+    return done(true, t)
+  end
+  local completed = 0
+  local failed = false
+  for i = 1, n do
+    fn(function (ok, v)
+      if failed then return end
+      if not ok then
+        failed = true
+        return done(ok, v)
+      end
+      t[i] = v
+      completed = completed + 1
+      if completed == n then
+        return done(true, t)
+      end
+    end, t[i], i)
+  end
+end
+
+M.filterall = function (t, fn, done)
+  local n = #t
+  if n == 0 then
+    return done(true, t)
+  end
+  local keep = {}
+  local completed = 0
+  local failed = false
+  for i = 1, n do
+    fn(function (ok, should_keep)
+      if failed then return end
+      if not ok then
+        failed = true
+        return done(ok, should_keep)
+      end
+      keep[i] = should_keep
+      completed = completed + 1
+      if completed == n then
+        local j = 1
+        for k = 1, n do
+          if keep[k] then
+            t[j] = t[k]
+            j = j + 1
+          end
+        end
+        for k = j, n do
+          t[k] = nil
+        end
+        return done(true, t)
+      end
+    end, t[i], i)
+  end
 end
 
 return M
