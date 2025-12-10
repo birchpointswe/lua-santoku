@@ -162,6 +162,30 @@ end
 
 local ALL_EVENTS = {}
 
+local function noop () end
+
+local function id (k, ...)
+  return k(...)
+end
+
+local function run_process (hs, each, done, asy, i, ...)
+  local h = hs[i]
+  if not h then
+    return done(...)
+  elseif not asy[h] then
+    h(...)
+    return each(function (...)
+      return run_process(hs, each, done, asy, i + 1, ...)
+    end, ...)
+  else
+    return h(function (...)
+      return each(function (...)
+        return run_process(hs, each, done, asy, i + 1, ...)
+      end, ...)
+    end, ...)
+  end
+end
+
 local function run_events (hs, asy, i, ...)
   local h = hs and hs[i]
   if not h then
@@ -210,6 +234,12 @@ M.events = function ()
     emit = function (ev, ...)
       run_events(hs[ev], asy, 1, ...)
       return run_events(hs[ALL_EVENTS], asy, 1, ev, ...)
+    end,
+    process = function (ev, each, done, ...)
+      local hs0 = ev and hs[ev] or {}
+      each = each or id
+      done = done or noop
+      return run_process(hs0, each, done, asy, 1, ...)
     end
   }
 end
