@@ -369,11 +369,12 @@ local function fill (t, v, i, j)
   return t
 end
 
-local function lookup (t, m)
-  for i = 1, #t do
-    t[i] = m[t[i]]
+local function lookup (idx, source, dest)
+  dest = dest or idx
+  for i = 1, #idx do
+    dest[i] = source[idx[i]]
   end
-  return t
+  return dest
 end
 
 local function take (t, n)
