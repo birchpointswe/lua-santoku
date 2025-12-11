@@ -12,6 +12,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #include <santoku/klib.h>
 
@@ -932,6 +933,228 @@ static inline const void *tk_lua_fcheckustring (lua_State *L, int i, char *name,
   if (r == NULL)
     tk_lua_verror(L, 3, name, field, "field is not a string or light userdata");
   return r;
+}
+
+static const char tk_lua_hex[] = "0123456789ABCDEF";
+
+static inline void tk_lua_to_hex_buf (const char *data, size_t size0, char *out, size_t *out_size)
+{
+  size_t size1 = size0 * 2;
+  for (size_t i = 0; i < size0; ++i) {
+    unsigned char byte = (unsigned char) data[i];
+    out[i * 2] = tk_lua_hex[byte >> 4];
+    out[i * 2 + 1] = tk_lua_hex[byte & 0x0F];
+  }
+  out[size1] = '\0';
+  *out_size = size1;
+}
+
+static inline char *tk_lua_to_hex (const char *data, size_t size0, size_t *out_size)
+{
+  char *out = malloc(size0 * 2 + 1);
+  if (!out) return NULL;
+  tk_lua_to_hex_buf(data, size0, out, out_size);
+  return out;
+}
+
+static inline const char *tk_lua_from_hex_buf (const char *data, size_t size0, char *out, size_t *out_size)
+{
+  if (size0 % 2 != 0)
+    return "Invalid hex string length";
+  size_t size1 = size0 / 2;
+  for (size_t i = 0; i < size0; i += 2) {
+    int high = data[i];
+    int low = data[i + 1];
+    if (!isxdigit(high) || !isxdigit(low))
+      return "Invalid hex character";
+    high = (isdigit(high) ? high - '0' : (toupper(high) - 'A' + 10));
+    low = (isdigit(low) ? low - '0' : (toupper(low) - 'A' + 10));
+    out[i / 2] = (char) ((high << 4) | low);
+  }
+  out[size1] = '\0';
+  *out_size = size1;
+  return NULL;
+}
+
+static inline char *tk_lua_from_hex (const char *data, size_t size0, size_t *out_size, const char **err)
+{
+  *err = NULL;
+  if (size0 % 2 != 0) {
+    *err = "Invalid hex string length";
+    return NULL;
+  }
+  char *out = malloc(size0 / 2 + 1);
+  if (!out) return NULL;
+  *err = tk_lua_from_hex_buf(data, size0, out, out_size);
+  if (*err) {
+    free(out);
+    return NULL;
+  }
+  return out;
+}
+
+static unsigned char tk_lua_b64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static unsigned char tk_lua_b64url[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
+static inline void tk_lua_to_base64_buf (const char *src, size_t len, bool url, char *out, size_t *out_size)
+{
+  unsigned char *enc = url ? tk_lua_b64url : tk_lua_b64;
+  int64_t i, j;
+  i = j = 0;
+  size_t size = 0;
+  unsigned char buf[4] = {0};
+  unsigned char tmp[3] = {0};
+  size_t remaining = len;
+  while (remaining--) {
+    tmp[i++] = (unsigned char) *(src++);
+    if (3 == i) {
+      buf[0] = (tmp[0] & 0xfc) >> 2;
+      buf[1] = ((tmp[0] & 0x03) << 4) + ((tmp[1] & 0xf0) >> 4);
+      buf[2] = ((tmp[1] & 0x0f) << 2) + ((tmp[2] & 0xc0) >> 6);
+      buf[3] = tmp[2] & 0x3f;
+      for (i = 0; i < 4; ++i)
+        out[size++] = (char) enc[buf[i]];
+      i = 0;
+    }
+  }
+  if (i > 0) {
+    for (j = i; j < 3; ++j)
+      tmp[j] = '\0';
+    buf[0] = (tmp[0] & 0xfc) >> 2;
+    buf[1] = ((tmp[0] & 0x03) << 4) + ((tmp[1] & 0xf0) >> 4);
+    buf[2] = ((tmp[1] & 0x0f) << 2) + ((tmp[2] & 0xc0) >> 6);
+    buf[3] = tmp[2] & 0x3f;
+    for (j = 0; (j < i + 1); ++j)
+      out[size++] = (char) enc[buf[j]];
+    while ((i++ < 3))
+      out[size++] = '=';
+  }
+  out[size] = '\0';
+  *out_size = size;
+}
+
+static inline char *tk_lua_to_base64 (const char *src, size_t len, bool url, size_t *out_size)
+{
+  char *out = malloc(((len + 2) / 3) * 4 + 1);
+  if (!out) return NULL;
+  tk_lua_to_base64_buf(src, len, url, out, out_size);
+  return out;
+}
+
+static inline void tk_lua_from_base64_buf (const char *src, size_t len, bool url, char *out, size_t *out_size)
+{
+  unsigned char *enc = url ? tk_lua_b64url : tk_lua_b64;
+  int64_t i, j, l;
+  i = j = l = 0;
+  size_t size = 0;
+  unsigned char buf[3];
+  unsigned char tmp[4];
+  size_t remaining = len;
+  while (remaining--) {
+    if ('=' == src[j] || !(isalnum(src[j]) || (url
+        ? ('-' == src[j] || '_' == src[j])
+        : ('+' == src[j] || '/' == src[j]))))
+      break;
+    tmp[i++] = (unsigned char) src[j++];
+    if (4 == i) {
+      for (i = 0; i < 4; ++i)
+        for (l = 0; l < 64; ++l)
+          if (tmp[i] == enc[l]) {
+            tmp[i] = (unsigned char) l;
+            break;
+          }
+      buf[0] = (tmp[0] << 2) + ((tmp[1] & 0x30) >> 4);
+      buf[1] = ((tmp[1] & 0xf) << 4) + ((tmp[2] & 0x3c) >> 2);
+      buf[2] = ((tmp[2] & 0x3) << 6) + tmp[3];
+      for (i = 0; i < 3; ++i)
+        out[size++] = (char) buf[i];
+      i = 0;
+    }
+  }
+  if (i > 0) {
+    for (j = i; j < 4; ++j)
+      tmp[j] = '\0';
+    for (j = 0; j < 4; ++j)
+      for (l = 0; l < 64; ++l)
+        if (tmp[j] == enc[l]) {
+          tmp[j] = (unsigned char) l;
+          break;
+        }
+    buf[0] = (tmp[0] << 2) + ((tmp[1] & 0x30) >> 4);
+    buf[1] = ((tmp[1] & 0xf) << 4) + ((tmp[2] & 0x3c) >> 2);
+    buf[2] = ((tmp[2] & 0x3) << 6) + tmp[3];
+    for (j = 0; (j < i - 1); ++j)
+      out[size++] = (char) buf[j];
+  }
+  out[size] = '\0';
+  *out_size = size;
+}
+
+static inline char *tk_lua_from_base64 (const char *src, size_t len, bool url, size_t *out_size)
+{
+  char *out = malloc((len * 3) / 4 + 1);
+  if (!out) return NULL;
+  tk_lua_from_base64_buf(src, len, url, out, out_size);
+  return out;
+}
+
+static inline void tk_lua_to_url_buf (const char *data, size_t size0, char *out, size_t *out_size)
+{
+  int64_t i, j;
+  for (i = 0, j = 0; i < (int64_t) size0; i++) {
+    unsigned char d = (unsigned char) data[i];
+    if (isalnum(d) || strchr("-_.~", d)) {
+      out[j++] = (char) d;
+    } else {
+      sprintf(out + j, "%%%02x", d);
+      j += 3;
+    }
+  }
+  out[j] = '\0';
+  *out_size = (size_t) j;
+}
+
+static inline char *tk_lua_to_url (const char *data, size_t size0, size_t *out_size)
+{
+  char *out = malloc(size0 * 3 + 1);
+  if (!out) return NULL;
+  tk_lua_to_url_buf(data, size0, out, out_size);
+  return out;
+}
+
+static inline const char *tk_lua_from_url_buf (const char *data, size_t size0, char *out, size_t *out_size)
+{
+  int64_t i, j = 0;
+  for (i = 0; i < (int64_t) size0; i++) {
+    unsigned char d = (unsigned char) data[i];
+    if (d == '%') {
+      if (i + 2 < (int64_t) size0) {
+        char hex[3] = { data[i + 1], data[i + 2], 0 };
+        out[j++] = (char) strtol(hex, NULL, 16);
+        i += 2;
+      } else {
+        return "Invalid URL encoding";
+      }
+    } else {
+      out[j++] = (char) d;
+    }
+  }
+  out[j] = '\0';
+  *out_size = (size_t) j;
+  return NULL;
+}
+
+static inline char *tk_lua_from_url (const char *data, size_t size0, size_t *out_size, const char **err)
+{
+  *err = NULL;
+  char *out = malloc(size0 + 1);
+  if (!out) return NULL;
+  *err = tk_lua_from_url_buf(data, size0, out, out_size);
+  if (*err) {
+    free(out);
+    return NULL;
+  }
+  return out;
 }
 
 #endif
