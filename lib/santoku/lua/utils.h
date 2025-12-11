@@ -945,7 +945,6 @@ static inline void tk_lua_to_hex_buf (const char *data, size_t size0, char *out,
     out[i * 2] = tk_lua_hex[byte >> 4];
     out[i * 2 + 1] = tk_lua_hex[byte & 0x0F];
   }
-  out[size1] = '\0';
   *out_size = size1;
 }
 
@@ -954,6 +953,7 @@ static inline char *tk_lua_to_hex (const char *data, size_t size0, size_t *out_s
   char *out = malloc(size0 * 2 + 1);
   if (!out) return NULL;
   tk_lua_to_hex_buf(data, size0, out, out_size);
+  out[*out_size] = '\0';
   return out;
 }
 
@@ -971,7 +971,6 @@ static inline const char *tk_lua_from_hex_buf (const char *data, size_t size0, c
     low = (isdigit(low) ? low - '0' : (toupper(low) - 'A' + 10));
     out[i / 2] = (char) ((high << 4) | low);
   }
-  out[size1] = '\0';
   *out_size = size1;
   return NULL;
 }
@@ -990,6 +989,7 @@ static inline char *tk_lua_from_hex (const char *data, size_t size0, size_t *out
     free(out);
     return NULL;
   }
+  out[*out_size] = '\0';
   return out;
 }
 
@@ -1029,7 +1029,6 @@ static inline void tk_lua_to_base64_buf (const char *src, size_t len, bool url, 
     while ((i++ < 3))
       out[size++] = '=';
   }
-  out[size] = '\0';
   *out_size = size;
 }
 
@@ -1038,6 +1037,7 @@ static inline char *tk_lua_to_base64 (const char *src, size_t len, bool url, siz
   char *out = malloc(((len + 2) / 3) * 4 + 1);
   if (!out) return NULL;
   tk_lua_to_base64_buf(src, len, url, out, out_size);
+  out[*out_size] = '\0';
   return out;
 }
 
@@ -1086,7 +1086,6 @@ static inline void tk_lua_from_base64_buf (const char *src, size_t len, bool url
     for (j = 0; (j < i - 1); ++j)
       out[size++] = (char) buf[j];
   }
-  out[size] = '\0';
   *out_size = size;
 }
 
@@ -1095,6 +1094,7 @@ static inline char *tk_lua_from_base64 (const char *src, size_t len, bool url, s
   char *out = malloc((len * 3) / 4 + 1);
   if (!out) return NULL;
   tk_lua_from_base64_buf(src, len, url, out, out_size);
+  out[*out_size] = '\0';
   return out;
 }
 
@@ -1110,7 +1110,6 @@ static inline void tk_lua_to_url_buf (const char *data, size_t size0, char *out,
       j += 3;
     }
   }
-  out[j] = '\0';
   *out_size = (size_t) j;
 }
 
@@ -1119,6 +1118,7 @@ static inline char *tk_lua_to_url (const char *data, size_t size0, size_t *out_s
   char *out = malloc(size0 * 3 + 1);
   if (!out) return NULL;
   tk_lua_to_url_buf(data, size0, out, out_size);
+  out[*out_size] = '\0';
   return out;
 }
 
@@ -1139,7 +1139,6 @@ static inline const char *tk_lua_from_url_buf (const char *data, size_t size0, c
       out[j++] = (char) d;
     }
   }
-  out[j] = '\0';
   *out_size = (size_t) j;
   return NULL;
 }
@@ -1154,6 +1153,7 @@ static inline char *tk_lua_from_url (const char *data, size_t size0, size_t *out
     free(out);
     return NULL;
   }
+  out[*out_size] = '\0';
   return out;
 }
 
