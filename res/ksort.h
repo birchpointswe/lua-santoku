@@ -122,7 +122,7 @@ typedef struct {
 		} \
 		if (temp == 0) free(a2[1]); \
 	} \
-	void ks_heapadjust_##name(size_t i, size_t n, type_t l[]) \
+	static inline void ks_heapadjust_##name(size_t i, size_t n, type_t l[]) \
 	{ \
 		size_t k = i; \
 		type_t tmp = l[i]; \
@@ -133,13 +133,13 @@ typedef struct {
 		} \
 		l[i] = tmp; \
 	} \
-	void ks_heapmake_##name(size_t lsize, type_t l[]) \
+	static inline void ks_heapmake_##name(size_t lsize, type_t l[]) \
 	{ \
 		size_t i; \
 		for (i = (lsize >> 1) - 1; i != (size_t)(-1); --i) \
 			ks_heapadjust_##name(i, lsize, l); \
 	} \
-	void ks_heapsort_##name(size_t lsize, type_t l[]) \
+	static inline void ks_heapsort_##name(size_t lsize, type_t l[]) \
 	{ \
 		size_t i; \
 		for (i = lsize - 1; i > 0; --i) { \
@@ -155,7 +155,7 @@ typedef struct {
 				swap_tmp = *j; *j = *(j-1); *(j-1) = swap_tmp; \
 			} \
 	} \
-	void ks_combsort_##name(size_t n, type_t a[]) \
+	static inline void ks_combsort_##name(size_t n, type_t a[]) \
 	{ \
 		const double shrink_factor = 1.2473309501039786540366528676643; \
 		int do_swap; \
@@ -177,7 +177,7 @@ typedef struct {
 		} while (do_swap || gap > 2); \
 		if (gap != 1) __ks_insertsort_##name(a, a + n); \
 	} \
-	void ks_introsort_##name(size_t n, type_t a[]) \
+	static inline void ks_introsort_##name(size_t n, type_t a[]) \
 	{ \
 		int d; \
 		ks_isort_stack_t *top, *stack; \
@@ -230,7 +230,7 @@ typedef struct {
 	} \
 	/* This function is adapted from: http://ndevilla.free.fr/median/ */ \
 	/* 0 <= kk < n */ \
-	type_t ks_ksmall_##name(size_t n, type_t arr[], size_t kk) \
+	static inline type_t ks_ksmall_##name(size_t n, type_t arr[], size_t kk) \
 	{ \
 		type_t *low, *high, *k, *ll, *hh, *mid; \
 		low = arr; high = arr + n - 1; k = arr + kk; \
@@ -257,7 +257,7 @@ typedef struct {
 			if (hh >= k) high = hh - 1; \
 		} \
 	} \
-	void ks_shuffle_##name(size_t n, type_t a[]) \
+	static inline void ks_shuffle_##name(size_t n, type_t a[]) \
 	{ \
 		size_t i, j; \
 		for (i = n; i > 1; --i) { \
