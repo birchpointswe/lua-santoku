@@ -259,10 +259,10 @@ typedef struct {
 	} \
 	void ks_shuffle_##name(size_t n, type_t a[]) \
 	{ \
-		int i, j; \
+		size_t i, j; \
 		for (i = n; i > 1; --i) { \
 			type_t tmp; \
-			j = (int)(tk_fast_drand() * i); \
+			j = (size_t)(tk_fast_drand() * i); \
 			tmp = a[j]; a[j] = a[i-1]; a[i-1] = tmp; \
 		} \
 	}
