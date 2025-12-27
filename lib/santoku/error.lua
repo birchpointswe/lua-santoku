@@ -1,4 +1,5 @@
 local arr = require("santoku.array")
+local co_factory = require("santoku.co")
 local select = select
 
 local _error = error
@@ -116,11 +117,63 @@ local function checkok (ok, ...)
   end
 end
 
+local function copcall_finalizer (ok, ...)
+  if ok then
+    return ok, ...
+  elseif getmetatable(...) == mt then
+    return ok, arr.spread((...))
+  else
+    return ok, ...
+  end
+end
+
+local function copcall (fn, ...)
+  local co = co_factory()
+  local args = { ... }
+  return copcall_finalizer(co.resume(co.create(function ()
+    return fn(arr.spread(args))
+  end)))
+end
+
+local function coxpcall_finalizer (ok, ...)
+  if ok then
+    return ok, ...
+  elseif getmetatable(...) == mt then
+    return ok, select(2, arr.spread((...)))
+  else
+    return ok, select(2, ...)
+  end
+end
+
+local function coxpcall (fn, handler, ...)
+  local co = co_factory()
+  local args = { ... }
+  local results = { co.resume(co.create(function ()
+    return fn(arr.spread(args))
+  end)) }
+  if results[1] then
+    return arr.spread(results)
+  else
+    local err_val = results[2]
+    if getmetatable(err_val) == mt then
+      err_val = arr.spread(err_val)
+    end
+    local handler_ok, handler_result = copcall(handler, err_val)
+    if handler_ok then
+      return coxpcall_finalizer(false, handler_result)
+    else
+      return coxpcall_finalizer(false, handler_result)
+    end
+  end
+end
+
 return {
   error = error,
   assert = assert,
   pcall = pcall,
   xpcall = xpcall,
+  copcall = copcall,
+  coxpcall = coxpcall,
   wrapok = wrapok,
   wrapnil = wrapnil,
   checkok = checkok,
