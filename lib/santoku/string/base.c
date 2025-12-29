@@ -75,8 +75,9 @@ static inline int to_base64 (lua_State *L)
   size_t len;
   const char *src = luaL_checklstring(L, 1, &len);
   bool url = lua_toboolean(L, 2);
+  bool pad = lua_isnil(L, 3) ? true : lua_toboolean(L, 3);
   size_t size;
-  char *out = tk_lua_to_base64(src, len, url, &size);
+  char *out = tk_lua_to_base64(src, len, url, pad, &size);
   if (!out) return tk_lua_errmalloc(L);
   lua_pushlstring(L, out, size);
   free(out);
@@ -98,8 +99,11 @@ static inline int from_base64 (lua_State *L)
 
 static inline int to_base64_url (lua_State *L)
 {
+  lua_settop(L, 2);
+  bool pad = lua_isnil(L, 2) ? true : lua_toboolean(L, 2);
   lua_settop(L, 1);
   lua_pushboolean(L, true);
+  lua_pushboolean(L, pad);
   return to_base64(L);
 }
 

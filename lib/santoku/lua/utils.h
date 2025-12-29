@@ -996,7 +996,7 @@ static inline char *tk_lua_from_hex (const char *data, size_t size0, size_t *out
 static unsigned char tk_lua_b64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static unsigned char tk_lua_b64url[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
-static inline void tk_lua_to_base64_buf (const char *src, size_t len, bool url, char *out, size_t *out_size)
+static inline void tk_lua_to_base64_buf (const char *src, size_t len, bool url, bool pad, char *out, size_t *out_size)
 {
   unsigned char *enc = url ? tk_lua_b64url : tk_lua_b64;
   int64_t i, j;
@@ -1026,17 +1026,18 @@ static inline void tk_lua_to_base64_buf (const char *src, size_t len, bool url, 
     buf[3] = tmp[2] & 0x3f;
     for (j = 0; (j < i + 1); ++j)
       out[size++] = (char) enc[buf[j]];
-    while ((i++ < 3))
-      out[size++] = '=';
+    if (pad)
+      while ((i++ < 3))
+        out[size++] = '=';
   }
   *out_size = size;
 }
 
-static inline char *tk_lua_to_base64 (const char *src, size_t len, bool url, size_t *out_size)
+static inline char *tk_lua_to_base64 (const char *src, size_t len, bool url, bool pad, size_t *out_size)
 {
   char *out = malloc(((len + 2) / 3) * 4 + 1);
   if (!out) return NULL;
-  tk_lua_to_base64_buf(src, len, url, out, out_size);
+  tk_lua_to_base64_buf(src, len, url, pad, out, out_size);
   out[*out_size] = '\0';
   return out;
 }
