@@ -160,8 +160,10 @@ static inline char *tk_lua_foptstring (lua_State *L, int i, char *name, char *fi
 static inline bool tk_lua_foptboolean (lua_State *L, int i, char *name, char *field, bool def)
 {
   lua_getfield(L, i, field);
-  if (lua_type(L, -1) < 1)
+  if (lua_type(L, -1) < 1) {
+    lua_pop(L, 1);
     return def;
+  }
   if (lua_type(L, -1) != LUA_TBOOLEAN)
     tk_lua_verror(L, 3, name, field, "field is not a boolean");
   bool b = lua_toboolean(L, -1);
