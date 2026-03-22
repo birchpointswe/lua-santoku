@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <santoku/lua/utils.h>
 #include <time.h>
 
@@ -9,7 +10,7 @@ static int utc_date (lua_State *L)
   int n = lua_gettop(L);
 
   if (n == 1 && lua_type(L, 1) == LUA_TNUMBER) {
-    t = lua_tointeger(L, 1);
+    t = (time_t) lua_tonumber(L, 1);
     local = false;
     lua_settop(L, 0);
     lua_newtable(L);
@@ -19,11 +20,11 @@ static int utc_date (lua_State *L)
     lua_settop(L, 0);
     lua_newtable(L);
   } else if (n == 2 && lua_type(L, 2) == LUA_TTABLE) {
-    t = luaL_checkinteger(L, 1);
+    t = (time_t) luaL_checknumber(L, 1);
     local = false;
   } else {
     lua_settop(L, 3);
-    t = luaL_checkinteger(L, 1);
+    t = (time_t) luaL_checknumber(L, 1);
     local = lua_toboolean(L, 2);
     if (lua_type(L, 3) == LUA_TNIL) {
       lua_pop(L, 1);
@@ -62,7 +63,7 @@ static int utc_format (lua_State *L)
 {
   lua_settop(L, 4);
 
-  time_t t = tk_lua_checkinteger(L, 1, "time");
+  time_t t = (time_t) tk_lua_checknumber(L, 1, "time");
   const char *fmt = tk_lua_checkstring(L, 2, "format");
   bool local = tk_lua_optboolean(L, 3, "local", false);
   unsigned bufsize = tk_lua_optunsigned(L, 4, "bufsize", 1024);
@@ -102,13 +103,13 @@ static int utc_time (lua_State *L)
     if (lua_toboolean(L, 2))
       lua_pushnumber(L, utc_time_subsec(L));
     else
-      lua_pushinteger(L, utc_time_seconds());
+      lua_pushnumber(L, utc_time_seconds());
     return 1;
   } else if (lua_type(L, 1) == LUA_TBOOLEAN) {
     if (lua_toboolean(L, 1))
       lua_pushnumber(L, utc_time_subsec(L));
     else
-      lua_pushinteger(L, utc_time_seconds());
+      lua_pushnumber(L, utc_time_seconds());
     return 1;
   }
 
@@ -129,7 +130,7 @@ static int utc_time (lua_State *L)
   if (t == (time_t)(-1))
     return tk_lua_errno(L, errno);
 
-  lua_pushinteger(L, t);
+  lua_pushnumber(L, t);
 
   return 1;
 }
@@ -143,7 +144,7 @@ static int utc_trunc (lua_State *L)
     lua_pushstring(L, str);
   }
 
-  time_t t = luaL_checkinteger(L, 1);
+  time_t t = (time_t) luaL_checknumber(L, 1);
 
   luaL_checktype(L, 2, LUA_TSTRING);
 
@@ -184,12 +185,12 @@ static int utc_trunc (lua_State *L)
     lua_settop(L, 3);
     lua_insert(L, 1);
     lua_settop(L, 1);
-    lua_pushinteger(L, t0);
+    lua_pushnumber(L, t0);
     lua_insert(L, 1);
     utc_date(L);
   }
 
-  lua_pushinteger(L, t0);
+  lua_pushnumber(L, t0);
   return 1;
 }
 
@@ -197,7 +198,7 @@ static int utc_shift (lua_State *L)
 {
   lua_settop(L, 4);
 
-  time_t t = luaL_checkinteger(L, 1);
+  time_t t = (time_t) luaL_checknumber(L, 1);
   lua_Integer offset = luaL_checkinteger(L, 2);
   luaL_checktype(L, 3, LUA_TSTRING);
 
@@ -230,12 +231,12 @@ static int utc_shift (lua_State *L)
   if (lua_type(L, 4) == LUA_TTABLE) {
     lua_insert(L, 1);
     lua_settop(L, 1);
-    lua_pushinteger(L, t0);
+    lua_pushnumber(L, t0);
     lua_insert(L, 1);
     utc_date(L);
   }
 
-  lua_pushinteger(L, t0);
+  lua_pushnumber(L, t0);
   return 1;
 }
 
