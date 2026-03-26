@@ -1,5 +1,9 @@
 #include <santoku/lua/utils.h>
 
+#ifdef __GLIBC__
+#include <malloc.h>
+#endif
+
 static inline int tk_lua_mt_userdata (lua_State *L)
 {
   luaL_checktype(L, -1, LUA_TTABLE);
@@ -9,9 +13,19 @@ static inline int tk_lua_mt_userdata (lua_State *L)
   return 1;
 }
 
+static inline int tk_lua_malloc_trim (lua_State *L)
+{
+  (void)L;
+#ifdef __GLIBC__
+  malloc_trim(0);
+#endif
+  return 0;
+}
+
 luaL_Reg tk_lua_mt_fns[] =
 {
   { "userdata", tk_lua_mt_userdata },
+  { "malloc_trim", tk_lua_malloc_trim },
   { NULL, NULL }
 };
 
