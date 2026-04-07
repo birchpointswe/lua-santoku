@@ -369,6 +369,19 @@ local function encode_url (t)
   return arr.concat(out)
 end
 
+local function escape_html (s)
+  return (gsub(gsub(gsub(gsub(s, "&", "&amp;"), "<", "&lt;"), ">", "&gt;"), '"', "&quot;"))
+end
+
+local function sanitize_filename (s, max_len)
+  max_len = max_len or 80
+  local r = string.sub(s, 1, max_len)
+  r = gsub(r, "[^%w%s%-_]", "")
+  r = gsub(r, "%s+", "-")
+  if r == "" then r = "export" end
+  return r
+end
+
 return tbl.merge({
   splits = splits,
   matches = matches,
@@ -392,6 +405,8 @@ return tbl.merge({
   stripprefix = stripprefix,
   compare = compare,
   commonprefix = commonprefix,
+  escape_html = escape_html,
+  sanitize_filename = sanitize_filename,
   format_number = format_number,
   to_query = to_query,
   from_query = from_query,
