@@ -4,7 +4,7 @@ local hascall = validate.hascall
 
 local tsort = table.sort
 local tcat = table.concat
-local unpack = unpack or table.unpack -- luacheck: ignore
+local unpack = unpack -- luacheck: ignore
 local select = select
 
 local function concat (t, d, s, e)
@@ -25,20 +25,19 @@ end
 
 -- NOTE: Adapted from:
 -- https://github.com/lunarmodules/lua-compat-5.3
-local _move = table.move or -- luacheck: ignore
-  function (s, ss, se, ds, d)
-    d = d or s
-    if se >= ss then
-      local m, n, o = 0, se - ss, 1
-      if ds > ss then
-        m, n, o = n, m, -1
-      end
-      for i = m, n, o do
-        d[ds + i] = s[ss + i]
-      end
+local function _move (s, ss, se, ds, d)
+  d = d or s
+  if se >= ss then
+    local m, n, o = 0, se - ss, 1
+    if ds > ss then
+      m, n, o = n, m, -1
     end
-    return d
+    for i = m, n, o do
+      d[ds + i] = s[ss + i]
+    end
   end
+  return d
+end
 
 local function _copy (d, s, ss, se, ds, ismove)
   ss = ss or 1

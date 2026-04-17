@@ -9,14 +9,7 @@
 #define MAX_DEPTH_DEFAULT 200
 #define INDENT_STRING "  "
 
-#if !defined(LUA_VERSION_NUM) || LUA_VERSION_NUM < 502
-#define lua_rawlen lua_objlen
-#endif
-
 static int lua_isinteger_compat(lua_State *L, int idx) {
-#if LUA_VERSION_NUM >= 503
-  return lua_isinteger(L, idx);
-#else
   if (lua_type(L, idx) == LUA_TNUMBER) {
     lua_Number n = lua_tonumber(L, idx);
     if (isnan(n) || isinf(n)) {
@@ -25,7 +18,6 @@ static int lua_isinteger_compat(lua_State *L, int idx) {
     return n == (lua_Number)(lua_Integer)n;
   }
   return 0;
-#endif
 }
 
 static void out_push(lua_State *L, int out_idx, lua_Integer *n, const char *s) {
@@ -130,14 +122,9 @@ static void serialize_value(
       } else if (isinf(num)) {
         out_push(L, out_idx, out_n, num > 0 ? "(1/0)" : "(-1/0)");
       } else if (lua_isinteger_compat(L, idx)) {
-#if LUA_VERSION_NUM >= 503
-        lua_pushfstring(L, "%I", lua_tointeger(L, idx));
-        out_pushvalue(L, out_idx, out_n);
-#else
         char numbuf[64];
         snprintf(numbuf, sizeof(numbuf), "%.0f", num);
         out_push(L, out_idx, out_n, numbuf);
-#endif
       } else {
         lua_pushnumber(L, num);
         lua_tostring(L, -1);
@@ -174,7 +161,7 @@ static void serialize_value(
       int nl_len = (nl[0] == '\0') ? 0 : 1;
 
       lua_Integer maxi = 0;
-      lua_Integer n = (lua_Integer)lua_rawlen(L, idx);
+      lua_Integer n = (lua_Integer)lua_objlen(L, idx);
       if (n > 100000000)
         luaL_error(L, "array part too large: %d", (int)n);
       for (lua_Integer i = 1; i <= n; i++) {
@@ -287,7 +274,7 @@ static void serialize_table_contents(
   int nl_len = (nl[0] == '\0') ? 0 : 1;
 
   lua_Integer maxi = 0;
-  lua_Integer n = (lua_Integer)lua_rawlen(L, idx);
+  lua_Integer n = (lua_Integer)lua_objlen(L, idx);
   if (n > 100000000)
     luaL_error(L, "array part too large: %d", (int)n);
   for (lua_Integer i = 1; i <= n; i++) {

@@ -1,5 +1,6 @@
+local arr = require("santoku.array")
+local spread = arr.spread
 local select = select
-local spread = table.unpack or unpack -- luacheck: ignore
 
 local function bind (fn, ...)
   if select("#", ...) == 0 then
