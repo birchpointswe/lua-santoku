@@ -564,12 +564,6 @@ Comprehensive Lua C API utilities.
 | `tk_lua_testuserdata(L, idx, tname)` | Test userdata type |
 | `tk_lua_register(L, regs, nup)` | Register functions with upvalues |
 
-#### Ephemeron Tables
-| Function | Description |
-|----------|-------------|
-| `tk_lua_add_ephemeron(L, eph_key, idx_parent, idx_ephemeron)` | Add to ephemeron table |
-| `tk_lua_get_ephemeron(L, eph_key, e)` | Get from ephemeron table |
-
 #### Random Number Generation
 | Function | Description |
 |----------|-------------|
