@@ -128,11 +128,14 @@ local function copcall_finalizer (ok, ...)
 end
 
 local function copcall (fn, ...)
+  pcall_stack = pcall_stack + 1
   local co = co_factory()
   local args = { ... }
-  return copcall_finalizer(co.resume(co.create(function ()
+  local results = { co.resume(co.create(function ()
     return fn(arr.spread(args))
-  end)))
+  end)) }
+  pcall_stack = pcall_stack - 1
+  return copcall_finalizer(arr.spread(results))
 end
 
 local function coxpcall_finalizer (ok, ...)
@@ -146,11 +149,13 @@ local function coxpcall_finalizer (ok, ...)
 end
 
 local function coxpcall (fn, handler, ...)
+  pcall_stack = pcall_stack + 1
   local co = co_factory()
   local args = { ... }
   local results = { co.resume(co.create(function ()
     return fn(arr.spread(args))
   end)) }
+  pcall_stack = pcall_stack - 1
   if results[1] then
     return arr.spread(results)
   else
