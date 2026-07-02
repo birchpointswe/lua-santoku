@@ -1,0 +1,43 @@
+local test = require("santoku.test")
+local co = require("santoku.co")
+
+test("co wrap yields scoped by tag", function ()
+  local c = co()
+  local gen = c.wrap(function ()
+    c.yield(1)
+    c.yield(2)
+    return 3
+  end)
+  assert(gen() == 1)
+  assert(gen() == 2)
+  assert(gen() == 3)
+end)
+
+test("co resume returns status then values", function ()
+  local c = co()
+  local cc = c.create(function (x)
+    c.yield(x + 1)
+    return x + 2
+  end)
+  local ok, a = c.resume(cc, 10)
+  assert(ok and a == 11)
+  local ok2, b = c.resume(cc)
+  assert(ok2 and b == 12)
+end)
+
+test("co tags isolate nested coroutines", function ()
+  local outer = co("outer")
+  local inner = co("inner")
+  local gen = outer.wrap(function ()
+    local g = inner.wrap(function ()
+      inner.yield("from-inner")
+      return "inner-done"
+    end)
+    assert(g() == "from-inner")
+    assert(g() == "inner-done")
+    outer.yield("from-outer")
+    return "outer-done"
+  end)
+  assert(gen() == "from-outer")
+  assert(gen() == "outer-done")
+end)

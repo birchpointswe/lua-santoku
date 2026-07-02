@@ -78,6 +78,20 @@ test("format", function ()
   err.assert(vdt.isequal(s, "2024-04-08"))
 end)
 
+test("ticktock", function ()
+  local tt = utc.ticktock()
+  local a1 = tt("a")()          -- one "a" measurement
+  local stop = tt("b")          -- nest: start "b" while timing another "a"
+  local a2 = tt("a")()
+  local b1 = stop()
+  err.assert(a1 >= 0 and a2 >= 0 and b1 >= 0)
+  local stats, total = tt()
+  err.assert(vdt.isequal(stats.a.count, 2))
+  err.assert(vdt.isequal(stats.b.count, 1))
+  err.assert(stats.a.time >= 0 and total >= stats.a.time)
+  err.assert(tt("z") ~= nil)    -- tt(name) returns a stop closure
+end)
+
 test("subsec", function ()
   local t = utc.time(true)
   local tt = num.trunc(t, 0)

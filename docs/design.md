@@ -35,7 +35,6 @@
 
 - docs: documentation generator
 
-- iconv: charset conversion
 - html: streaming html parser
 - sqlite: sqlite utilities
 - sqlite-migrate: sqlite ddl migration utilities
