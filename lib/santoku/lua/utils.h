@@ -402,8 +402,7 @@ static inline double tk_fast_normal (double mean, double variance)
 
 static inline void tk_fast_seed (uint64_t r)
 {
-  uint64_t raw = (uint64_t) time(NULL) ^ ((uint64_t) r << 32);
-  tk_fast_mcg_state = tk_hash_mix(raw);
+  tk_fast_mcg_state = tk_hash_mix(r);
 }
 
 static inline double tk_fast_drand ()
