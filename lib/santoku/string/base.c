@@ -1,4 +1,5 @@
 #include <santoku/lua/utils.h>
+#include <santoku/string/sha256.h>
 #include <ctype.h>
 
 static inline int number (lua_State *L)
@@ -67,6 +68,19 @@ static inline int from_hex (lua_State *L)
   if (!out) return tk_lua_errmalloc(L);
   lua_pushlstring(L, out, size1);
   free(out);
+  return 1;
+}
+
+static inline int sha256 (lua_State *L)
+{
+  size_t len;
+  const char *data = luaL_checklstring(L, 1, &len);
+  SHA256_CTX ctx;
+  SHA256_BYTE hash[SHA256_BLOCK_SIZE];
+  sha256_init(&ctx);
+  sha256_update(&ctx, (const SHA256_BYTE *) data, len);
+  sha256_final(&ctx, hash);
+  lua_pushlstring(L, (const char *) hash, SHA256_BLOCK_SIZE);
   return 1;
 }
 
@@ -365,6 +379,8 @@ static inline int parse_url (lua_State *L)
 
 static luaL_Reg fns[] =
 {
+  { "sha256", sha256 },
+
   { "to_hex", to_hex },
   { "to_base64", to_base64 },
   { "to_base64_url", to_base64_url },
