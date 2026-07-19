@@ -7,35 +7,37 @@
               Algorithm specification can be found here:
                * http://csrc.nist.gov/publications/fips/fips180-2/fips180-2withchangenotice.pdf
               This implementation uses little endian byte order.
+* Note: all identifiers are tk_-namespaced so this can be safely combined in a
+* unified/amalgamated build alongside other vendored SHA-256s (e.g. monocypher).
 *********************************************************************/
 
-#ifndef SANTOKU_SHA256_H
-#define SANTOKU_SHA256_H
+#ifndef TK_STRING_SHA256_H
+#define TK_STRING_SHA256_H
 
 #include <stddef.h>
 #include <string.h>
 
-#define SHA256_BLOCK_SIZE 32
+#define TK_SHA256_BLOCK_SIZE 32
 
-typedef unsigned char SHA256_BYTE;
-typedef unsigned int  SHA256_WORD;
+typedef unsigned char tk_sha256_byte;
+typedef unsigned int  tk_sha256_word;
 
 typedef struct {
-  SHA256_BYTE data[64];
-  SHA256_WORD datalen;
+  tk_sha256_byte data[64];
+  tk_sha256_word datalen;
   unsigned long long bitlen;
-  SHA256_WORD state[8];
-} SHA256_CTX;
+  tk_sha256_word state[8];
+} tk_sha256_ctx;
 
-#define SHA256_ROTRIGHT(a,b) (((a) >> (b)) | ((a) << (32-(b))))
-#define SHA256_CH(x,y,z) (((x) & (y)) ^ (~(x) & (z)))
-#define SHA256_MAJ(x,y,z) (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
-#define SHA256_EP0(x) (SHA256_ROTRIGHT(x,2) ^ SHA256_ROTRIGHT(x,13) ^ SHA256_ROTRIGHT(x,22))
-#define SHA256_EP1(x) (SHA256_ROTRIGHT(x,6) ^ SHA256_ROTRIGHT(x,11) ^ SHA256_ROTRIGHT(x,25))
-#define SHA256_SIG0(x) (SHA256_ROTRIGHT(x,7) ^ SHA256_ROTRIGHT(x,18) ^ ((x) >> 3))
-#define SHA256_SIG1(x) (SHA256_ROTRIGHT(x,17) ^ SHA256_ROTRIGHT(x,19) ^ ((x) >> 10))
+#define TK_SHA256_ROTRIGHT(a,b) (((a) >> (b)) | ((a) << (32-(b))))
+#define TK_SHA256_CH(x,y,z) (((x) & (y)) ^ (~(x) & (z)))
+#define TK_SHA256_MAJ(x,y,z) (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
+#define TK_SHA256_EP0(x) (TK_SHA256_ROTRIGHT(x,2) ^ TK_SHA256_ROTRIGHT(x,13) ^ TK_SHA256_ROTRIGHT(x,22))
+#define TK_SHA256_EP1(x) (TK_SHA256_ROTRIGHT(x,6) ^ TK_SHA256_ROTRIGHT(x,11) ^ TK_SHA256_ROTRIGHT(x,25))
+#define TK_SHA256_SIG0(x) (TK_SHA256_ROTRIGHT(x,7) ^ TK_SHA256_ROTRIGHT(x,18) ^ ((x) >> 3))
+#define TK_SHA256_SIG1(x) (TK_SHA256_ROTRIGHT(x,17) ^ TK_SHA256_ROTRIGHT(x,19) ^ ((x) >> 10))
 
-static const SHA256_WORD sha256_k[64] = {
+static const tk_sha256_word tk_sha256_k[64] = {
   0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
   0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
   0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
@@ -46,14 +48,15 @@ static const SHA256_WORD sha256_k[64] = {
   0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
 };
 
-static inline void sha256_transform (SHA256_CTX *ctx, const SHA256_BYTE data[])
+static inline void tk_sha256_transform (tk_sha256_ctx *ctx, const tk_sha256_byte data[])
 {
-  SHA256_WORD a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
+  tk_sha256_word a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
 
   for (i = 0, j = 0; i < 16; ++i, j += 4)
-    m[i] = (data[j] << 24) | (data[j + 1] << 16) | (data[j + 2] << 8) | (data[j + 3]);
+    m[i] = ((tk_sha256_word)data[j] << 24) | ((tk_sha256_word)data[j + 1] << 16)
+         | ((tk_sha256_word)data[j + 2] << 8) | ((tk_sha256_word)data[j + 3]);
   for ( ; i < 64; ++i)
-    m[i] = SHA256_SIG1(m[i - 2]) + m[i - 7] + SHA256_SIG0(m[i - 15]) + m[i - 16];
+    m[i] = TK_SHA256_SIG1(m[i - 2]) + m[i - 7] + TK_SHA256_SIG0(m[i - 15]) + m[i - 16];
 
   a = ctx->state[0];
   b = ctx->state[1];
@@ -65,8 +68,8 @@ static inline void sha256_transform (SHA256_CTX *ctx, const SHA256_BYTE data[])
   h = ctx->state[7];
 
   for (i = 0; i < 64; ++i) {
-    t1 = h + SHA256_EP1(e) + SHA256_CH(e,f,g) + sha256_k[i] + m[i];
-    t2 = SHA256_EP0(a) + SHA256_MAJ(a,b,c);
+    t1 = h + TK_SHA256_EP1(e) + TK_SHA256_CH(e,f,g) + tk_sha256_k[i] + m[i];
+    t2 = TK_SHA256_EP0(a) + TK_SHA256_MAJ(a,b,c);
     h = g;
     g = f;
     f = e;
@@ -87,7 +90,7 @@ static inline void sha256_transform (SHA256_CTX *ctx, const SHA256_BYTE data[])
   ctx->state[7] += h;
 }
 
-static inline void sha256_init (SHA256_CTX *ctx)
+static inline void tk_sha256_init (tk_sha256_ctx *ctx)
 {
   ctx->datalen = 0;
   ctx->bitlen = 0;
@@ -101,23 +104,23 @@ static inline void sha256_init (SHA256_CTX *ctx)
   ctx->state[7] = 0x5be0cd19;
 }
 
-static inline void sha256_update (SHA256_CTX *ctx, const SHA256_BYTE data[], size_t len)
+static inline void tk_sha256_update (tk_sha256_ctx *ctx, const tk_sha256_byte data[], size_t len)
 {
   size_t i;
   for (i = 0; i < len; ++i) {
     ctx->data[ctx->datalen] = data[i];
     ctx->datalen++;
     if (ctx->datalen == 64) {
-      sha256_transform(ctx, ctx->data);
+      tk_sha256_transform(ctx, ctx->data);
       ctx->bitlen += 512;
       ctx->datalen = 0;
     }
   }
 }
 
-static inline void sha256_final (SHA256_CTX *ctx, SHA256_BYTE hash[])
+static inline void tk_sha256_final (tk_sha256_ctx *ctx, tk_sha256_byte hash[])
 {
-  SHA256_WORD i;
+  tk_sha256_word i;
 
   i = ctx->datalen;
 
@@ -130,7 +133,7 @@ static inline void sha256_final (SHA256_CTX *ctx, SHA256_BYTE hash[])
     ctx->data[i++] = 0x80;
     while (i < 64)
       ctx->data[i++] = 0x00;
-    sha256_transform(ctx, ctx->data);
+    tk_sha256_transform(ctx, ctx->data);
     memset(ctx->data, 0, 56);
   }
 
@@ -143,7 +146,7 @@ static inline void sha256_final (SHA256_CTX *ctx, SHA256_BYTE hash[])
   ctx->data[58] = ctx->bitlen >> 40;
   ctx->data[57] = ctx->bitlen >> 48;
   ctx->data[56] = ctx->bitlen >> 56;
-  sha256_transform(ctx, ctx->data);
+  tk_sha256_transform(ctx, ctx->data);
 
   for (i = 0; i < 4; ++i) {
     hash[i]      = (ctx->state[0] >> (24 - i * 8)) & 0x000000ff;

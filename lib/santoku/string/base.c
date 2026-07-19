@@ -71,16 +71,16 @@ static inline int from_hex (lua_State *L)
   return 1;
 }
 
-static inline int sha256 (lua_State *L)
+static inline int tk_string_sha256 (lua_State *L)
 {
   size_t len;
   const char *data = luaL_checklstring(L, 1, &len);
-  SHA256_CTX ctx;
-  SHA256_BYTE hash[SHA256_BLOCK_SIZE];
-  sha256_init(&ctx);
-  sha256_update(&ctx, (const SHA256_BYTE *) data, len);
-  sha256_final(&ctx, hash);
-  lua_pushlstring(L, (const char *) hash, SHA256_BLOCK_SIZE);
+  tk_sha256_ctx ctx;
+  tk_sha256_byte hash[TK_SHA256_BLOCK_SIZE];
+  tk_sha256_init(&ctx);
+  tk_sha256_update(&ctx, (const tk_sha256_byte *) data, len);
+  tk_sha256_final(&ctx, hash);
+  lua_pushlstring(L, (const char *) hash, TK_SHA256_BLOCK_SIZE);
   return 1;
 }
 
@@ -379,7 +379,7 @@ static inline int parse_url (lua_State *L)
 
 static luaL_Reg fns[] =
 {
-  { "sha256", sha256 },
+  { "sha256", tk_string_sha256 },
 
   { "to_hex", to_hex },
   { "to_base64", to_base64 },
