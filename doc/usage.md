@@ -8,7 +8,7 @@ Recurring idioms:
 - **mutate vs copy.** `array`/`table` ops mutate and return self; `-ed` variants copy.
 - **structured errors.** values flow through `error`/`assert`/`pcall` as a tuple.
 - **predicates return diagnostics.** `false, reason, ...`, composable with `assert`.
-- **load-only tools.** `autoserialize`/`profile`/`trace` install hooks on `require`.
+- **load-only tools.** `autoserialize`/`trace` install hooks on `require`.
 
 ---
 
@@ -282,6 +282,41 @@ local bench = require("santoku.bench")
 bench("tag", fn, ...)         -- GC twice, time fn(...), print "tag  seconds  result"
 ```
 
+## profile  ·  `test/spec/santoku/profile.lua`
+
+Explicit instrumentation that reports inclusive (`total`) and exclusive (`self`) time, so
+nested spans stop triple-counting the same wall clock.
+
+```lua
+local profile = require("santoku.profile")
+
+profile.enable(); profile.disable(); profile.enabled()    -- off until enabled
+profile.wrap(M, { "sweep", "drain_pending" }, "db.")      -- in place; labels "db.sweep", ...
+profile.wrap(M, "sweep")                                   -- single name, no prefix
+local f = profile.wrapped("respec", f)                     -- returns the wrapper
+profile.timed("respec", fn, ...)                           -- one call inside a span
+local finish = profile.span("block"); ...; finish()        -- inline block
+
+profile.report()    -- array sorted by self desc; label calls total self mean min max open unwound
+profile.format()    -- that report as an aligned table; profile.format(r) renders one you hold
+profile.elapsed()   -- seconds since load or last reset
+profile.reset()     -- zero every counter, drop every open span
+```
+
+- **Disabled costs one boolean test.** Wrappers tail-call straight through and `span` returns
+  a shared no-op, allocating nothing, so instrumentation can stay in shipped code.
+- **`self` subtracts instrumented children** on the same coroutine: `sweep` at 22.1s calling
+  `drain_pending` at 20.8s reports 1.3s of self time.
+- **Units.** `report()` is seconds, `format()` renders milliseconds.
+- **Per-coroutine stacks**, keyed by `coroutine.running()`. A span opened in another
+  coroutine never lands in this one's `self`, and interleaved spans can't pop each other.
+- **`total` is wall clock**, so a span held open across a yield includes the time its
+  coroutine was suspended.
+- **`open=N`**: spans still in flight, or abandoned when their coroutine was collected. The
+  stack table is weak-keyed, so an abandoned coroutine's spans are dropped unrecorded.
+- **`unwound=N`**: spans left open by an error, discarded when an enclosing span finishes.
+  Their time is not fabricated and not charged to a parent.
+
 ## lua  ·  `test/spec/santoku/lua.lua`
 
 ```lua
@@ -314,15 +349,12 @@ These install global hooks the moment they load; don't call them, load them:
 
 ```sh
 lua -l santoku.autoserialize  script.lua   # global print() now serializes its arguments
-lua -l santoku.profile        script.lua   # function-level profile, report at GC/exit
 lua -l santoku.trace          script.lua   # line/return execution trace to stdout
 ```
 
-The factories behind the last two are usable directly when you want explicit control:
+The tracer is usable directly when you want explicit control:
 
 ```lua
-local profiler = require("santoku.profiler")
-local report = profiler()      -- starts profiling; call report() to print + stop
 local tracer = require("santoku.tracer")
 local stop = tracer()          -- starts tracing; call stop() to detach the hook
 ```

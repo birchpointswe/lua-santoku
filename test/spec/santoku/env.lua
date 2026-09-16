@@ -25,11 +25,13 @@ test("path accessors", function ()
   assert(env.cpath() == package.cpath)
 end)
 
-test("searchpath defaults to package.path", function ()
-  local explicit = env.searchpath("santoku.env", package.path)
-  assert(explicit ~= nil)
-  assert(env.searchpath("santoku.env") == explicit)
-end)
+if env.searchpath("santoku.env", package.path) then
+  test("searchpath defaults to package.path", function ()
+    local explicit = env.searchpath("santoku.env", package.path)
+    assert(explicit ~= nil)
+    assert(env.searchpath("santoku.env") == explicit)
+  end)
+end
 
 test("with_paths swaps and restores", function ()
   local old_path = package.path

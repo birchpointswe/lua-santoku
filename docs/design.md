@@ -20,7 +20,7 @@
 
 - test: basic test wrapper
 - validate: various validations that can be passed to assert
-- profile: basic profiler
+- profile: opt-in span profiler, total vs self time, per-coroutine stacks
 - coverage: basic coverage analyzer
 - serialize: serialize values to strings that can be re-loaded
 

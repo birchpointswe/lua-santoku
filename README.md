@@ -7,7 +7,7 @@
 The base library the rest of the santoku ecosystem is built on. Arrays and tables that
 mutate in place, errors that carry more than a string, string splitting and named
 interpolation, continuation-passing async, validation, serialization, UTC time, random
-numbers, benchmarking, tracing, and a tiny test harness.
+numbers, benchmarking, coroutine-aware profiling, tracing, and a tiny test harness.
 
 ## Documentation
 
