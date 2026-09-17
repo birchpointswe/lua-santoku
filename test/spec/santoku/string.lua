@@ -127,6 +127,80 @@ test("uquote", function ()
   assert("hello" == str.unquote(s))
 end)
 
+test("quote escapes the escape character", function ()
+  assert("\"a\\\\\"" == str.quote("a\\"))
+  assert("\"a\\\\b\"" == str.quote("a\\b"))
+  assert("\"a\\\\\\\"b\"" == str.quote("a\\\"b"))
+  assert("\"\\\\\\\\\"" == str.quote("\\\\"))
+end)
+
+test("quoted values are safe to embed", function ()
+  local a = str.quote("ends with backslash\\")
+  local b = str.quote("next")
+  local doc = a .. "," .. b
+  local _, close = str.find(doc, "^\"")
+  assert(close == 1)
+  local i = 2
+  while i <= #doc do
+    local c = str.sub(doc, i, i)
+    if c == "\\" then
+      i = i + 2
+    elseif c == "\"" then
+      break
+    else
+      i = i + 1
+    end
+  end
+  assert(str.sub(doc, 1, i) == a)
+  assert(str.sub(doc, i + 2) == b)
+end)
+
+test("unquote inverts quote", function ()
+  local cases = {
+    "",
+    "hello",
+    "a\\",
+    "\\",
+    "\\\\",
+    "a\"b",
+    "\"",
+    "a\\\"b",
+    "\\\"",
+    "\"\\",
+    "tab\tand\nnewline",
+    "mixed \\\\ \" \\ end",
+  }
+  for i = 1, #cases do
+    assert(cases[i] == str.unquote(str.quote(cases[i])))
+  end
+end)
+
+test("unquote returns one value", function ()
+  assert(1 == select("#", str.unquote("\"hello\"")))
+  assert(1 == select("#", str.unquote("bare")))
+end)
+
+test("quote and unquote with custom delimiters", function ()
+  assert("'a|'b'" == str.quote("a'b", "'", "|"))
+  assert("a'b" == str.unquote(str.quote("a'b", "'", "|"), "'", "|"))
+  assert("a|b" == str.unquote(str.quote("a|b", "'", "|"), "'", "|"))
+  assert("a|'b" == str.unquote(str.quote("a|'b", "'", "|"), "'", "|"))
+  assert("<<a%b>>" == str.quote("a%b", "<<", ">>"))
+  assert("a%b" == str.unquote(str.quote("a%b", "<<", ">>"), "<<", ">>"))
+  assert("a<<b>>c" == str.unquote(str.quote("a<<b>>c", "<<", ">>"), "<<", ">>"))
+end)
+
+test("quote with an empty escape leaves the body untouched", function ()
+  assert("'a'b'" == str.quote("a'b", "'", ""))
+  assert("a'b" == str.unquote("'a'b'", "'", ""))
+end)
+
+test("unquote leaves unquoted input alone", function ()
+  assert("hello" == str.unquote("hello"))
+  assert("\"hello" == str.unquote("\"hello"))
+  assert("hello\"" == str.unquote("hello\""))
+end)
+
 test("interp multiple", function ()
   assert(teq({ "hello world" }, { str.interp("%s#(greet) %s#(target)", { greet = "hello", target = "world" }) }))
 end)
@@ -291,4 +365,121 @@ test("encode_url", function ()
   assert(eq(str.encode_url({ host = "example.com", path = { "a", "b" } }), "//example.com/a/b"))
   assert(eq(str.encode_url({ host = "example.com", params = { x = 1 } }), "//example.com?x=1"))
   assert(eq(str.encode_url({ host = "example.com", fragment = "top" }), "//example.com#top"))
+end)
+
+local u_eacute = "\195\169"
+local u_Eacute = "\195\137"
+local u_euro = "\226\130\172"
+local u_clef = "\240\157\132\158"
+local u_alpha = "\206\177"
+local u_Alpha = "\206\145"
+local u_sharp_s = "\195\159"
+local u_cap_sharp_s = "\225\186\158"
+local u_kelvin = "\226\132\170"
+local u_dotted_I = "\196\176"
+local u_dot_above = "\204\135"
+local u_ligature_fi = "\239\172\129"
+local u_deseret_long_i = "\240\144\144\128"
+local u_deseret_long_i_small = "\240\144\144\168"
+
+test("utf8_next decodes each width", function ()
+  assert(teq({ 97, 1 }, { str.utf8_next("a") }))
+  assert(teq({ 233, 2 }, { str.utf8_next(u_eacute) }))
+  assert(teq({ 8364, 3 }, { str.utf8_next(u_euro) }))
+  assert(teq({ 119070, 4 }, { str.utf8_next(u_clef) }))
+end)
+
+test("utf8_next walks a string by byte offset", function ()
+  local s = "a" .. u_eacute .. u_euro .. u_clef
+  local cps = {}
+  local i = 1
+  while true do
+    local cp, w = str.utf8_next(s, i)
+    if not cp then break end
+    cps[#cps + 1] = cp
+    i = i + w
+  end
+  assert(teq({ 97, 233, 8364, 119070 }, cps))
+  assert(eq(#s + 1, i))
+end)
+
+test("utf8_next returns nil off the ends and on continuation bytes", function ()
+  assert(eq(nil, str.utf8_next("", 1)))
+  assert(eq(nil, str.utf8_next("abc", 4)))
+  assert(eq(nil, str.utf8_next("abc", 0)))
+  assert(eq(nil, str.utf8_next(u_euro, 2)))
+  assert(eq(nil, str.utf8_next(u_euro, 3)))
+end)
+
+test("utf8_len counts codepoints", function ()
+  assert(eq(0, str.utf8_len("")))
+  assert(eq(3, str.utf8_len("abc")))
+  assert(eq(4, str.utf8_len("a" .. u_eacute .. u_euro .. u_clef)))
+  assert(eq(1, str.utf8_len(u_clef)))
+end)
+
+test("malformed utf8 yields nil", function ()
+  local cases = {
+    "\226\130",
+    "\240\157\132",
+    "\195",
+    "\169",
+    "\128\128",
+    "\192\175",
+    "\224\128\175",
+    "\240\128\128\175",
+    "\237\160\128",
+    "\244\144\128\128",
+    "\254",
+    "\255",
+    "\226\130\226\130\172",
+  }
+  for i = 1, #cases do
+    assert(eq(nil, str.utf8_next(cases[i], 1)))
+    assert(eq(nil, str.utf8_len(cases[i])))
+    assert(eq(nil, str.utf8_lower(cases[i])))
+    assert(eq(nil, str.utf8_fold(cases[i])))
+  end
+end)
+
+test("malformed utf8 later in a string still yields nil", function ()
+  local s = "ok then \226\130"
+  assert(eq(111, str.utf8_next(s, 1)))
+  assert(eq(nil, str.utf8_next(s, 9)))
+  assert(eq(nil, str.utf8_len(s)))
+  assert(eq(nil, str.utf8_lower(s)))
+  assert(eq(nil, str.utf8_fold(s)))
+end)
+
+test("utf8_lower maps across all widths", function ()
+  assert(eq("", str.utf8_lower("")))
+  assert(eq("abc", str.utf8_lower("ABC")))
+  assert(eq(u_eacute, str.utf8_lower(u_Eacute)))
+  assert(eq(u_alpha, str.utf8_lower(u_Alpha)))
+  assert(eq(u_deseret_long_i_small, str.utf8_lower(u_deseret_long_i)))
+  assert(eq("x" .. u_alpha .. "y", str.utf8_lower("X" .. u_Alpha .. "Y")))
+end)
+
+test("utf8_lower changes byte length where unicode says so", function ()
+  assert(eq(u_sharp_s, str.utf8_lower(u_cap_sharp_s)))
+  assert(eq(2, #str.utf8_lower(u_cap_sharp_s)))
+  assert(eq("k", str.utf8_lower(u_kelvin)))
+  assert(eq("i", str.utf8_lower(u_dotted_I)))
+  assert(eq(u_sharp_s, str.utf8_lower(u_sharp_s)))
+end)
+
+test("utf8_fold expands beyond one codepoint", function ()
+  assert(eq("", str.utf8_fold("")))
+  assert(eq("ss", str.utf8_fold(u_sharp_s)))
+  assert(eq("ss", str.utf8_fold(u_cap_sharp_s)))
+  assert(eq("fi", str.utf8_fold(u_ligature_fi)))
+  assert(eq("i" .. u_dot_above, str.utf8_fold(u_dotted_I)))
+  assert(eq(u_alpha, str.utf8_fold(u_Alpha)))
+  assert(eq("k", str.utf8_fold(u_kelvin)))
+  assert(eq(u_deseret_long_i_small, str.utf8_fold(u_deseret_long_i)))
+end)
+
+test("utf8_fold equates case variants", function ()
+  assert(eq(str.utf8_fold("Stra" .. u_sharp_s .. "e"), str.utf8_fold("STRASSE")))
+  assert(eq(str.utf8_fold(u_Alpha .. "BC"), str.utf8_fold(u_alpha .. "bc")))
 end)

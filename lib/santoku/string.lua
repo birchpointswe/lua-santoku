@@ -154,30 +154,65 @@ local function startswith (str, pfx)
   return sub(str, 1, #pfx) == pfx
 end
 
-local function quote (s, q, e)
-  q = q or "\""
-  e = e or "\\"
-  return arr.concat({ q, (gsub(s, q, e .. q)), q })
-end
-
-local function unquote (s, q, e)
-  q = q or "\""
-  e = e or "\\"
-  if startswith(s, q) and endswith(s, q) then
-    local slen = #s
-    local qlen = #q
-    return gsub(sub(s, 1 + qlen, slen - qlen), e .. q, q)
-  else
-    return s
-  end
-end
-
 local function escape (s)
   return (gsub(s, "[%(%)%.%%+%-%*%?%[%]%^%$]", "%%%1"))
 end
 
 local function unescape (s)
   return (gsub(s, "%%([%(%)%.%%+%-%*%?%[%]%^%$])", "%1"))
+end
+
+local function escape_replacement (s)
+  return (gsub(s, "%%", "%%%%"))
+end
+
+local function quote (s, q, e)
+  q = q or "\""
+  e = e or "\\"
+  if e ~= "" then
+    s = gsub(s, escape(e), escape_replacement(e .. e))
+  end
+  s = gsub(s, escape(q), escape_replacement(e .. q))
+  return arr.concat({ q, s, q })
+end
+
+local function unquote (s, q, e)
+  q = q or "\""
+  e = e or "\\"
+  if not (startswith(s, q) and endswith(s, q)) then
+    return s
+  end
+  local inner = sub(s, 1 + #q, #s - #q)
+  if e == "" then
+    return inner
+  end
+  local elen = #e
+  local qlen = #q
+  local n = #inner
+  local out = {}
+  local i = 1
+  while i <= n do
+    local b = find(inner, e, i, true)
+    if not b then
+      out[#out + 1] = sub(inner, i)
+      break
+    end
+    if b > i then
+      out[#out + 1] = sub(inner, i, b - 1)
+    end
+    local j = b + elen
+    if sub(inner, j, j + elen - 1) == e then
+      out[#out + 1] = e
+      i = j + elen
+    elseif sub(inner, j, j + qlen - 1) == q then
+      out[#out + 1] = q
+      i = j + qlen
+    else
+      out[#out + 1] = e
+      i = j
+    end
+  end
+  return arr.concat(out)
 end
 
 local function printf (s, ...)

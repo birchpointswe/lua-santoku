@@ -1,5 +1,6 @@
 #include <santoku/lua/utils.h>
 #include <santoku/string/sha256.h>
+#include <santoku/string/utf8.h>
 #include <ctype.h>
 
 static inline int number (lua_State *L)
@@ -43,6 +44,85 @@ static inline int equals (lua_State *L)
   }
   lua_pushboolean(L, strncmp(lit, chunk + s - 1, (size_t) (e - s + 1)) == 0);
   return 1;
+}
+
+static inline int utf8_next (lua_State *L)
+{
+  size_t len;
+  const char *s = luaL_checklstring(L, 1, &len);
+  lua_Integer i = luaL_optinteger(L, 2, 1);
+  if (i < 1 || (size_t) i > len)
+    return 0;
+  uint32_t cp;
+  int n = tk_utf8_decode(s, len, (size_t) i - 1, &cp);
+  if (!n)
+    return 0;
+  lua_pushinteger(L, (lua_Integer) cp);
+  lua_pushinteger(L, n);
+  return 2;
+}
+
+static inline int utf8_len (lua_State *L)
+{
+  size_t len;
+  const char *s = luaL_checklstring(L, 1, &len);
+  size_t pos = 0;
+  lua_Integer n = 0;
+  while (pos < len) {
+    uint32_t cp;
+    int w = tk_utf8_decode(s, len, pos, &cp);
+    if (!w)
+      return 0;
+    pos += (size_t) w;
+    n ++;
+  }
+  lua_pushinteger(L, n);
+  return 1;
+}
+
+static inline int utf8_case (lua_State *L, bool fold)
+{
+  size_t len;
+  const char *s = luaL_checklstring(L, 1, &len);
+  uint32_t cp;
+  size_t pos = 0;
+  while (pos < len) {
+    int w = tk_utf8_decode(s, len, pos, &cp);
+    if (!w)
+      return 0;
+    pos += (size_t) w;
+  }
+  luaL_Buffer B;
+  luaL_buffinit(L, &B);
+  char buf[4];
+  pos = 0;
+  while (pos < len) {
+    pos += (size_t) tk_utf8_decode(s, len, pos, &cp);
+    if (fold) {
+      const tk_utf8_expand_t *e = tk_utf8_fold_full(cp);
+      if (e) {
+        luaL_addlstring(&B, e->bytes, (size_t) e->len);
+        continue;
+      }
+      cp = tk_utf8_fold_cp(cp);
+    } else {
+      cp = tk_utf8_lower_cp(cp);
+    }
+    int w = tk_utf8_encode(cp, buf);
+    luaL_addlstring(&B, buf, (size_t) w);
+  }
+  luaL_pushresult(&B);
+  return 1;
+}
+
+static inline int utf8_lower (lua_State *L)
+{
+  return utf8_case(L, false);
+}
+
+static inline int utf8_fold (lua_State *L)
+{
+  return utf8_case(L, true);
 }
 
 static inline int to_hex (lua_State *L)
@@ -393,6 +473,11 @@ static luaL_Reg fns[] =
 
   { "number", number },
   { "equals", equals },
+
+  { "utf8_next", utf8_next },
+  { "utf8_len", utf8_len },
+  { "utf8_lower", utf8_lower },
+  { "utf8_fold", utf8_fold },
 
   { "parse_url", parse_url },
 
