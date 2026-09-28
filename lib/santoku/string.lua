@@ -7,6 +7,7 @@ local sub = string.sub
 local gsub = string.gsub
 local format = string.format
 local reverse = string.reverse
+local lower = string.lower
 local smatch = string.match
 local sgmatch = string.gmatch
 local io_write = io.write
@@ -266,6 +267,27 @@ local function compare (a, b)
   end
 end
 
+local function compare_natural (a, b)
+  a, b = lower(a), lower(b)
+  local i, j, na, nb = 1, 1, #a, #b
+  while i <= na and j <= nb do
+    local da = smatch(a, "^%d+", i)
+    local db = da and smatch(b, "^%d+", j)
+    if db then
+      local ta, tb = smatch(da, "^0*(.-)$"), smatch(db, "^0*(.-)$")
+      if #ta ~= #tb then return #ta < #tb end
+      if ta ~= tb then return ta < tb end
+      if #da ~= #db then return #da < #db end
+      i, j = i + #da, j + #db
+    else
+      local ca, cb = sub(a, i, i), sub(b, j, j)
+      if ca ~= cb then return ca < cb end
+      i, j = i + 1, j + 1
+    end
+  end
+  return na - i < nb - j
+end
+
 local function commonprefix (...)
   local strs = { ... }
   local n = #strs
@@ -440,6 +462,7 @@ return tbl.merge({
   isempty = isempty,
   stripprefix = stripprefix,
   compare = compare,
+  compare_natural = compare_natural,
   commonprefix = commonprefix,
   escape_html = escape_html,
   sanitize_filename = sanitize_filename,
