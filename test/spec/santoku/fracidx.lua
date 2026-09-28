@@ -77,6 +77,79 @@ test("validate accepts well-formed keys and rejects malformed", function ()
   assert(not ok)
 end)
 
+test("suffix encodes fixed width, sorts numerically, never ends in zero", function ()
+  assert(fi.suffix(0, 1) == "1")
+  assert(fi.suffix(60, 1) == "z")
+  assert(fi.suffix(0, 3) == "111")
+  assert(fi.suffix(61, 2) == "21")
+  assert(#fi.suffix(12345, 4) == 4)
+  local prev = nil
+  for i = 0, 61 * 61 - 1, 7 do
+    local s = fi.suffix(i, 2)
+    assert(#s == 2)
+    assert(s:sub(-1) ~= "0")
+    if prev then assert(prev < s, prev .. " >= " .. s) end
+    prev = s
+  end
+  assert(fi.suffix_desc(0, 2) == fi.suffix(61 * 61 - 1, 2))
+  assert(fi.suffix_desc(5, 2) > fi.suffix_desc(6, 2))
+  assert(not pcall(fi.suffix, 61, 1))
+  assert(not pcall(fi.suffix, -1, 1))
+  assert(not pcall(fi.suffix, 1.5, 1))
+  assert(not pcall(fi.suffix, 1, 0))
+  assert(not pcall(fi.suffix, 1, 9))
+end)
+
+test("gap keys sit strictly inside the interval for every suffix", function ()
+  local function check (a, b)
+    local g = fi.gap(a, b)
+    assert(g:sub(1, #a) == a)
+    for _, s in ipairs({ "1", "z", "11", "zz", "1z1", fi.suffix(3000, 3) }) do
+      local k = g .. s
+      fi.validate(k)
+      assert(k > a, k .. " <= " .. a)
+      if b then assert(k < b, k .. " >= " .. b) end
+      local k2 = k .. fi.suffix(7, 2)
+      fi.validate(k2)
+      assert(k2 > k)
+      if b then assert(k2 < b) end
+    end
+    if b then
+      local p = fi.between(a, b)
+      local gp = fi.gap(a, p)
+      assert(gp .. "zzzz" < p, gp .. "zzzz >= " .. p)
+    end
+  end
+  check("a0", "a1")
+  check("a0", "a0V")
+  check("a0V", "a0VG")
+  check("a0V", "a0V1")
+  check("a0V", "a0V01")
+  check("a0V", "a0V001")
+  check("a0V", "a0W")
+  check("a0", "b00")
+  check("Zz", "a0")
+  check("a0", nil)
+  check("a0V", nil)
+  local keys = { fi.between(nil, nil) }
+  for i = 1, 40 do
+    if i % 2 == 0 then
+      arr.push(keys, fi.between(keys[#keys], nil))
+    else
+      local m = num.floor(#keys / 2)
+      if m >= 1 then
+        arr.insert(keys, m + 1, fi.between(keys[m], keys[m + 1]))
+      end
+    end
+  end
+  for i = 1, #keys - 1 do
+    check(keys[i], keys[i + 1])
+  end
+  assert(not pcall(fi.gap, "a1", "a0"))
+  assert(not pcall(fi.gap, "a0", "a0"))
+  assert(not pcall(fi.validate, fi.gap("a0", "a1")))
+end)
+
 test("lex order matches insertion order across many ops", function ()
 
   local keys = { fi.between(nil, nil) }

@@ -229,6 +229,52 @@ M.between_n = function (prev, next_, n)
   return out
 end
 
+local SUFFIX_DIGITS = DIGITS:sub(2)
+local SUFFIX_BASE = BASE - 1
+local SUFFIX_MAX_WIDTH = 8
+
+M.gap = function (prev, next_)
+  validate_key(prev)
+  if next_ == nil then return prev .. "0" end
+  validate_key(next_)
+  if prev >= next_ then
+    error("prev >= next: " .. prev .. " >= " .. next_)
+  end
+  local n = #prev
+  if next_:sub(1, n) ~= prev then return prev .. "0" end
+  local i = n + 1
+  while next_:sub(i, i) == "0" do i = i + 1 end
+  return prev .. str.rep("0", i - n)
+end
+
+M.suffix = function (n, width)
+  if type(n) ~= "number" or n < 0 or n ~= num.floor(n) then
+    error("invalid suffix value: " .. tostring(n))
+  end
+  if type(width) ~= "number" or width < 1 or width > SUFFIX_MAX_WIDTH
+    or width ~= num.floor(width) then
+    error("invalid suffix width: " .. tostring(width))
+  end
+  local out = {}
+  for i = width, 1, -1 do
+    local d = n % SUFFIX_BASE
+    out[i] = SUFFIX_DIGITS:sub(d + 1, d + 1)
+    n = (n - d) / SUFFIX_BASE
+  end
+  if n > 0 then
+    error("suffix value does not fit in width " .. width)
+  end
+  return arr.concat(out)
+end
+
+M.suffix_desc = function (n, width)
+  if type(width) ~= "number" or width < 1 or width > SUFFIX_MAX_WIDTH
+    or width ~= num.floor(width) then
+    error("invalid suffix width: " .. tostring(width))
+  end
+  return M.suffix(SUFFIX_BASE ^ width - 1 - n, width)
+end
+
 M.validate = validate_key
 
 return M

@@ -125,6 +125,23 @@ static inline int utf8_fold (lua_State *L)
   return utf8_case(L, true);
 }
 
+static inline int utf8_char (lua_State *L)
+{
+  int n = lua_gettop(L);
+  luaL_Buffer B;
+  luaL_buffinit(L, &B);
+  char buf[4];
+  for (int i = 1; i <= n; i ++) {
+    lua_Integer cp = luaL_checkinteger(L, i);
+    if (cp < 0 || cp > 0x10FFFF || (cp >= 0xD800 && cp <= 0xDFFF))
+      return luaL_argerror(L, i, "invalid codepoint");
+    int w = tk_utf8_encode((uint32_t) cp, buf);
+    luaL_addlstring(&B, buf, (size_t) w);
+  }
+  luaL_pushresult(&B);
+  return 1;
+}
+
 static inline int to_hex (lua_State *L)
 {
   size_t size0;
@@ -478,6 +495,7 @@ static luaL_Reg fns[] =
   { "utf8_len", utf8_len },
   { "utf8_lower", utf8_lower },
   { "utf8_fold", utf8_fold },
+  { "utf8_char", utf8_char },
 
   { "parse_url", parse_url },
 
