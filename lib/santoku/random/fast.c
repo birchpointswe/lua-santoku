@@ -8,7 +8,7 @@ static inline int fast_seed (lua_State *L)
 
 static inline int fast_random (lua_State *L)
 {
-  lua_pushinteger(L, (lua_Integer)tk_fast_random());
+  lua_pushnumber(L, (lua_Number) tk_fast_random());
   return 1;
 }
 
@@ -30,9 +30,10 @@ static luaL_Reg fns[] = {
 
 int luaopen_santoku_random_fast (lua_State *L)
 {
+  tk_fast_bind(L);
   lua_newtable(L);
   luaL_register(L, NULL, fns);
-  lua_pushinteger(L, (lua_Integer)UINT32_MAX);
+  lua_pushnumber(L, (lua_Number) UINT32_MAX);
   lua_setfield(L, -2, "fast_max");
   return 1;
 }

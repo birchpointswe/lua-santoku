@@ -34,7 +34,11 @@ end)
 test("fast", function ()
 
   rand.fast_normal(0, 100)
-  rand.fast_random()
+  assert(rand.fast_max == 4294967295, "fast_max must be UINT32_MAX: " .. tostring(rand.fast_max))
+  for _ = 1, 64 do
+    local v = rand.fast_random()
+    assert(v >= 0 and v <= rand.fast_max, "fast_random out of range: " .. tostring(v))
+  end
 end)
 
 if can_spawn then

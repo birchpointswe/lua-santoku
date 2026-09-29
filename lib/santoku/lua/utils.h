@@ -12,6 +12,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <ctype.h>
 
 #include <santoku/klib.h>
@@ -376,15 +377,11 @@ static inline bool tk_lua_fcheckboolean (lua_State *L, int i, char *name, char *
   return n;
 }
 
-#define TK_FAST_UNSEEDED 0xcafef00dd15ea5e5u
+#define TK_FAST_REGISTRY_KEY "santoku.fast_state"
 
 static uint64_t const tk_fast_multiplier = 6364136223846793005u;
-static __thread uint64_t tk_fast_mcg_state = TK_FAST_UNSEEDED;
-
-static inline void tk_fast_seed (uint64_t r)
-{
-  tk_fast_mcg_state = tk_hash_mix(r);
-}
+static uint64_t *tk_fast_state = NULL;
+static lua_State *tk_fast_bound = NULL;
 
 static inline uint64_t tk_fast_entropy ()
 {
@@ -394,14 +391,58 @@ static inline uint64_t tk_fast_entropy ()
   return tk_hash_mix(t ^ (c << 17) ^ (a << 33) ^ (a >> 31));
 }
 
+static inline void tk_fast_bind (lua_State *L)
+{
+  if (tk_fast_bound == L)
+    return;
+  lua_getfield(L, LUA_REGISTRYINDEX, TK_FAST_REGISTRY_KEY);
+  if (lua_isnil(L, -1)) {
+    lua_pop(L, 1);
+    uint64_t *s = (uint64_t *) lua_newuserdata(L, sizeof(uint64_t));
+    *s = tk_hash_mix(tk_fast_entropy());
+    lua_setfield(L, LUA_REGISTRYINDEX, TK_FAST_REGISTRY_KEY);
+    tk_fast_state = s;
+  } else {
+    tk_fast_state = (uint64_t *) lua_touserdata(L, -1);
+    lua_pop(L, 1);
+  }
+  tk_fast_bound = L;
+}
+
+static inline uint64_t *tk_fast_shared ()
+{
+  if (tk_fast_state == NULL) {
+    fputs("santoku: tk_fast_* used before tk_fast_bind(L)\n", stderr);
+    abort();
+  }
+  return tk_fast_state;
+}
+
+static inline void tk_fast_seed (uint64_t r)
+{
+  __atomic_store_n(tk_fast_shared(), tk_hash_mix(r), __ATOMIC_RELAXED);
+}
+
+static inline uint32_t tk_fast_out (uint64_t x)
+{
+  unsigned int count = (unsigned int) (x >> 61);
+  return (uint32_t) ((x ^ x >> 22) >> (22 + count));
+}
+
+static inline uint32_t tk_fast_step (uint64_t *state)
+{
+  uint64_t x = *state;
+  *state = x * tk_fast_multiplier;
+  return tk_fast_out(x);
+}
+
 static inline uint32_t tk_fast_random ()
 {
-  if (tk_fast_mcg_state == TK_FAST_UNSEEDED)
-    tk_fast_seed(tk_fast_entropy());
-  uint64_t x = tk_fast_mcg_state;
-  unsigned int count = (unsigned int) (x >> 61);
-  tk_fast_mcg_state = x * tk_fast_multiplier;
-  return (uint32_t) ((x ^ x >> 22) >> (22 + count));
+  uint64_t *s = tk_fast_shared();
+  uint64_t x = __atomic_load_n(s, __ATOMIC_RELAXED);
+  while (!__atomic_compare_exchange_n(s, &x, x * tk_fast_multiplier, true,
+      __ATOMIC_RELAXED, __ATOMIC_RELAXED));
+  return tk_fast_out(x);
 }
 
 static inline double tk_fast_normal (double mean, double variance)
