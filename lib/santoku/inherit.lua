@@ -1,12 +1,5 @@
-
-
-
-
-
-
-
-
-
+-- SPDX-License-Identifier: MIT
+-- SPDX-FileCopyrightText: 2023 Birch Point SWE
 
 local function getindex (t)
   local tmeta = getmetatable(t)

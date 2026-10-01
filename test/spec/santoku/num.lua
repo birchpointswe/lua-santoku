@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: MIT
+-- SPDX-FileCopyrightText: 2023 Birch Point SWE
 local test = require("santoku.test")
 local num = require("santoku.num")
 
@@ -7,7 +9,4 @@ test("trunc", function ()
   assert(1.1 == num.trunc(1.18901234098234, 1))
   assert(1 == num.trunc(1.18901234098234, 0))
 end)
-
-
-
 

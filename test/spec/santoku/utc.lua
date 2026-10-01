@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: MIT
+-- SPDX-FileCopyrightText: 2023 Birch Point SWE
 local serialize = require("santoku.serialize") -- luacheck: ignore
 local utc = require("santoku.utc")
 local test = require("santoku.test")

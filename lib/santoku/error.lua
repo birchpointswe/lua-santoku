@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: MIT
+-- SPDX-FileCopyrightText: 2023 Birch Point SWE
 local arr = require("santoku.array")
 local co_factory = require("santoku.co")
 local select = select

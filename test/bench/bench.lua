@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: MIT
+-- SPDX-FileCopyrightText: 2023 Birch Point SWE
 local bench = require("santoku.bench")
 local rand = require("santoku.random")
 local asy = require("santoku.async")

@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: MIT
+-- SPDX-FileCopyrightText: 2023 Birch Point SWE
 local test = require("santoku.test")
 local rand = require("santoku.random")
 local str = require("santoku.string")

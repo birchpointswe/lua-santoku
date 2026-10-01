@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2023 Birch Point SWE
 #define _GNU_SOURCE
 #include <santoku/lua/utils.h>
 #include <time.h>

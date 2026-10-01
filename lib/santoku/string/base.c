@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2023 Birch Point SWE
 #include <santoku/lua/utils.h>
 #include <santoku/string/sha256.h>
 #include <santoku/string/utf8.h>

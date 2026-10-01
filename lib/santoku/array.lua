@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: MIT
+-- SPDX-FileCopyrightText: 2023 Birch Point SWE
 local validate = require("santoku.validate")
 local hasindex = validate.hasindex
 local hascall = validate.hascall
@@ -22,8 +24,6 @@ local function clear (t, ts, te)
   end
   return t
 end
-
-
 
 local function _move (s, ss, se, ds, d)
   d = d or s
@@ -122,8 +122,6 @@ local function filtered (t, fn, ...)
   end
   return r
 end
-
-
 
 local function sort (t, opts)
   if hascall(opts) then

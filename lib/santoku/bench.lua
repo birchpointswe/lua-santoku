@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: MIT
+-- SPDX-FileCopyrightText: 2023 Birch Point SWE
 local collectgarbage = collectgarbage
 local print = print
 local time = require("santoku.utc.capi").time

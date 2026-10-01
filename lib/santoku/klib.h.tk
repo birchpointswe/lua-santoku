@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2023 Birch Point SWE
 #include <santoku/lua/utils.h>
 <% return readfile("res/vendor/klib/khash.h") %>
-<% return readfile("res/vendor/klib/kbtree.h") %>
 <% return readfile("res/vendor/klib/ksort.h") %>
 <% return readfile("res/vendor/klib/kvec.h") %>

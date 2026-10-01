@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: MIT
+-- SPDX-FileCopyrightText: 2023 Birch Point SWE
 local tbl = require("santoku.table")
 local num = require("santoku.num")
 local capi = require("santoku.utc.capi")

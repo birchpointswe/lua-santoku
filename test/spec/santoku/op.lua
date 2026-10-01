@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: MIT
+-- SPDX-FileCopyrightText: 2023 Birch Point SWE
 local test = require("santoku.test")
 local op = require("santoku.op")
 local num = require("santoku.num")

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2023 Birch Point SWE
 #include <santoku/lua/utils.h>
 
 int luaopen_santoku_validate_capi (lua_State *L)

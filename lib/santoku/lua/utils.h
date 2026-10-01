@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2023 Birch Point SWE
 #ifndef TK_LUA_UTILS_H
 #define TK_LUA_UTILS_H
 

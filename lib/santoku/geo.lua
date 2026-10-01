@@ -1,4 +1,5 @@
-
+-- SPDX-License-Identifier: MIT
+-- SPDX-FileCopyrightText: 2023 Birch Point SWE
 
 local num = require("santoku.num")
 local sqrt = num.sqrt
@@ -14,9 +15,6 @@ local function distance (one, two)
   return sqrt(a^2 + b^2)
 end
 
-
-
-
 local function earth_stereo (point, origin)
   local p = -1
   local R = 3671
@@ -29,7 +27,6 @@ local function earth_stereo (point, origin)
     y = R * k2 * (cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(lon2 - lon1))
   }
 end
-
 
 local function earth_distance (one, two)
   local earth_radius = 6371

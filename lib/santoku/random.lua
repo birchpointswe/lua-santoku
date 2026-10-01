@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: MIT
+-- SPDX-FileCopyrightText: 2023 Birch Point SWE
 local tbl = require("santoku.table")
 local arr = require("santoku.array")
 local fast = require("santoku.random.fast")

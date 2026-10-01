@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2023 Birch Point SWE
 #ifndef TK_EXECINFO_H
 #define TK_EXECINFO_H
 
@@ -87,8 +89,6 @@ static inline void tk_execinfo_handler(int sig)
   free(strings);
   exit(1);
 }
-
-
 
 __attribute__((constructor)) static inline void tk_execinfo_init () {
   signal(SIGSEGV, tk_execinfo_handler);
